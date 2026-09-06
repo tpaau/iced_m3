@@ -44,7 +44,7 @@ jobs:
         run: |
           cargo doc --no-deps -p iced_m3 --all-features
           mkdir -p publish/
-          cp -r ./target/doc/* ./publish/
+          cp -r ./target/doc/iced_m3/* ./publish/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
