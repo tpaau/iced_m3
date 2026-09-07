@@ -125,7 +125,7 @@ impl<'a, Message> Navbar<'a, Message> {
     }
 }
 
-impl<'a, Message> From<Navbar<'a, Message>> for Element<'a, Message, iced::Theme, iced::Renderer>
+impl<'a, Message> From<Navbar<'a, Message>> for Element<'a, Message>
 where
     Message: 'a + Clone,
 {

@@ -99,22 +99,9 @@ const SUPPORTING_TEXT_SIZE: Pixels = Pixels(12.0);
 const ICON_SIZE: Pixels = Pixels(20.0);
 static BUTTON_RADIUS: LazyLock<Radius> = LazyLock::new(|| Radius::new(12.0));
 
-impl<'a, Message, Theme, Renderer> From<Menu<'a, Message>> for Element<'a, Message, Theme, Renderer>
+impl<'a, Message> From<Menu<'a, Message>> for Element<'a, Message>
 where
-    Renderer: 'a + iced::advanced::Renderer + iced::advanced::text::Renderer,
-    <Renderer as iced::advanced::text::Renderer>::Font: From<iced::Font>,
     Message: 'a + Clone,
-    Theme: 'a
-        + iced_widget::container::Catalog
-        + iced_widget::text::Catalog
-        + iced_widget::button::Catalog
-        + iced_widget::rule::Catalog,
-    <Theme as iced_widget::container::Catalog>::Class<'a>:
-        From<iced_widget::container::StyleFn<'a, Theme>>,
-    <Theme as iced_widget::text::Catalog>::Class<'a>: From<iced_widget::text::StyleFn<'a, Theme>>,
-    <Theme as iced_widget::button::Catalog>::Class<'a>:
-        From<iced_widget::button::StyleFn<'a, Theme>>,
-    <Theme as iced_widget::rule::Catalog>::Class<'a>: From<iced_widget::rule::StyleFn<'a, Theme>>,
 {
     fn from(menu: Menu<'a, Message>) -> Self {
         let vibrant = menu.vibrant;
@@ -171,11 +158,11 @@ where
         let button_error_press_color =
             error_state_layer_color.scale_alpha(PRESSED_STATE_LAYER_OPACITY);
 
-        let children: Vec<Element<'_, Message, Theme, Renderer>> = menu
+        let children: Vec<Element<'_, Message>> = menu
             .groups
             .into_iter()
-            .map(|group| -> Element<'_, Message, Theme, Renderer> {
-                let mut children: Vec<Element<'a, Message, Theme, Renderer>> = Vec::new();
+            .map(|group| -> Element<'_, Message> {
+                let mut children: Vec<Element<'a, Message>> = Vec::new();
                 if let Some(label) = group.label {
                     children.push(
                         container(
@@ -209,7 +196,7 @@ where
                             };
                             let content_alpha = if button_disabled { DIM_ALPHA } else { 1.0 };
                             let trailing_icon_visible = matches!(action, Action::Menu(_));
-                            let content = move || -> Element<'a, Message, Theme, Renderer> {
+                            let content = move || -> Element<'a, Message> {
                                 row![
                                     icon.map(|i| text(i).size(ICON_SIZE).font(icon_font).style(
                                         move |_| text::Style {
@@ -223,7 +210,7 @@ where
                                     column![
                                         space().height(Length::Fill),
                                         text(label).size(LABEL_TEXT_SIZE).font(font).style(
-                                            move |_: &Theme| text::Style {
+                                            move |_| text::Style {
                                                 color: Some(if error {
                                                     error_content_color.scale_alpha(content_alpha)
                                                 } else {
@@ -232,7 +219,7 @@ where
                                             }
                                         ),
                                         supporting_text.map(
-                                            |t| -> iced::advanced::widget::Text<'_, _, Renderer> {
+                                            |t| -> iced::advanced::widget::Text<'_, _, _> {
                                                 text(t).size(SUPPORTING_TEXT_SIZE).font(font).style(
                                                     move |_| text::Style {
                                                         color: Some(if error {
@@ -337,7 +324,7 @@ where
                 }
 
                 container(column(children).spacing(2.0))
-                    .style(move |_: &Theme| container::Style {
+                    .style(move |_| container::Style {
                         background: Some(iced::Background::Color(bg)),
                         border: iced::Border {
                             radius: Radius::new(16),
