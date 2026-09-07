@@ -12,6 +12,9 @@ num-traits = "0.2.19"
 pollster = "1.0.1"
 unicode-segmentation = "1.13.3"
 
+[features]
+advanced = []
+
 [workspace]
 members = [
   "demos/fonts",

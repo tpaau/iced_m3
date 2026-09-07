@@ -1,6 +1,9 @@
+#[cfg(feature = "advanced")]
+pub mod advanced;
+#[cfg(not(feature = "advanced"))]
+pub(crate) mod advanced;
 pub mod button;
 pub mod dialog;
-pub mod drop_down_menu;
 pub mod fab_menu;
 pub mod navbar;
 pub mod progress_bar;
@@ -16,24 +19,10 @@ use iced_widget::rule;
 use crate::{
     theme::ColorScheme,
     widget::{
-        button::Button,
-        dialog::Dialog,
-        drop_down_menu::{DropDownMenu, Placement},
-        fab_menu::FABMenu,
-        navbar::Navbar,
-        progress_bar::ProgressBar,
-        text_input::TextInput,
+        button::Button, dialog::Dialog, fab_menu::FABMenu, navbar::Navbar,
+        progress_bar::ProgressBar, text_input::TextInput,
     },
 };
-
-#[must_use]
-pub fn drop_down_menu<'a, Message, Theme, Renderer>(
-    trigger: impl Fn(bool) -> Element<'a, Message, Theme, Renderer> + 'a,
-    menu: Option<impl Into<Element<'a, Message, Theme, Renderer>>>,
-    placement: Placement,
-) -> DropDownMenu<'a, Message, Theme, Renderer> {
-    DropDownMenu::<'a, Message, Theme, Renderer>::new(trigger, menu, placement)
-}
 
 #[must_use]
 pub fn menu<'a, Message>(

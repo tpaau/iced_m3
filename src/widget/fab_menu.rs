@@ -4,8 +4,9 @@ use iced_widget::{center, column, space, text};
 use crate::{
     style::shadow,
     theme::{Accent, ColorScheme},
-    widget::drop_down_menu,
 };
+
+pub use crate::widget::advanced::drop_down_menu::Placement;
 
 const TRIGGER_SIZE: f32 = 56.0;
 const TRIGGER_ICON_SIZE: f32 = 20.0;
@@ -139,7 +140,7 @@ impl<'a, Message: 'a + Clone> From<FABMenu<'a, Message>> for Element<'a, Message
                 .into(),
         );
 
-        drop_down_menu(
+        super::advanced::drop_down_menu(
             move |opened| {
                 center(
                     text((menu.icon)(opened))
@@ -156,7 +157,7 @@ impl<'a, Message: 'a + Clone> From<FABMenu<'a, Message>> for Element<'a, Message
                     .spacing(BUTTON_SPACING)
                     .align_x(Alignment::End),
             ),
-            drop_down_menu::Placement::TopLeft,
+            Placement::TopLeft,
         )
         .menu_transparent(true)
         .into()
