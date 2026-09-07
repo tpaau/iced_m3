@@ -1,8 +1,8 @@
 doc-no-all-features:
-	cargo doc --no-deps -p iced_m3
+	RUSTDOCFLAGS="--cfg docsrs" cargo +nightly doc --no-deps -p iced_m3
 
 doc:
-	cargo doc --no-deps -p iced_m3 --all-features
+	RUSTDOCFLAGS="--cfg docsrs" cargo +nightly doc --no-deps -p iced_m3 --all-features
 
 open-doc:
 	cargo doc --no-deps -p iced_m3 --all-features --open

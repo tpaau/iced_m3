@@ -2,6 +2,7 @@
 name: Deploy static content to Pages
 env:
   CARGO_TERM_COLOR: always
+  RUSTDOCFLAGS: --cfg docsrs
 
 on:
   # Runs on pushes targeting the default branch
@@ -42,7 +43,7 @@ jobs:
 
       - name: Generate rustdoc documentation
         run: |
-          cargo doc --no-deps -p iced_m3 --all-features
+          cargo +nightly doc --no-deps -p iced_m3 --all-features
           mkdir -p publish/
           cp -r ./site/* ./publish/
           cp -r ./target/doc/* ./publish/
