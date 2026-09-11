@@ -4,6 +4,7 @@ use iced_widget::{center, column, space, text};
 use crate::{
     style::shadow,
     theme::{Accent, ColorScheme},
+    widget::button,
 };
 
 pub use crate::widget::advanced::drop_down_menu::Placement;
@@ -123,15 +124,16 @@ impl<'a, Message: 'a + Clone> From<FABMenu<'a, Message>> for Element<'a, Message
             .entries
             .into_iter()
             .map(|e| {
-                crate::widget::button(menu.theme)
-                    .on_press(e.message)
-                    .size(crate::widget::button::Size::Medium) // TEST: Height should be 56px
-                    .label(e.label)
-                    .icon_maybe(e.icon)
-                    .label_font_maybe(menu.label_font)
-                    .icon_font_maybe(menu.icon_font)
-                    .style(crate::widget::button::Style::Tonal(menu.accent))
-                    .into()
+                crate::widget::button(
+                    menu.theme,
+                    button::Content::Label(e.label.into()).icon_maybe(e.icon.copied()),
+                )
+                .on_press(e.message)
+                .size(crate::widget::button::Size::Medium) // TEST: Height should be 56px
+                .label_font_maybe(menu.label_font)
+                .icon_font_maybe(menu.icon_font)
+                .style(crate::widget::button::Style::Tonal(menu.accent))
+                .into()
             })
             .collect();
         buttons.push(

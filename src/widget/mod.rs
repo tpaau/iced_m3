@@ -50,8 +50,11 @@ pub fn navbar<'a, Message, Theme, Renderer>(
 }
 
 #[must_use]
-pub fn button<'a, Message>(theme: &'a dyn ColorScheme) -> Button<'a, Message> {
-    Button::new(theme)
+pub fn button<'a, Message>(
+    theme: &'a dyn ColorScheme,
+    content: button::Content<'a>,
+) -> Button<'a, Message> {
+    Button::new(theme, content)
 }
 
 #[must_use]

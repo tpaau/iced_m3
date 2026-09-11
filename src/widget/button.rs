@@ -1,7 +1,5 @@
-use std::borrow::Cow;
-
 use iced::{Alignment, Color, Element, Length, Padding, border::Radius, padding};
-use iced_widget::{center, row, text, text::IntoFragment};
+use iced_widget::{center, row, text};
 
 use crate::{
     DISABLED_STATE_LAYER_OPACITY, HOVER_STATE_LAYER_OPACITY, PRESSED_STATE_LAYER_OPACITY,
@@ -502,6 +500,75 @@ enum OnPress<'a, Message> {
     Closure(Box<dyn Fn() -> Message + 'a>),
 }
 
+pub enum Content<'a> {
+    Icon(char),
+    Label(text::Fragment<'a>),
+    Full {
+        icon: char,
+        label: text::Fragment<'a>,
+    },
+}
+
+impl<'a> Content<'a> {
+    #[must_use]
+    pub fn label(self, label: impl text::IntoFragment<'a>) -> Self {
+        match self {
+            Content::Icon(icon) => Self::Full {
+                icon,
+                label: label.into_fragment(),
+            },
+            Content::Label(_) => Self::Label(label.into_fragment()),
+            Content::Full { icon, label: _ } => Self::Full {
+                icon,
+                label: label.into_fragment(),
+            },
+        }
+    }
+
+    #[must_use]
+    pub fn label_maybe(self, maybe_label: Option<impl text::IntoFragment<'a>>) -> Self {
+        match maybe_label {
+            Some(label) => self.label(label),
+            None => self,
+        }
+    }
+
+    #[must_use]
+    pub fn icon(self, icon: char) -> Self {
+        match self {
+            Content::Icon(_) => Self::Icon(icon),
+            Content::Label(label) => Self::Full { icon, label },
+            Content::Full { icon: _, label } => Self::Full { icon, label },
+        }
+    }
+
+    #[must_use]
+    pub fn icon_maybe(self, maybe_icon: Option<char>) -> Self {
+        match maybe_icon {
+            Some(icon) => self.icon(icon),
+            None => self,
+        }
+    }
+
+    #[must_use]
+    fn get_icon(&self) -> Option<char> {
+        match self {
+            Content::Icon(icon) => Some(*icon),
+            Content::Label(_) => None,
+            Content::Full { icon, label: _ } => Some(*icon),
+        }
+    }
+
+    #[must_use]
+    fn get_label(&self) -> Option<&str> {
+        match self {
+            Content::Icon(_) => None,
+            Content::Label(label) => Some(label),
+            Content::Full { icon: _, label } => Some(label),
+        }
+    }
+}
+
 pub struct Button<'a, Message, Renderer = iced_widget::Renderer>
 where
     Renderer: 'a + iced_widget::core::text::Renderer,
@@ -509,9 +576,8 @@ where
     on_press: Option<OnPress<'a, Message>>,
     clip: bool,
     theme: &'a dyn ColorScheme,
-    label: Option<Cow<'a, str>>,
+    content: Content<'a>,
     label_font: Option<Renderer::Font>,
-    icon: Option<&'a char>,
     icon_font: Option<Renderer::Font>,
     size: Size,
     corner_style: CornerStyle,
@@ -525,14 +591,13 @@ where
     Renderer: iced::advanced::text::Renderer,
 {
     #[must_use]
-    pub fn new(theme: &'a dyn ColorScheme) -> Self {
+    pub fn new(theme: &'a dyn ColorScheme, content: Content<'a>) -> Self {
         Self {
             on_press: None,
             clip: false,
             theme,
-            label: Some(Cow::Borrowed("label")),
+            content,
             label_font: None,
-            icon: None,
             icon_font: None,
             size: Size::default(),
             corner_style: CornerStyle::default(),
@@ -540,18 +605,6 @@ where
             elevation: Elevation::default(),
             selected: None,
         }
-    }
-
-    #[must_use]
-    pub fn label(mut self, label: impl IntoFragment<'a>) -> Self {
-        self.label = Some(label.into_fragment());
-        self
-    }
-
-    #[must_use]
-    pub fn label_maybe(mut self, maybe_label: Option<String>) -> Self {
-        self.label = maybe_label.map(|l| l.into_fragment());
-        self
     }
 
     #[must_use]
@@ -563,18 +616,6 @@ where
     #[must_use]
     pub fn label_font_maybe(mut self, maybe_font: Option<Renderer::Font>) -> Self {
         self.label_font = maybe_font;
-        self
-    }
-
-    #[must_use]
-    pub fn icon(mut self, icon: &'a char) -> Self {
-        self.icon = Some(icon);
-        self
-    }
-
-    #[must_use]
-    pub fn icon_maybe(mut self, maybe_icon: Option<&'a char>) -> Self {
-        self.icon = maybe_icon;
         self
     }
 
@@ -651,11 +692,11 @@ where
 {
     fn from(button: Button<'a, Message>) -> Self {
         let content = row![
-            button.icon.map(|i| text(i)
+            button.content.get_icon().map(|i| text(i)
                 .wrapping(text::Wrapping::None)
                 .size(button.size.icon_size())
                 .font_maybe(button.icon_font)),
-            button.label.map(|l| text(l)
+            button.content.get_label().map(|l| text(l.to_string())
                 .wrapping(text::Wrapping::None)
                 .size(button.size.font_size())
                 .font_maybe(button.label_font))

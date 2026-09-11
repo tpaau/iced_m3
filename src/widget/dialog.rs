@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use iced::{Alignment, Border, Element, Font, Length, color};
 use iced_widget::{column, container, opaque, row, space, text::IntoFragment};
 
-use crate::theme::ColorScheme;
+use crate::{theme::ColorScheme, widget::button};
 
 pub const MIN_WIDTH: f32 = 280.0;
 pub const MAX_WIDTH: f32 = 560.0;
@@ -163,8 +163,7 @@ where
             let mut content = Vec::with_capacity(value.buttons.len() + 1);
             content.push(space().width(Length::Fill).into());
             content.extend(value.buttons.into_iter().map(|b| {
-                crate::widget::button(value.theme)
-                    .label(b.label)
+                crate::widget::button(value.theme, button::Content::Label(b.label.into()))
                     .label_font_maybe(value.button_label_font)
                     .style(b.style)
                     .on_press_maybe(b.on_press)

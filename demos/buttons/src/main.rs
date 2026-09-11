@@ -6,7 +6,7 @@ use iced::{
 };
 use iced_m3::{
     theme::{Accent, ColorScheme, Mode, Theme},
-    widget::button::{Button, CornerStyle, Style},
+    widget::button::{Button, Content, CornerStyle, Style},
 };
 
 #[derive(Clone)]
@@ -40,14 +40,13 @@ const APP_NAME: &str = "Buttons demo";
 static EDIT: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe3c9).unwrap());
 const CONTAINER_WIDTH: f32 = 220.0;
 
-fn button<'a>(state: &'a State, style: Style) -> Button<'a, Message> {
-    iced_m3::widget::button(&state.theme)
+fn button<'a>(state: &'a State, style: Style, content: Content<'a>) -> Button<'a, Message> {
+    iced_m3::widget::button(&state.theme, content)
         .style(style)
         .icon_font(match state.icons_filled {
             true => fonts::icons_filled(),
             false => fonts::icons_outlined(),
         })
-        .icon(&state.icon)
         .corner_style(match state.square {
             true => CornerStyle::Square,
             false => CornerStyle::Round,
@@ -66,83 +65,196 @@ impl State {
         let buttons = container(
             column![
                 row![
-                    wrapper(button(self, Style::Elevated(self.accent)).label("Elevated button")),
+                    wrapper(button(
+                        self,
+                        Style::Elevated(self.accent),
+                        Content::Full {
+                            icon: self.icon,
+                            label: "Elevated button".into()
+                        }
+                    )),
                     wrapper(
-                        button(self, Style::Elevated(self.accent))
-                            .label("Elevated unselected")
-                            .selected(false)
+                        button(
+                            self,
+                            Style::Elevated(self.accent),
+                            Content::Full {
+                                icon: self.icon,
+                                label: "Elevated unselected".into()
+                            }
+                        )
+                        .selected(false)
                     ),
                     wrapper(
-                        button(self, Style::Elevated(self.accent))
-                            .label("Elevated selected")
-                            .selected(true)
+                        button(
+                            self,
+                            Style::Elevated(self.accent),
+                            Content::Full {
+                                icon: self.icon,
+                                label: "Elevated selected".into()
+                            }
+                        )
+                        .selected(true)
                     ),
                     wrapper(
-                        button(self, Style::Elevated(self.accent))
-                            .label("Elevated disabled")
-                            .on_press_maybe(None)
-                    ),
-                ],
-                row![
-                    wrapper(button(self, Style::Filled(self.accent)).label("Filled button")),
-                    wrapper(
-                        button(self, Style::Filled(self.accent))
-                            .label("Filled unselected")
-                            .selected(false)
-                    ),
-                    wrapper(
-                        button(self, Style::Filled(self.accent))
-                            .label("Filled selected")
-                            .selected(true)
-                    ),
-                    wrapper(
-                        button(self, Style::Filled(self.accent))
-                            .label("Filled disabled")
-                            .on_press_maybe(None)
-                    ),
-                ],
-                row![
-                    wrapper(button(self, Style::Tonal(self.accent)).label("Tonal button")),
-                    wrapper(
-                        button(self, Style::Tonal(self.accent))
-                            .label("Tonal unselected")
-                            .selected(false)
-                    ),
-                    wrapper(
-                        button(self, Style::Tonal(self.accent))
-                            .label("Tonal selected")
-                            .selected(true)
-                    ),
-                    wrapper(
-                        button(self, Style::Tonal(self.accent))
-                            .label("Tonal disabled")
-                            .on_press_maybe(None)
+                        button(
+                            self,
+                            Style::Elevated(self.accent),
+                            Content::Full {
+                                icon: self.icon,
+                                label: "Elevated disabled".into()
+                            }
+                        )
+                        .on_press_maybe(None)
                     ),
                 ],
                 row![
-                    wrapper(button(self, Style::Outlined).label("Outlined button")),
+                    wrapper(button(
+                        self,
+                        Style::Filled(self.accent),
+                        Content::Full {
+                            icon: self.icon,
+                            label: "Filled button".into()
+                        }
+                    )),
                     wrapper(
-                        button(self, Style::Outlined)
-                            .label("Outlined unselected")
-                            .selected(false)
+                        button(
+                            self,
+                            Style::Filled(self.accent),
+                            Content::Full {
+                                icon: self.icon,
+                                label: "Filled unselected".into()
+                            }
+                        )
+                        .selected(false)
                     ),
                     wrapper(
-                        button(self, Style::Outlined)
-                            .label("Outlined selected")
-                            .selected(true)
+                        button(
+                            self,
+                            Style::Filled(self.accent),
+                            Content::Full {
+                                icon: self.icon,
+                                label: "Filled selected".into()
+                            }
+                        )
+                        .selected(true)
                     ),
                     wrapper(
-                        button(self, Style::Outlined)
-                            .label("Outlined disabled")
-                            .on_press_maybe(None)
+                        button(
+                            self,
+                            Style::Filled(self.accent),
+                            Content::Full {
+                                icon: self.icon,
+                                label: "Filled disabled".into()
+                            }
+                        )
+                        .on_press_maybe(None)
                     ),
                 ],
                 row![
-                    wrapper(button(self, Style::Text(self.accent)).label("Text button")),
+                    wrapper(button(
+                        self,
+                        Style::Tonal(self.accent),
+                        Content::Full {
+                            icon: self.icon,
+                            label: "Tonal button".into()
+                        }
+                    )),
                     wrapper(
-                        button(self, Style::Text(self.accent))
-                            .label("Text disabled")
-                            .on_press_maybe(None)
+                        button(
+                            self,
+                            Style::Tonal(self.accent),
+                            Content::Full {
+                                icon: self.icon,
+                                label: "Tonal unselected".into()
+                            }
+                        )
+                        .selected(false)
+                    ),
+                    wrapper(
+                        button(
+                            self,
+                            Style::Tonal(self.accent),
+                            Content::Full {
+                                icon: self.icon,
+                                label: "Tonal selected".into()
+                            }
+                        )
+                        .selected(true)
+                    ),
+                    wrapper(
+                        button(
+                            self,
+                            Style::Tonal(self.accent),
+                            Content::Full {
+                                icon: self.icon,
+                                label: "Tonal disabled".into()
+                            }
+                        )
+                        .on_press_maybe(None)
+                    ),
+                ],
+                row![
+                    wrapper(button(
+                        self,
+                        Style::Outlined,
+                        Content::Full {
+                            icon: self.icon,
+                            label: "Outlined button".into()
+                        }
+                    )),
+                    wrapper(
+                        button(
+                            self,
+                            Style::Outlined,
+                            Content::Full {
+                                icon: self.icon,
+                                label: "Outlined unselected".into()
+                            }
+                        )
+                        .selected(false)
+                    ),
+                    wrapper(
+                        button(
+                            self,
+                            Style::Outlined,
+                            Content::Full {
+                                icon: self.icon,
+                                label: "Outlined selected".into()
+                            }
+                        )
+                        .selected(true)
+                    ),
+                    wrapper(
+                        button(
+                            self,
+                            Style::Outlined,
+                            Content::Full {
+                                icon: self.icon,
+                                label: "Outlined disabled".into()
+                            }
+                        )
+                        .on_press_maybe(None)
+                    ),
+                ],
+                row![
+                    wrapper(button(
+                        self,
+                        Style::Text(self.accent),
+                        Content::Full {
+                            icon: self.icon,
+                            label: "Text button".into()
+                        }
+                    )),
+                    wrapper(
+                        button(
+                            self,
+                            Style::Text(self.accent),
+                            Content::Full {
+                                icon: self.icon,
+                                label: "Text disabled".into()
+                            }
+                        )
+                        .on_press_maybe(None)
                     )
                 ]
             ]
@@ -150,21 +262,51 @@ impl State {
         );
 
         let sized_buttons = column![
-            button(self, Style::Elevated(self.accent))
-                .label("Common button")
-                .size(iced_m3::widget::button::Size::ExtraSmall),
-            button(self, Style::Elevated(self.accent))
-                .label("Common button")
-                .size(iced_m3::widget::button::Size::Small),
-            button(self, Style::Elevated(self.accent))
-                .label("Common button")
-                .size(iced_m3::widget::button::Size::Medium),
-            button(self, Style::Elevated(self.accent))
-                .label("Common button")
-                .size(iced_m3::widget::button::Size::Large),
-            button(self, Style::Elevated(self.accent))
-                .label("Common button")
-                .size(iced_m3::widget::button::Size::ExtraLarge),
+            button(
+                self,
+                Style::Elevated(self.accent),
+                Content::Full {
+                    icon: self.icon,
+                    label: "Common button".into()
+                }
+            )
+            .size(iced_m3::widget::button::Size::ExtraSmall),
+            button(
+                self,
+                Style::Elevated(self.accent),
+                Content::Full {
+                    icon: self.icon,
+                    label: "Common button".into()
+                }
+            )
+            .size(iced_m3::widget::button::Size::Small),
+            button(
+                self,
+                Style::Elevated(self.accent),
+                Content::Full {
+                    icon: self.icon,
+                    label: "Common button".into()
+                }
+            )
+            .size(iced_m3::widget::button::Size::Medium),
+            button(
+                self,
+                Style::Elevated(self.accent),
+                Content::Full {
+                    icon: self.icon,
+                    label: "Common button".into()
+                }
+            )
+            .size(iced_m3::widget::button::Size::Large),
+            button(
+                self,
+                Style::Elevated(self.accent),
+                Content::Full {
+                    icon: self.icon,
+                    label: "Common button".into()
+                }
+            )
+            .size(iced_m3::widget::button::Size::ExtraLarge),
         ]
         .spacing(12.0);
 
