@@ -133,6 +133,10 @@ impl<'a, Message: 'a + Clone> From<FABMenu<'a, Message>> for Element<'a, Message
                 .label_font_maybe(menu.label_font)
                 .icon_font_maybe(menu.icon_font)
                 .style(crate::widget::button::Style::Tonal(menu.accent))
+                .corner_style(button::CornerStyle::Custom {
+                    resting: f32::MAX.into(),
+                    pressed: f32::MAX.into(),
+                })
                 .into()
             })
             .collect();
