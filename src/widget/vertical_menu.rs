@@ -330,7 +330,7 @@ where
                             radius: Radius::new(16),
                             ..Default::default()
                         },
-                        shadow: shadow(shadow_color, Elevation::new(0.5)),
+                        shadow: shadow(shadow_color, Elevation::Level3),
                         ..Default::default()
                     })
                     .padding(SECTION_PADDING)

@@ -4,6 +4,7 @@ pub mod advanced;
 pub(crate) mod advanced;
 pub mod button;
 pub mod dialog;
+pub mod fab;
 pub mod fab_menu;
 pub mod navbar;
 pub mod progress_bar;
@@ -19,7 +20,7 @@ use iced_widget::rule;
 use crate::{
     theme::ColorScheme,
     widget::{
-        button::Button, dialog::Dialog, fab_menu::FABMenu, navbar::Navbar,
+        button::Button, dialog::Dialog, fab::Fab, fab_menu::FABMenu, navbar::Navbar,
         progress_bar::ProgressBar, text_input::TextInput,
     },
 };
@@ -112,4 +113,28 @@ pub fn dialog<'a, Message>(
 #[must_use]
 pub fn progress_bar<'a>(theme: &'a impl ColorScheme) -> ProgressBar<'a> {
     ProgressBar::new(theme)
+}
+
+#[must_use]
+pub fn fab<'a, Message>(
+    theme: &'a impl ColorScheme,
+    content: fab::Content<'a>,
+    on_press: Message,
+) -> Fab<'a, Message>
+where
+    Message: 'a + Clone,
+{
+    Fab::new(theme, content, on_press)
+}
+
+#[must_use]
+pub fn fab_with<'a, Message>(
+    theme: &'a impl ColorScheme,
+    content: fab::Content<'a>,
+    on_press: impl Fn() -> Message + 'a,
+) -> Fab<'a, Message>
+where
+    Message: 'a + Clone,
+{
+    Fab::new_with(theme, content, on_press)
 }

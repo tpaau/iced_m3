@@ -769,6 +769,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "fab"
+version = "0.1.0"
+dependencies = [
+ "fonts",
+ "iced",
+ "iced_m3",
+]
+
+[[package]]
 name = "fab_menu"
 version = "0.1.0"
 dependencies = [

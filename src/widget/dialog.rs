@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use iced::{Alignment, Border, Element, Font, Length, color};
 use iced_widget::{column, container, opaque, row, space, text::IntoFragment};
 
-use crate::{theme::ColorScheme, widget::button};
+use crate::{style::Elevation, theme::ColorScheme, widget::button};
 
 pub const MIN_WIDTH: f32 = 280.0;
 pub const MAX_WIDTH: f32 = 560.0;
@@ -196,7 +196,10 @@ where
                 iced_widget::container::Style::default()
                     .background(value.theme.surface_container_high())
                     .border(Border::default().rounded(DIALOG_RADIUS))
-                    .shadow(crate::style::shadow(value.theme.shadow(), 0.6))
+                    .shadow(crate::style::shadow(
+                        value.theme.shadow(),
+                        Elevation::Level3,
+                    ))
             })
             .max_width(MAX_WIDTH);
 

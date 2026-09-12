@@ -2,7 +2,7 @@ use iced::{Alignment, Border, Element, Font, Length};
 use iced_widget::{center, column, space, text};
 
 use crate::{
-    style::shadow,
+    style::{Elevation, shadow},
     theme::{Accent, ColorScheme},
     widget::button,
 };
@@ -38,7 +38,7 @@ fn trigger_style(
             true => f32::MAX,
             false => 16.0,
         }),
-        shadow: shadow(theme.shadow(), 0.3),
+        shadow: shadow(theme.shadow(), Elevation::Level3),
         ..Default::default()
     }
 }

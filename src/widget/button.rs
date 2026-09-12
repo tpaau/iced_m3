@@ -405,7 +405,7 @@ pub enum CornerStyle {
     Round,
     Square,
     Custom {
-        regular: Radius,
+        resting: Radius,
         pressed: Radius,
     },
 }
@@ -431,9 +431,9 @@ impl CornerStyle {
                     Size::Large | Size::ExtraLarge => Radius::new(28.0),
                 },
                 CornerStyle::Custom {
-                    regular,
+                    resting,
                     pressed: _,
-                } => *regular,
+                } => *resting,
             }
         }
     }
@@ -457,7 +457,7 @@ impl CornerStyle {
                     Size::Large | Size::ExtraLarge => Radius::new(16.0),
                 },
                 CornerStyle::Custom {
-                    regular: _,
+                    resting: _,
                     pressed,
                 } => *pressed,
             }
@@ -495,7 +495,7 @@ fn style(
     }
 }
 
-enum OnPress<'a, Message> {
+pub(crate) enum OnPress<'a, Message> {
     Direct(Message),
     Closure(Box<dyn Fn() -> Message + 'a>),
 }
