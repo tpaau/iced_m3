@@ -49,6 +49,13 @@ TODOs:
 
 ~[demo]()~
 
+### FABs
+![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/fab.jpg)
+
+Reference: [FABs](https://m3.material.io/components/floating-action-button/overview), [Extended FABs](https://m3.material.io/components/extended-fab/overview) (yes, adding a label makes it a separate widget somehow)
+
+[demo](https://github.com/tpaau/iced_m3/blob/main/demos/fab)
+
 ### FAB Menu
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/fab-menu-demo.gif)
 
@@ -58,6 +65,7 @@ TODOs:
 
 TODOs:
 - Animation
+
 
 ### Vertical Menu
 ~![showcase]()~
