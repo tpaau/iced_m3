@@ -1,6 +1,15 @@
 <h1 align="center">iced_m3</h1>
 
-<div align="center"><a href="https://m3.material.io">Material Design 3</a> widgets for the <a href="https://iced.rs/">iced GUI library</a></div>
+
+<div align="center">
+  
+  ![](https://img.shields.io/github/last-commit/tpaau/iced_m3?&style=for-the-badge&color=FFFFFF&logo=git&logoColor=C9C9C9&labelColor=252525)
+  ![](https://img.shields.io/github/repo-size/tpaau/iced_m3?&style=for-the-badge&color=FFFFFF&logo=git&logoColor=C9C9C9&labelColor=252525)
+</div>
+
+<div align="center">
+  <a href="https://m3.material.io">Material Design 3</a> widgets for the <a href="https://iced.rs/">iced GUI library</a>
+</div>
 
 
 ## Usage
