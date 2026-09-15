@@ -20,15 +20,20 @@ same reason, but also because I don't think `iced_m3` is mature enough to be put
 releases.
 
 
-## Features
-
-
-## Material Widgets
+## Widgets
 Implementations of material widgets. Some of them more complete, some of them less complete. Some
 animated, others not... You get the idea.
 
 Note that those **aren't** styles, but rather widget wrappers, completely custom widgets or forks of
 widgets from `iced_widget`.
+
+
+### Badges
+![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/buttons-demo.gif)
+
+[reference](https://m3.material.io/components/badges/overview)
+
+[demo](https://github.com/tpaau/iced_m3/blob/main/demos/badges)
 
 
 ### Buttons

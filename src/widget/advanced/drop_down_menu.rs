@@ -1,3 +1,5 @@
+// TODO: I should probably redo this one from scratch, it's a mess
+
 use std::{cell::Cell, rc::Rc};
 
 use iced::advanced::Clipboard;
@@ -352,8 +354,8 @@ impl<Message, Theme, Renderer: iced::advanced::Renderer> Widget<Message, Theme, 
                 unreachable!();
             };
             [
-                // NOTE: I think this might cause issues if `trigger_cached` is not assigned, it won't
-                // display its overlay??
+                // NOTE: I think this might cause issues if `trigger_cached` is not assigned, it
+                // won't display its overlay??
                 self.trigger_cached.as_mut().and_then(|trigger_cached| {
                     trigger_cached.as_widget_mut().overlay(
                         first,

@@ -21,7 +21,8 @@ members = [
   "demos/buttons",
   "demos/fab_menu",
   "demos/progress_indicators",
-  "demos/fab"
+  "demos/fab",
+  "demos/badges"
 ]
 
 [package.metadata.docs.rs]

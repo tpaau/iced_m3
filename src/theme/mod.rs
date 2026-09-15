@@ -125,7 +125,6 @@ pub struct Palette {
 }
 
 impl Palette {
-    // TODO: Replace the default material color scheme with a custom one.
     pub fn default_dark() -> Self {
         Self {
             primary: color!(0xD0BCFF),

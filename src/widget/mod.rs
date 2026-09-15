@@ -2,6 +2,7 @@
 pub mod advanced;
 #[cfg(not(feature = "advanced"))]
 pub(crate) mod advanced;
+pub mod badge;
 pub mod button;
 pub mod dialog;
 pub mod fab;
@@ -20,7 +21,7 @@ use iced_widget::rule;
 use crate::{
     theme::ColorScheme,
     widget::{
-        button::Button, dialog::Dialog, fab::Fab, fab_menu::FABMenu, navbar::Navbar,
+        badge::Badge, button::Button, dialog::Dialog, fab::Fab, fab_menu::FABMenu, navbar::Navbar,
         progress_bar::ProgressBar, text_input::TextInput,
     },
 };
@@ -137,4 +138,15 @@ where
     Message: 'a + Clone,
 {
     Fab::new_with(theme, content, on_press)
+}
+
+#[must_use]
+pub fn badge<'a, Message, Theme, Renderer>(
+    theme: &'a impl ColorScheme,
+    base: impl Into<Element<'a, Message, Theme, Renderer>>,
+) -> Badge<'a, Message, Theme, Renderer>
+where
+    Renderer: 'a + iced_widget::core::text::Renderer,
+{
+    Badge::new(theme, base)
 }
