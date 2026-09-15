@@ -29,7 +29,7 @@ widgets from `iced_widget`.
 
 
 ### Badges
-![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/buttons-demo.gif)
+![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/badges.jpg)
 
 [reference](https://m3.material.io/components/badges/overview)
 

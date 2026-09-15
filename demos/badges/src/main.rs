@@ -54,7 +54,8 @@ impl State {
 
         let badges = vec![
             badge_column(vec![
-                badge(&self.theme, icon()).into(),
+                // So that the icon is as big as the ones with padding
+                column![badge(&self.theme, icon()), space().height(4.0)].into(),
                 nav_bar_container(badge(&self.theme, icon()).into()),
             ]),
             badge_column(vec![
