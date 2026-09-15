@@ -91,7 +91,7 @@ where
 }
 
 #[must_use]
-pub fn spacer<'a, Message>(theme: &'a impl ColorScheme) -> Element<'a, Message>
+pub fn spacer<'a, Message>(theme: &'a dyn ColorScheme) -> Element<'a, Message>
 where
     Message: 'a,
 {

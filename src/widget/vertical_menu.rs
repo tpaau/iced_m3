@@ -1,12 +1,13 @@
 use std::sync::LazyLock;
 
 use iced::{Alignment, Border, Color, Element, Font, Length, Pixels, border::Radius, padding};
-use iced_widget::{button, column, container, row, rule, space, text};
+use iced_widget::{button, column, container, row, space, text};
 
 use crate::{
     DIM_ALPHA, HOVER_STATE_LAYER_OPACITY, PRESSED_STATE_LAYER_OPACITY,
     style::{Elevation, shadow},
     theme::ColorScheme,
+    widget::spacer,
 };
 
 pub enum Action<'a, Message> {
@@ -119,11 +120,6 @@ where
         } else {
             menu.theme.on_surface_variant()
         };
-        let separator_color = if menu.vibrant {
-            menu.theme.on_tertiary_container().scale_alpha(0.3)
-        } else {
-            menu.theme.outline_variant()
-        };
         let bg = if menu.vibrant {
             menu.theme.tertiary_container()
         } else {
@@ -163,7 +159,8 @@ where
             .into_iter()
             .map(|group| -> Element<'_, Message> {
                 let mut children: Vec<Element<'a, Message>> = Vec::new();
-                if let Some(label) = group.label {
+
+                group.label.map(|label| {
                     children.push(
                         container(
                             text(label)
@@ -179,8 +176,9 @@ where
                         .height(LABEL_HEIGHT)
                         .width(container_width)
                         .into(),
-                    );
-                }
+                    )
+                });
+
                 for entry in group.entries {
                     match entry {
                         Entry::Button {
@@ -236,27 +234,24 @@ where
                                         space().height(Length::Fill),
                                     ],
                                     space().width(Length::Fill),
-                                    if trailing_icon_visible {
-                                        Some(
-                                            crate::widget::icon(trailing_icon, ICON_SIZE)
-                                                .font(icon_font)
-                                                .color(if error {
-                                                    error_content_color.scale_alpha(content_alpha)
-                                                } else {
-                                                    icon_color.scale_alpha(content_alpha)
-                                                }),
-                                        )
-                                    } else {
-                                        None
-                                    }
+                                    trailing_icon_visible.then_some(
+                                        crate::widget::icon(trailing_icon, ICON_SIZE)
+                                            .font(icon_font)
+                                            .color(if error {
+                                                error_content_color.scale_alpha(content_alpha)
+                                            } else {
+                                                icon_color.scale_alpha(content_alpha)
+                                            }),
+                                    ),
                                 ]
                                 .spacing(8.0)
                                 .align_y(Alignment::Center)
                                 .into()
                             };
+
                             match action {
-                                Action::Menu(groups) => children.push(
-                                    super::advanced::drop_down_menu(
+                                Action::Menu(groups) => {
+                                    let submenu = super::advanced::drop_down_menu(
                                         move |_| container(content()).height(BUTTON_HEIGHT).into(),
                                         if groups.is_empty() {
                                             None
@@ -266,10 +261,12 @@ where
                                         super::advanced::drop_down_menu::Placement::RightBottom,
                                     )
                                     .trigger_transparent(true)
-                                    .into(),
-                                ),
-                                Action::Message(message) => children.push(
-                                    button(content())
+                                    .into();
+
+                                    children.push(submenu)
+                                }
+                                Action::Message(message) => {
+                                    let entry = button(content())
                                         .style(move |_, status| button::Style {
                                             background: Some(iced::Background::Color(
                                                 match status {
@@ -293,29 +290,25 @@ where
                                                     }
                                                 },
                                             )),
-                                            border: Border {
-                                                radius: *BUTTON_RADIUS,
-                                                ..Default::default()
-                                            },
+                                            border: Border::default().rounded(*BUTTON_RADIUS),
                                             ..Default::default()
                                         })
                                         .on_press_maybe(message)
                                         .height(BUTTON_HEIGHT)
-                                        .into(),
-                                ),
+                                        .into();
+
+                                    children.push(entry)
+                                }
                             }
                         }
-                        Entry::Separator => children.push(
-                            container(rule::horizontal(1.0).style(move |_| rule::Style {
-                                color: separator_color,
-                                radius: Radius::from(u32::MAX),
-                                fill_mode: rule::FillMode::Full,
-                                snap: true,
-                            }))
-                            .width(Length::Fill)
-                            .padding(padding::horizontal(8.0).vertical(2.0))
-                            .into(),
-                        ),
+                        Entry::Separator => {
+                            let separator = container(spacer(theme))
+                                .width(Length::Fill)
+                                .padding(padding::horizontal(8.0).vertical(2.0))
+                                .into();
+
+                            children.push(separator);
+                        }
                     }
                 }
 
