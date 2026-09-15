@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 use fonts::{icons_outlined, text_bold};
 use iced::{
     Alignment, Border, Element, Font, Length, Task, color,
-    widget::{column, container, row, space, text, text::LineHeight},
+    widget::{column, container, row, space, text},
 };
 use iced_m3::{
     theme::{ColorScheme, Theme},
@@ -28,11 +28,8 @@ impl Default for State {
 impl State {
     fn view<'a>(&'a self) -> Element<'a, Message> {
         let icon = || -> Element<'_, Message> {
-            text(*HOME)
+            iced_m3::widget::icon(*HOME, 24.0)
                 .font(icons_outlined())
-                .line_height(LineHeight::Absolute(iced::Pixels(24.0)))
-                .width(24.0)
-                .size(24.0)
                 .into()
         };
 

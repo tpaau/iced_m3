@@ -5,6 +5,7 @@ use crate::{
     DISABLED_STATE_LAYER_OPACITY, HOVER_STATE_LAYER_OPACITY, PRESSED_STATE_LAYER_OPACITY,
     style::{Elevation, mix_colors, shadow},
     theme::{Accent, ColorScheme},
+    widget::icon,
 };
 
 const DISABLED_CONTAINER_OPACITY: f32 = 0.1;
@@ -692,10 +693,10 @@ where
 {
     fn from(button: Button<'a, Message>) -> Self {
         let content = row![
-            button.content.get_icon().map(|i| text(i)
-                .wrapping(text::Wrapping::None)
-                .size(button.size.icon_size())
-                .font_maybe(button.icon_font)),
+            button
+                .content
+                .get_icon()
+                .map(|i| icon(i, button.size.icon_size()).font_maybe(button.icon_font)),
             button.content.get_label().map(|l| text(l.to_string())
                 .wrapping(text::Wrapping::None)
                 .size(button.size.font_size())

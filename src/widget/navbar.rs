@@ -8,7 +8,7 @@ use iced_widget::{
     text::{LineHeight, Shaping, Wrapping},
 };
 
-use crate::{style::mix_colors, theme::ColorScheme};
+use crate::{style::mix_colors, theme::ColorScheme, widget::icon};
 
 const COMPACT_BUTTON_SIZE: Size<f32> = Size {
     width: 56.0,
@@ -205,10 +205,9 @@ where
                             center_x(
                                 column![
                                     button(center(
-                                        iced_widget::text(item.icon)
+                                        crate::widget::icon(item.icon, navbar.icon_size)
                                             .font(icon_font)
                                             .color(icon_color)
-                                            .size(navbar.icon_size)
                                             .align_x(Alignment::Center)
                                             .align_y(Alignment::Center)
                                     ))
@@ -278,10 +277,9 @@ where
                         buttons.push(
                             button(center(
                                 row![
-                                    iced_widget::text(item.icon)
+                                    icon(item.icon, navbar.icon_size)
                                         .font(icon_font)
-                                        .color(icon_color)
-                                        .size(navbar.icon_size),
+                                        .color(icon_color),
                                     iced_widget::text(item.label)
                                         .font(font)
                                         .color(label_color)

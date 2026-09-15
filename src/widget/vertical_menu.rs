@@ -198,15 +198,15 @@ where
                             let trailing_icon_visible = matches!(action, Action::Menu(_));
                             let content = move || -> Element<'a, Message> {
                                 row![
-                                    icon.map(|i| text(i).size(ICON_SIZE).font(icon_font).style(
-                                        move |_| text::Style {
+                                    icon.map(|i| crate::widget::icon(i, ICON_SIZE)
+                                        .font(icon_font)
+                                        .style(move |_| text::Style {
                                             color: Some(if error {
                                                 error_content_color.scale_alpha(content_alpha)
                                             } else {
                                                 icon_color.scale_alpha(content_alpha)
                                             })
-                                        }
-                                    )),
+                                        })),
                                     column![
                                         space().height(Length::Fill),
                                         text(label).size(LABEL_TEXT_SIZE).font(font).style(
@@ -238,16 +238,12 @@ where
                                     space().width(Length::Fill),
                                     if trailing_icon_visible {
                                         Some(
-                                            text(trailing_icon)
-                                                .size(ICON_SIZE)
+                                            crate::widget::icon(trailing_icon, ICON_SIZE)
                                                 .font(icon_font)
-                                                .style(move |_| text::Style {
-                                                    color: Some(if error {
-                                                        error_content_color
-                                                            .scale_alpha(content_alpha)
-                                                    } else {
-                                                        icon_color.scale_alpha(content_alpha)
-                                                    }),
+                                                .color(if error {
+                                                    error_content_color.scale_alpha(content_alpha)
+                                                } else {
+                                                    icon_color.scale_alpha(content_alpha)
                                                 }),
                                         )
                                     } else {

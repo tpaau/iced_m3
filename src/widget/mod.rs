@@ -12,6 +12,9 @@ pub mod progress_bar;
 pub mod slider;
 pub mod text_input;
 pub mod vertical_menu;
+mod wrappers;
+
+pub use wrappers::*;
 
 use std::ops::RangeInclusive;
 

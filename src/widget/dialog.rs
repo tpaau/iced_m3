@@ -3,7 +3,11 @@ use std::borrow::Cow;
 use iced::{Alignment, Border, Element, Font, Length, color};
 use iced_widget::{column, container, opaque, row, space, text::IntoFragment};
 
-use crate::{style::Elevation, theme::ColorScheme, widget::button};
+use crate::{
+    style::Elevation,
+    theme::ColorScheme,
+    widget::{button, icon},
+};
 
 pub const MIN_WIDTH: f32 = 280.0;
 pub const MAX_WIDTH: f32 = 560.0;
@@ -142,8 +146,7 @@ where
     fn from(value: Dialog<'a, Message>) -> Self {
         let icon = value.icon.map(|i| {
             column![
-                iced_widget::text(i)
-                    .size(ICON_SIZE)
+                icon(i, ICON_SIZE)
                     .color(value.theme.secondary())
                     .font_maybe(value.icon_font),
                 space().height(ICON_TITLE_SPACING)

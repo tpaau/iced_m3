@@ -1,10 +1,10 @@
 use iced::{Alignment, Border, Element, Font, Length};
-use iced_widget::{center, column, space, text};
+use iced_widget::{center, column, space};
 
 use crate::{
     style::{Elevation, shadow},
     theme::{Accent, ColorScheme},
-    widget::button,
+    widget::{button, icon},
 };
 
 pub use crate::widget::advanced::drop_down_menu::Placement;
@@ -148,15 +148,11 @@ impl<'a, Message: 'a + Clone> From<FABMenu<'a, Message>> for Element<'a, Message
 
         super::advanced::drop_down_menu(
             move |opened| {
-                center(
-                    text((menu.icon)(opened))
-                        .size(TRIGGER_ICON_SIZE)
-                        .font_maybe(menu.icon_font),
-                )
-                .width(Length::Fixed(TRIGGER_SIZE))
-                .height(Length::Fixed(TRIGGER_SIZE))
-                .style(move |_| trigger_style(menu.accent, opened, menu.theme))
-                .into()
+                center(icon((menu.icon)(opened), TRIGGER_ICON_SIZE).font_maybe(menu.icon_font))
+                    .width(Length::Fixed(TRIGGER_SIZE))
+                    .height(Length::Fixed(TRIGGER_SIZE))
+                    .style(move |_| trigger_style(menu.accent, opened, menu.theme))
+                    .into()
             },
             Some(
                 column(buttons)
