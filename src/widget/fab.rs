@@ -1,6 +1,8 @@
 use iced::{Element, Length, advanced::text, padding};
 use iced_widget::text::IntoFragment;
 
+pub const EDGE_SPACING: f32 = 16.0;
+
 use crate::{
     style::Elevation,
     theme::{Accent, ColorScheme},

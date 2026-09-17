@@ -2,14 +2,14 @@ use std::sync::LazyLock;
 
 use fonts::{icons_filled, icons_outlined, text_regular};
 use iced::{
-    Element, Font, Length, Task,
-    widget::{center, column, container, row, text::IntoFragment},
+    Element, Font, Length, Task, padding,
+    widget::{column, container, row, text::IntoFragment, toggler},
 };
 use iced_m3::{
     theme::{ColorScheme, Mode, Theme},
     widget::{
-        Badge, Icon, OnPress,
-        navrail::{self, Fab, Item, Status},
+        Badge, Icon, OnPress, button,
+        navrail::{self, Fab, Item, ItemAlignment, Menu, Status},
     },
 };
 
@@ -53,13 +53,19 @@ impl Tab {
 enum Message {
     GoTo(Tab),
     ToggleExpanded,
+    SetAlignment(ItemAlignment),
     Noop,
+    ToggleMenu,
+    ToggleFAB,
 }
 
 struct State {
     theme: Theme,
     tab: Tab,
     expanded: bool,
+    fab: bool,
+    menu: bool,
+    alignment: ItemAlignment,
 }
 
 impl Default for State {
@@ -68,6 +74,9 @@ impl Default for State {
             theme: Theme::default(Mode::Dark),
             tab: Tab::default(),
             expanded: false,
+            fab: true,
+            menu: true,
+            alignment: ItemAlignment::default(),
         }
     }
 }
@@ -130,17 +139,43 @@ impl State {
             .icon_font(icons_filled())
             .icon_font_inactive(icons_outlined())
             .status(status)
-            .fab(fab)
-            .menu(
-                &|expanded| {
+            .fab_maybe(self.fab.then_some(fab))
+            .item_alignment(self.alignment)
+            .menu_maybe(self.menu.then_some(Menu {
+                icon: Box::new(|expanded| {
                     if expanded {
                         MENU_OPEN.to_string().into_fragment()
                     } else {
                         MENU.to_string().into_fragment()
                     }
-                },
-                &|_| Message::ToggleExpanded,
-            );
+                }),
+                on_press: Box::new(|_| Message::ToggleExpanded),
+            }));
+
+        let content = column![
+            iced::widget::text("Alignment").color(self.theme.on_surface()),
+            row![
+                button(&self.theme, button::Content::Label("Top".into()))
+                    .on_press(Message::SetAlignment(ItemAlignment::Top)),
+                button(&self.theme, button::Content::Label("Center".into()))
+                    .on_press(Message::SetAlignment(ItemAlignment::Center)),
+                button(&self.theme, button::Content::Label("Bottom".into()))
+                    .on_press(Message::SetAlignment(ItemAlignment::Bottom)),
+            ]
+            .spacing(8),
+            row![
+                iced::widget::text("Menu:").color(self.theme.on_surface()),
+                toggler(self.menu).on_toggle(|_| Message::ToggleMenu)
+            ]
+            .spacing(8),
+            row![
+                iced::widget::text("Floating Action Button:").color(self.theme.on_surface()),
+                toggler(self.fab).on_toggle(|_| Message::ToggleFAB)
+            ]
+            .spacing(8),
+            iced::widget::text(format!("Current tab: {}", self.tab)).color(self.theme.on_surface())
+        ]
+        .spacing(8);
 
         container(column![
             container(
@@ -155,7 +190,7 @@ impl State {
                     iced::widget::container::Style::default()
                         .background(self.theme.surface_container())
                 }),
-                center(iced::widget::text(format!("{}", self.tab)).color(self.theme.on_surface()))
+                container(content).padding(padding::horizontal(12))
             ],
         ])
         .width(Length::Fill)
@@ -169,6 +204,9 @@ impl State {
             Message::GoTo(tab) => self.tab = tab,
             Message::ToggleExpanded => self.expanded = !self.expanded,
             Message::Noop => {}
+            Message::SetAlignment(item_alignment) => self.alignment = item_alignment,
+            Message::ToggleMenu => self.menu = !self.menu,
+            Message::ToggleFAB => self.fab = !self.fab,
         }
         Task::none()
     }

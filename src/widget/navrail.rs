@@ -10,9 +10,7 @@ use crate::{
     },
 };
 
-pub const CONTAINER_EXPANDED_MIN_WIDTH: f32 = 220.0;
-pub const CONTAINER_EXPANDED_MAX_WIDTH: f32 = 360.0;
-const CONTAINER_TOP_SPACE: f32 = 44.0;
+const CONTAINER_VERTICAL_PADDING: f32 = 44.0;
 const CONTAINER_COLLAPSED_WIDTH: f32 = 96.0;
 const MENU_ICON_SIZE: f32 = 24.0;
 const ITEM_ICON_SIZE: f32 = 24.0;
@@ -26,12 +24,34 @@ const INDICATOR_HORIZONTAL_ICON_LABEL_SPACE: f32 = 8.0;
 const MENU_BUTTON_PADDING: f32 = 4.0;
 const INDICATOR_CONTENT_PADDING: f32 = 16.0;
 const COLLAPSED_ITEM_VERTICAL_SPACE: f32 = 16.0;
-const MENU_FAB_SPACE: f32 = 16.0;
-const FAB_ITEMS_SPACE: f32 = 32.0;
+const SECTION_SPACE: f32 = 16.0;
+// Small FAB container size
+const FAB_OFFSET: f32 = (CONTAINER_COLLAPSED_WIDTH - 56.0) / 2.0;
+const MENU_OFFSET: f32 =
+    (CONTAINER_COLLAPSED_WIDTH - MENU_ICON_SIZE - MENU_BUTTON_PADDING * 2.0) / 2.0;
 
-struct Menu<'a, Message> {
-    icon: Box<dyn Fn(bool) -> text::Fragment<'a> + 'a>,
-    on_press: Box<dyn Fn(bool) -> Message + 'a>,
+mod constants {
+    use crate::widget::navrail::{CONTAINER_COLLAPSED_WIDTH, INDICATOR_VERTICAL_WIDTH};
+
+    pub const CONTAINER_EXPANDED_MIN_WIDTH: f32 = 220.0;
+    pub const CONTAINER_EXPANDED_MAX_WIDTH: f32 = 360.0;
+    pub const ITEM_OFFSET: f32 = (CONTAINER_COLLAPSED_WIDTH - INDICATOR_VERTICAL_WIDTH) / 2.0;
+}
+
+#[cfg(feature = "pub-internal-const")]
+pub use constants::*;
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ItemAlignment {
+    #[default]
+    Top,
+    Center,
+    Bottom,
+}
+
+pub struct Menu<'a, Message> {
+    pub icon: Box<dyn Fn(bool) -> text::Fragment<'a> + 'a>,
+    pub on_press: Box<dyn Fn(bool) -> Message + 'a>,
 }
 
 pub struct Fab<'a, Message> {
@@ -63,10 +83,10 @@ impl Status {
     fn width(&self) -> Pixels {
         match self {
             Status::Collapsed => Pixels(CONTAINER_COLLAPSED_WIDTH),
-            Status::Expanded { width } => Pixels(
-                Into::<f32>::into(*width)
-                    .clamp(CONTAINER_EXPANDED_MIN_WIDTH, CONTAINER_EXPANDED_MAX_WIDTH),
-            ),
+            Status::Expanded { width } => Pixels(Into::<f32>::into(*width).clamp(
+                constants::CONTAINER_EXPANDED_MIN_WIDTH,
+                constants::CONTAINER_EXPANDED_MAX_WIDTH,
+            )),
         }
     }
 
@@ -89,6 +109,8 @@ where
     icon_font_inactive: Option<iced::Font>,
     icon_font_active: Option<iced::Font>,
     active_index: usize,
+    item_alignment: ItemAlignment,
+    container_vertical_padding: Option<f32>,
 }
 
 impl<'a, Message> NavRail<'a, Message>
@@ -108,6 +130,8 @@ where
             icon_font_inactive: None,
             icon_font_active: None,
             active_index: 0,
+            item_alignment: ItemAlignment::default(),
+            container_vertical_padding: None,
         }
     }
 
@@ -138,15 +162,14 @@ where
     }
 
     #[must_use]
-    pub fn menu(
-        mut self,
-        icon: &'a dyn Fn(bool) -> text::Fragment<'a>,
-        on_press: &'a dyn Fn(bool) -> Message,
-    ) -> Self {
-        self.menu = Some(Menu {
-            icon: Box::new(icon),
-            on_press: Box::new(on_press),
-        });
+    pub fn menu(mut self, menu: Menu<'a, Message>) -> Self {
+        self.menu = Some(menu);
+        self
+    }
+
+    #[must_use]
+    pub fn menu_maybe(mut self, maybe_menu: Option<Menu<'a, Message>>) -> Self {
+        self.menu = maybe_menu;
         self
     }
 
@@ -207,6 +230,32 @@ where
     #[must_use]
     pub fn icon_font_inactive_maybe(mut self, maybe_font: Option<iced::Font>) -> Self {
         self.icon_font_inactive = maybe_font;
+        self
+    }
+
+    #[must_use]
+    pub fn item_alignment(mut self, alignment: ItemAlignment) -> Self {
+        self.item_alignment = alignment;
+        self
+    }
+
+    #[must_use]
+    pub fn item_alignment_maybe(self, maybe_alignment: Option<ItemAlignment>) -> Self {
+        match maybe_alignment {
+            Some(alignment) => self.item_alignment(alignment),
+            None => self,
+        }
+    }
+
+    #[must_use]
+    pub fn container_vertical_padding(mut self, padding: f32) -> Self {
+        self.container_vertical_padding = Some(padding);
+        self
+    }
+
+    #[must_use]
+    pub fn container_vertical_padding_maybe(mut self, maybe_padding: Option<f32>) -> Self {
+        self.container_vertical_padding = maybe_padding;
         self
     }
 }
@@ -291,7 +340,6 @@ where
     }
     .into();
 
-    let offset = (CONTAINER_COLLAPSED_WIDTH - INDICATOR_VERTICAL_WIDTH) / 2.0;
     let content = match expanded {
         true => button,
         false => column![
@@ -306,7 +354,7 @@ where
         .spacing(INDICATOR_VERTICAL_ICON_LABEL_SPACE)
         .into(),
     };
-    row!(space().width(offset), content).into()
+    row!(space().width(constants::ITEM_OFFSET), content).into()
 }
 
 impl<'a, Message> From<NavRail<'a, Message>> for Element<'a, Message>
@@ -347,9 +395,10 @@ where
             .on_press((menu.on_press)(expanded))
         });
         let menu = menu.map(|menu| {
-            let offset =
-                (CONTAINER_COLLAPSED_WIDTH - MENU_ICON_SIZE - MENU_BUTTON_PADDING * 2.0) / 2.0;
-            row![space().width(offset), menu]
+            column![
+                row![space().width(MENU_OFFSET), menu],
+                space().height(SECTION_SPACE)
+            ]
         });
 
         let fab = value.fab.map(|fab| {
@@ -367,9 +416,11 @@ where
                 .style(fab.style)
         });
         let fab = fab.map(|fab| {
-            // Small FAB container size
-            let offset = (CONTAINER_COLLAPSED_WIDTH - 56.0) / 2.0;
-            row![space().width(offset), fab]
+            column![
+                row![space().width(FAB_OFFSET), fab],
+                (value.item_alignment != ItemAlignment::Center)
+                    .then_some(space().height(SECTION_SPACE))
+            ]
         });
 
         let active_index = value.active_index.min(value.items.len());
@@ -391,13 +442,22 @@ where
         };
         let item_column = column(items).spacing(spacing);
 
+        let vertical_padding = value
+            .container_vertical_padding
+            .unwrap_or(CONTAINER_VERTICAL_PADDING);
         let column = column![
-            space().height(CONTAINER_TOP_SPACE),
+            space().height(vertical_padding),
             menu,
-            space().height(MENU_FAB_SPACE),
             fab,
-            space().height(FAB_ITEMS_SPACE),
-            item_column
+            (value.item_alignment == ItemAlignment::Bottom
+                || value.item_alignment == ItemAlignment::Center)
+                .then_some(space().height(Length::Fill)),
+            item_column,
+            (value.item_alignment == ItemAlignment::Top
+                || value.item_alignment == ItemAlignment::Center)
+                .then_some(space().height(Length::Fill)),
+            (value.item_alignment == ItemAlignment::Center)
+                .then_some(space().height(vertical_padding)),
         ];
 
         container(column)

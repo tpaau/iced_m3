@@ -9,8 +9,11 @@ use crate::{
     widget::{button, icon},
 };
 
-pub const MIN_WIDTH: f32 = 280.0;
-pub const MAX_WIDTH: f32 = 560.0;
+mod constants {
+    pub const MIN_WIDTH: f32 = 280.0;
+    pub const MAX_WIDTH: f32 = 560.0;
+}
+
 const DIALOG_RADIUS: f32 = 24.0;
 const ICON_SIZE: f32 = 24.0;
 const TITLE_SIZE: f32 = 24.0;
@@ -19,6 +22,9 @@ const ICON_TITLE_SPACING: f32 = 16.0;
 const TITLE_BODY_SPACING: f32 = 16.0;
 const BODY_BUTTONS_SPACING: f32 = 24.0;
 const BUTTON_SPACING: f32 = 8.0;
+
+#[cfg(feature = "pub-internal-const")]
+pub use constants::*;
 
 pub struct Button<Message> {
     pub on_press: Option<Message>,
@@ -184,7 +190,7 @@ where
 
         let column = column![
             // A little hack to enforce the min width
-            space().width(MIN_WIDTH),
+            space().width(constants::MIN_WIDTH),
             icon,
             title,
             value.body,
@@ -204,10 +210,10 @@ where
                         Elevation::Level3,
                     ))
             })
-            .max_width(MAX_WIDTH);
+            .max_width(constants::MAX_WIDTH);
 
         let dialog = match value.width {
-            Some(width) => dialog.width(width.clamp(MIN_WIDTH, MAX_WIDTH)),
+            Some(width) => dialog.width(width.clamp(constants::MIN_WIDTH, constants::MAX_WIDTH)),
             None => dialog,
         };
 

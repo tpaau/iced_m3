@@ -14,6 +14,7 @@ unicode-segmentation = "1.13.3"
 
 [features]
 advanced = []
+pub-internal-const = []
 
 [workspace]
 members = [
