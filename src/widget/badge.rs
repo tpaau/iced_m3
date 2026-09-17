@@ -8,6 +8,7 @@ use iced::{
         widget::tree,
     },
 };
+use iced_widget::text::IntoFragment;
 
 const LARGE_LABEL_SIZE: f32 = 16.0;
 const LARGE_BADGE_OFFSET: Vector<f32> = Vector::new(4.0, -2.0);
@@ -48,7 +49,7 @@ where
 {
     theme: &'a dyn ColorScheme,
     base: Element<'a, Message, Theme, Renderer>,
-    label: Option<&'a str>,
+    label: Option<text::Fragment<'a>>,
     label_font: Option<Renderer::Font>,
     container_color: Option<Color>,
     label_color: Option<Color>,
@@ -61,7 +62,7 @@ where
 {
     #[must_use]
     pub fn new(
-        theme: &'a impl ColorScheme,
+        theme: &'a dyn ColorScheme,
         base: impl Into<Element<'a, Message, Theme, Renderer>>,
     ) -> Self {
         Self {
@@ -76,14 +77,14 @@ where
     }
 
     #[must_use]
-    pub fn label(mut self, label: &'a str) -> Self {
-        self.label = Some(label);
+    pub fn label(mut self, label: impl IntoFragment<'a>) -> Self {
+        self.label = Some(label.into_fragment());
         self
     }
 
     #[must_use]
-    pub fn label_maybe(mut self, label: Option<&'a str>) -> Self {
-        self.label = label;
+    pub fn label_maybe(mut self, label: Option<impl IntoFragment<'a>>) -> Self {
+        self.label = label.map(|l| l.into_fragment());
         self
     }
 
@@ -169,7 +170,7 @@ where
         renderer: &Renderer,
         limits: &iced::advanced::layout::Limits,
     ) -> iced::advanced::layout::Node {
-        match self.label {
+        match &self.label {
             Some(label) => {
                 let mut node =
                     self.base
@@ -182,7 +183,7 @@ where
                 let state = tree.state.downcast_mut::<State<Renderer::Paragraph>>();
 
                 let paragraph = <Renderer as text::Renderer>::Paragraph::with_text(text::Text {
-                    content: label,
+                    content: &label,
                     bounds: Size::INFINITE,
                     size: Pixels(LABEL_FONT_SIZE),
                     line_height: text::LineHeight::Relative(1.0),

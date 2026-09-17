@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 
 use iced::{
     Alignment, Element, Font, Length, Task,
-    widget::{Container, center, column, container, row, text, toggler},
+    widget::{Container, center, column, container, row, text, text::IntoFragment, toggler},
 };
 use iced_m3::{
     theme::{Accent, ColorScheme, Mode, Theme},
@@ -62,6 +62,7 @@ fn wrapper<'a>(content: impl Into<Element<'a, Message>>) -> Container<'a, Messag
 
 impl State {
     fn view(&self) -> Element<'_, Message> {
+        let icon = self.icon.to_string().into_fragment();
         let buttons = container(
             column![
                 row![
@@ -69,7 +70,7 @@ impl State {
                         self,
                         Style::Elevated(self.accent),
                         Content::Full {
-                            icon: self.icon,
+                            icon: icon.clone(),
                             label: "Elevated button".into()
                         }
                     )),
@@ -78,7 +79,7 @@ impl State {
                             self,
                             Style::Elevated(self.accent),
                             Content::Full {
-                                icon: self.icon,
+                                icon: icon.clone(),
                                 label: "Elevated unselected".into()
                             }
                         )
@@ -89,7 +90,7 @@ impl State {
                             self,
                             Style::Elevated(self.accent),
                             Content::Full {
-                                icon: self.icon,
+                                icon: icon.clone(),
                                 label: "Elevated selected".into()
                             }
                         )
@@ -100,7 +101,7 @@ impl State {
                             self,
                             Style::Elevated(self.accent),
                             Content::Full {
-                                icon: self.icon,
+                                icon: icon.clone(),
                                 label: "Elevated disabled".into()
                             }
                         )
@@ -112,7 +113,7 @@ impl State {
                         self,
                         Style::Filled(self.accent),
                         Content::Full {
-                            icon: self.icon,
+                            icon: icon.clone(),
                             label: "Filled button".into()
                         }
                     )),
@@ -121,7 +122,7 @@ impl State {
                             self,
                             Style::Filled(self.accent),
                             Content::Full {
-                                icon: self.icon,
+                                icon: icon.clone(),
                                 label: "Filled unselected".into()
                             }
                         )
@@ -132,7 +133,7 @@ impl State {
                             self,
                             Style::Filled(self.accent),
                             Content::Full {
-                                icon: self.icon,
+                                icon: icon.clone(),
                                 label: "Filled selected".into()
                             }
                         )
@@ -143,7 +144,7 @@ impl State {
                             self,
                             Style::Filled(self.accent),
                             Content::Full {
-                                icon: self.icon,
+                                icon: icon.clone(),
                                 label: "Filled disabled".into()
                             }
                         )
@@ -155,7 +156,7 @@ impl State {
                         self,
                         Style::Tonal(self.accent),
                         Content::Full {
-                            icon: self.icon,
+                            icon: icon.clone(),
                             label: "Tonal button".into()
                         }
                     )),
@@ -164,7 +165,7 @@ impl State {
                             self,
                             Style::Tonal(self.accent),
                             Content::Full {
-                                icon: self.icon,
+                                icon: icon.clone(),
                                 label: "Tonal unselected".into()
                             }
                         )
@@ -175,7 +176,7 @@ impl State {
                             self,
                             Style::Tonal(self.accent),
                             Content::Full {
-                                icon: self.icon,
+                                icon: icon.clone(),
                                 label: "Tonal selected".into()
                             }
                         )
@@ -186,7 +187,7 @@ impl State {
                             self,
                             Style::Tonal(self.accent),
                             Content::Full {
-                                icon: self.icon,
+                                icon: icon.clone(),
                                 label: "Tonal disabled".into()
                             }
                         )
@@ -198,7 +199,7 @@ impl State {
                         self,
                         Style::Outlined,
                         Content::Full {
-                            icon: self.icon,
+                            icon: icon.clone(),
                             label: "Outlined button".into()
                         }
                     )),
@@ -207,7 +208,7 @@ impl State {
                             self,
                             Style::Outlined,
                             Content::Full {
-                                icon: self.icon,
+                                icon: icon.clone(),
                                 label: "Outlined unselected".into()
                             }
                         )
@@ -218,7 +219,7 @@ impl State {
                             self,
                             Style::Outlined,
                             Content::Full {
-                                icon: self.icon,
+                                icon: icon.clone(),
                                 label: "Outlined selected".into()
                             }
                         )
@@ -229,7 +230,7 @@ impl State {
                             self,
                             Style::Outlined,
                             Content::Full {
-                                icon: self.icon,
+                                icon: icon.clone(),
                                 label: "Outlined disabled".into()
                             }
                         )
@@ -241,7 +242,7 @@ impl State {
                         self,
                         Style::Text(self.accent),
                         Content::Full {
-                            icon: self.icon,
+                            icon: icon.clone(),
                             label: "Text button".into()
                         }
                     )),
@@ -250,7 +251,7 @@ impl State {
                             self,
                             Style::Text(self.accent),
                             Content::Full {
-                                icon: self.icon,
+                                icon: icon.clone(),
                                 label: "Text disabled".into()
                             }
                         )
@@ -266,7 +267,7 @@ impl State {
                 self,
                 Style::Elevated(self.accent),
                 Content::Full {
-                    icon: self.icon,
+                    icon: icon.clone(),
                     label: "Common button".into()
                 }
             )
@@ -275,7 +276,7 @@ impl State {
                 self,
                 Style::Elevated(self.accent),
                 Content::Full {
-                    icon: self.icon,
+                    icon: icon.clone(),
                     label: "Common button".into()
                 }
             )
@@ -284,7 +285,7 @@ impl State {
                 self,
                 Style::Elevated(self.accent),
                 Content::Full {
-                    icon: self.icon,
+                    icon: icon.clone(),
                     label: "Common button".into()
                 }
             )
@@ -293,7 +294,7 @@ impl State {
                 self,
                 Style::Elevated(self.accent),
                 Content::Full {
-                    icon: self.icon,
+                    icon: icon.clone(),
                     label: "Common button".into()
                 }
             )
@@ -302,7 +303,7 @@ impl State {
                 self,
                 Style::Elevated(self.accent),
                 Content::Full {
-                    icon: self.icon,
+                    icon: icon,
                     label: "Common button".into()
                 }
             )

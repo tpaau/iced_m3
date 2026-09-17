@@ -4,16 +4,19 @@ pub mod advanced;
 pub(crate) mod advanced;
 pub mod badge;
 pub mod button;
+mod common_types;
 pub mod dialog;
 pub mod fab;
 pub mod fab_menu;
 pub mod navbar;
+pub mod navrail;
 pub mod progress_bar;
 pub mod slider;
 pub mod text_input;
 pub mod vertical_menu;
 mod wrappers;
 
+pub use common_types::*;
 pub use wrappers::*;
 
 use std::ops::RangeInclusive;
@@ -24,8 +27,8 @@ use iced_widget::rule;
 use crate::{
     theme::ColorScheme,
     widget::{
-        badge::Badge, button::Button, dialog::Dialog, fab::Fab, fab_menu::FABMenu, navbar::Navbar,
-        progress_bar::ProgressBar, text_input::TextInput,
+        button::Button, dialog::Dialog, fab::Fab, fab_menu::FABMenu, navbar::Navbar,
+        navrail::NavRail, progress_bar::ProgressBar, text_input::TextInput,
     },
 };
 
@@ -121,9 +124,9 @@ pub fn progress_bar<'a>(theme: &'a impl ColorScheme) -> ProgressBar<'a> {
 
 #[must_use]
 pub fn fab<'a, Message>(
-    theme: &'a impl ColorScheme,
+    theme: &'a dyn ColorScheme,
     content: fab::Content<'a>,
-    on_press: Message,
+    on_press: OnPress<'a, Message>,
 ) -> Fab<'a, Message>
 where
     Message: 'a + Clone,
@@ -132,24 +135,23 @@ where
 }
 
 #[must_use]
-pub fn fab_with<'a, Message>(
-    theme: &'a impl ColorScheme,
-    content: fab::Content<'a>,
-    on_press: impl Fn() -> Message + 'a,
-) -> Fab<'a, Message>
-where
-    Message: 'a + Clone,
-{
-    Fab::new_with(theme, content, on_press)
-}
-
-#[must_use]
 pub fn badge<'a, Message, Theme, Renderer>(
-    theme: &'a impl ColorScheme,
+    theme: &'a dyn ColorScheme,
     base: impl Into<Element<'a, Message, Theme, Renderer>>,
-) -> Badge<'a, Message, Theme, Renderer>
+) -> badge::Badge<'a, Message, Theme, Renderer>
 where
     Renderer: 'a + iced_widget::core::text::Renderer,
 {
-    Badge::new(theme, base)
+    badge::Badge::new(theme, base)
+}
+
+#[must_use]
+pub fn navrail<'a, Message>(
+    theme: &'a dyn ColorScheme,
+    items: Vec<navrail::Item<'a, Message>>,
+) -> NavRail<'a, Message>
+where
+    Message: 'a + Clone,
+{
+    NavRail::new(theme, items)
 }

@@ -4,7 +4,7 @@ use iced_widget::text::IntoFragment;
 use crate::{
     style::Elevation,
     theme::{Accent, ColorScheme},
-    widget::button::{self, OnPress},
+    widget::{OnPress, button},
 };
 
 #[derive(Default, Clone, Copy)]
@@ -88,23 +88,23 @@ impl Size {
 #[derive(Clone)]
 pub enum Content<'a> {
     Reguar {
-        icon: char,
+        icon: text::Fragment<'a>,
     },
     Extended {
-        icon: char,
+        icon: text::Fragment<'a>,
         label: text::Fragment<'a>,
     },
 }
 
 impl<'a> Content<'a> {
-    fn icon(&'a self) -> char {
+    fn icon(&'a self) -> text::Fragment<'a> {
         match self {
-            Content::Reguar { icon } => *icon,
-            Content::Extended { icon, label: _ } => *icon,
+            Content::Reguar { icon } => std::borrow::Cow::Borrowed(icon),
+            Content::Extended { icon, label: _ } => std::borrow::Cow::Borrowed(icon),
         }
     }
 
-    pub fn with_label(self, label: impl IntoFragment<'a>) -> Self {
+    pub fn with_label(&'a mut self, label: impl IntoFragment<'a>) -> Self {
         Self::Extended {
             icon: self.icon(),
             label: label.into_fragment(),
@@ -124,9 +124,9 @@ impl<'a> From<Content<'a>> for button::Content<'a> {
 #[derive(Default, Clone, Copy)]
 pub enum Style {
     #[default]
-    PrimaryContainer,
-    SecondaryContainer,
-    TertiaryContainer,
+    TonalPrimary,
+    TonalSecondary,
+    TonalTertiary,
     Primary,
     Secondary,
     Tertiary,
@@ -135,9 +135,9 @@ pub enum Style {
 impl From<Style> for button::Style {
     fn from(value: Style) -> Self {
         match value {
-            Style::PrimaryContainer => button::Style::Tonal(Accent::Primary),
-            Style::SecondaryContainer => button::Style::Tonal(Accent::Secondary),
-            Style::TertiaryContainer => button::Style::Tonal(Accent::Tertiary),
+            Style::TonalPrimary => button::Style::Tonal(Accent::Primary),
+            Style::TonalSecondary => button::Style::Tonal(Accent::Secondary),
+            Style::TonalTertiary => button::Style::Tonal(Accent::Tertiary),
             Style::Primary => button::Style::Filled(Accent::Primary),
             Style::Secondary => button::Style::Filled(Accent::Secondary),
             Style::Tertiary => button::Style::Filled(Accent::Tertiary),
@@ -165,23 +165,10 @@ where
     Renderer: iced::advanced::text::Renderer,
 {
     #[must_use]
-    pub fn new(theme: &'a impl ColorScheme, content: Content<'a>, on_press: Message) -> Self {
-        Self {
-            content,
-            size: Size::default(),
-            style: Style::default(),
-            label_font: None,
-            icon_font: None,
-            theme,
-            on_press: OnPress::Direct(on_press),
-        }
-    }
-
-    #[must_use]
-    pub fn new_with(
-        theme: &'a impl ColorScheme,
+    pub fn new(
+        theme: &'a dyn ColorScheme,
         content: Content<'a>,
-        on_press: impl Fn() -> Message + 'a,
+        on_press: OnPress<'a, Message>,
     ) -> Self {
         Self {
             content,
@@ -190,7 +177,7 @@ where
             label_font: None,
             icon_font: None,
             theme,
-            on_press: OnPress::Closure(Box::new(on_press)),
+            on_press: on_press,
         }
     }
 

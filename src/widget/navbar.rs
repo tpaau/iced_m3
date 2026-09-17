@@ -26,6 +26,37 @@ const LARGE_VERTICAL_PADDING: f32 = 12.0;
 const LARGE_BUTTON_INTERNAL_SPACING: f32 = 4.0;
 const LARGE_BUTTON_PADDING: f32 = 16.0;
 
+fn item_container_style<'a>(
+    status: iced_widget::button::Status,
+    active: bool,
+    theme: &'a dyn ColorScheme,
+) -> iced_widget::button::Style {
+    let state_layer_color = theme.on_secondary_container();
+    let layer_opacity = match status {
+        button::Status::Active => 0.0,
+        button::Status::Hovered => 0.08,
+        button::Status::Pressed => 0.1,
+        button::Status::Disabled => unreachable!(),
+    };
+    let color = if active {
+        mix_colors(
+            theme.secondary_container(),
+            state_layer_color,
+            layer_opacity,
+        )
+    } else {
+        state_layer_color.scale_alpha(layer_opacity)
+    };
+    button::Style {
+        background: Some(iced::Background::Color(color)),
+        border: Border {
+            radius: f32::MAX.into(),
+            ..Default::default()
+        },
+        ..Default::default()
+    }
+}
+
 #[derive(Default)]
 pub enum Mode {
     Compact,
@@ -212,31 +243,7 @@ where
                                             .align_y(Alignment::Center)
                                     ))
                                     .style(move |_, status| {
-                                        let state_layer_color =
-                                            navbar.theme.on_secondary_container();
-                                        let layer_opacity = match status {
-                                            button::Status::Active => 0.0,
-                                            button::Status::Hovered => 0.08,
-                                            button::Status::Pressed => 0.1,
-                                            button::Status::Disabled => unreachable!(),
-                                        };
-                                        let color = if active {
-                                            mix_colors(
-                                                navbar.theme.secondary_container(),
-                                                state_layer_color,
-                                                layer_opacity,
-                                            )
-                                        } else {
-                                            state_layer_color.scale_alpha(layer_opacity)
-                                        };
-                                        button::Style {
-                                            background: Some(iced::Background::Color(color)),
-                                            border: Border {
-                                                radius: f32::MAX.into(),
-                                                ..Default::default()
-                                            },
-                                            ..Default::default()
-                                        }
+                                        item_container_style(status, active, navbar.theme)
                                     })
                                     .on_press(item.message.clone())
                                     .width(Length::Fixed(COMPACT_BUTTON_SIZE.width))
@@ -289,30 +296,7 @@ where
                                 .spacing(LARGE_BUTTON_INTERNAL_SPACING),
                             ))
                             .style(move |_, status| {
-                                let state_layer_color = navbar.theme.on_secondary_container();
-                                let layer_opacity = match status {
-                                    button::Status::Active => 0.0,
-                                    button::Status::Hovered => 0.08,
-                                    button::Status::Pressed => 0.1,
-                                    button::Status::Disabled => unreachable!(),
-                                };
-                                let color = if active {
-                                    mix_colors(
-                                        navbar.theme.secondary_container(),
-                                        state_layer_color,
-                                        layer_opacity,
-                                    )
-                                } else {
-                                    state_layer_color.scale_alpha(layer_opacity)
-                                };
-                                button::Style {
-                                    background: Some(iced::Background::Color(color)),
-                                    border: Border {
-                                        radius: f32::MAX.into(),
-                                        ..Default::default()
-                                    },
-                                    ..Default::default()
-                                }
+                                item_container_style(status, active, navbar.theme)
                             })
                             .on_press(item.message.clone())
                             .width(Length::Fixed(max_width))

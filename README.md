@@ -102,6 +102,16 @@ TODOs:
 TODOs:
 - Animation
 
+### Navigation Rail
+![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/navigation-rail.gif)
+
+[reference](https://m3.material.io/components/navigation-rail/overview)
+
+[demo](https://github.com/tpaau/iced_m3/blob/main/demos/navrail)
+
+TODOs:
+- Animation
+
 ### Progress Bar
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/progress-bar-demo.gif)
 

@@ -2,12 +2,14 @@ use std::sync::LazyLock;
 
 use iced::{
     Element, Font, Length, Task,
-    widget::{column, container, row, text},
+    widget::{column, container, row, text, text::IntoFragment},
 };
 use iced_m3::{
     theme::{ColorScheme, Theme},
-    widget::fab,
-    widget::fab::{Content, Size, Style},
+    widget::{
+        OnPress, fab,
+        fab::{Content, Size, Style},
+    },
 };
 
 const APP_NAME: &str = "FAB Demo";
@@ -33,18 +35,20 @@ enum Message {
 impl State {
     fn view(&self) -> Element<'_, Message> {
         let styles = [
-            Style::PrimaryContainer,
-            Style::SecondaryContainer,
-            Style::TertiaryContainer,
+            Style::TonalPrimary,
+            Style::TonalSecondary,
+            Style::TonalTertiary,
             Style::Primary,
             Style::Secondary,
             Style::Tertiary,
         ];
         let sizes = [Size::Regular, Size::Medium, Size::Large];
-        let content = Content::Reguar { icon: *EDIT };
+        let content = Content::Reguar {
+            icon: EDIT.to_string().into_fragment().clone(),
+        };
         let fabs = row(sizes.into_iter().map(|size| {
             column(styles.into_iter().map(|style| {
-                fab(&self.theme, content.clone(), Message::Noop)
+                fab(&self.theme, content.clone(), OnPress::Direct(Message::Noop))
                     .style(style)
                     .size(size)
                     .into()
@@ -55,12 +59,12 @@ impl State {
         .spacing(20.0);
 
         let content = Content::Extended {
-            icon: *EDIT,
+            icon: EDIT.to_string().into_fragment().clone(),
             label: "Compose".into(),
         };
         let extended_fabs = row(sizes.into_iter().map(|size| {
             column(styles.into_iter().map(|style| {
-                fab(&self.theme, content.clone(), Message::Noop)
+                fab(&self.theme, content.clone(), OnPress::Direct(Message::Noop))
                     .style(style)
                     .size(size)
                     .into()

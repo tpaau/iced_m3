@@ -22,7 +22,8 @@ members = [
   "demos/fab_menu",
   "demos/progress_indicators",
   "demos/fab",
-  "demos/badges"
+  "demos/badges",
+  "demos/navrail"
 ]
 
 [package.metadata.docs.rs]

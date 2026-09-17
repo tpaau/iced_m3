@@ -5,7 +5,7 @@ use crate::{
     DISABLED_STATE_LAYER_OPACITY, HOVER_STATE_LAYER_OPACITY, PRESSED_STATE_LAYER_OPACITY,
     style::{Elevation, mix_colors, shadow},
     theme::{Accent, ColorScheme},
-    widget::icon,
+    widget::{OnPress, icon},
 };
 
 const DISABLED_CONTAINER_OPACITY: f32 = 0.1;
@@ -466,7 +466,7 @@ impl CornerStyle {
     }
 }
 
-fn style(
+pub(crate) fn style(
     status: iced_widget::button::Status,
     selected: Option<bool>,
     elevation: Elevation,
@@ -496,16 +496,12 @@ fn style(
     }
 }
 
-pub(crate) enum OnPress<'a, Message> {
-    Direct(Message),
-    Closure(Box<dyn Fn() -> Message + 'a>),
-}
-
+#[derive(Clone)]
 pub enum Content<'a> {
-    Icon(char),
+    Icon(text::Fragment<'a>),
     Label(text::Fragment<'a>),
     Full {
-        icon: char,
+        icon: text::Fragment<'a>,
         label: text::Fragment<'a>,
     },
 }
@@ -535,11 +531,17 @@ impl<'a> Content<'a> {
     }
 
     #[must_use]
-    pub fn icon(self, icon: char) -> Self {
+    pub fn icon(self, icon: impl text::IntoFragment<'a>) -> Self {
         match self {
-            Content::Icon(_) => Self::Icon(icon),
-            Content::Label(label) => Self::Full { icon, label },
-            Content::Full { icon: _, label } => Self::Full { icon, label },
+            Content::Icon(_) => Self::Icon(icon.into_fragment()),
+            Content::Label(label) => Self::Full {
+                icon: icon.into_fragment(),
+                label,
+            },
+            Content::Full { icon: _, label } => Self::Full {
+                icon: icon.into_fragment(),
+                label,
+            },
         }
     }
 
@@ -552,11 +554,11 @@ impl<'a> Content<'a> {
     }
 
     #[must_use]
-    fn get_icon(&self) -> Option<char> {
+    fn get_icon(self) -> Option<text::Fragment<'a>> {
         match self {
-            Content::Icon(icon) => Some(*icon),
+            Content::Icon(icon) => Some(icon),
             Content::Label(_) => None,
-            Content::Full { icon, label: _ } => Some(*icon),
+            Content::Full { icon, label: _ } => Some(icon),
         }
     }
 
@@ -570,16 +572,13 @@ impl<'a> Content<'a> {
     }
 }
 
-pub struct Button<'a, Message, Renderer = iced_widget::Renderer>
-where
-    Renderer: 'a + iced_widget::core::text::Renderer,
-{
+pub struct Button<'a, Message> {
     on_press: Option<OnPress<'a, Message>>,
     clip: bool,
     theme: &'a dyn ColorScheme,
     content: Content<'a>,
-    label_font: Option<Renderer::Font>,
-    icon_font: Option<Renderer::Font>,
+    label_font: Option<iced::Font>,
+    icon_font: Option<iced::Font>,
     size: Size,
     corner_style: CornerStyle,
     style: Style,
@@ -587,10 +586,7 @@ where
     selected: Option<bool>,
 }
 
-impl<'a, Message, Renderer> Button<'a, Message, Renderer>
-where
-    Renderer: iced::advanced::text::Renderer,
-{
+impl<'a, Message> Button<'a, Message> {
     #[must_use]
     pub fn new(theme: &'a dyn ColorScheme, content: Content<'a>) -> Self {
         Self {
@@ -609,25 +605,25 @@ where
     }
 
     #[must_use]
-    pub fn label_font(mut self, font: Renderer::Font) -> Self {
+    pub fn label_font(mut self, font: iced::Font) -> Self {
         self.label_font = Some(font);
         self
     }
 
     #[must_use]
-    pub fn label_font_maybe(mut self, maybe_font: Option<Renderer::Font>) -> Self {
+    pub fn label_font_maybe(mut self, maybe_font: Option<iced::Font>) -> Self {
         self.label_font = maybe_font;
         self
     }
 
     #[must_use]
-    pub fn icon_font(mut self, font: Renderer::Font) -> Self {
+    pub fn icon_font(mut self, font: iced::Font) -> Self {
         self.icon_font = Some(font);
         self
     }
 
     #[must_use]
-    pub fn icon_font_maybe(mut self, maybe_font: Option<Renderer::Font>) -> Self {
+    pub fn icon_font_maybe(mut self, maybe_font: Option<iced::Font>) -> Self {
         self.icon_font = maybe_font;
         self
     }
@@ -663,14 +659,14 @@ where
     }
 
     #[must_use]
-    pub fn on_press(mut self, message: Message) -> Self {
-        self.on_press = Some(OnPress::Direct(message));
+    pub fn on_press(mut self, on_press: Message) -> Self {
+        self.on_press = Some(OnPress::Direct(on_press));
         self
     }
 
     #[must_use]
-    pub fn on_press_maybe(mut self, message: Option<Message>) -> Self {
-        self.on_press = message.map(OnPress::Direct);
+    pub fn on_press_maybe(mut self, on_press: Option<Message>) -> Self {
+        self.on_press = on_press.map(OnPress::Direct);
         self
     }
 
@@ -692,18 +688,20 @@ where
     Message: 'a + Clone,
 {
     fn from(button: Button<'a, Message>) -> Self {
-        let content = row![
-            button
-                .content
-                .get_icon()
-                .map(|i| icon(i, button.size.icon_size()).font_maybe(button.icon_font)),
-            button.content.get_label().map(|l| text(l.to_string())
+        let label = button.content.get_label().map(|l| {
+            text(l.to_string())
                 .wrapping(text::Wrapping::None)
                 .size(button.size.font_size())
-                .font_maybe(button.label_font))
-        ]
-        .align_y(Alignment::Center)
-        .spacing(button.size.spacing());
+                .font_maybe(button.label_font)
+        });
+        let icon = button
+            .content
+            .get_icon()
+            .map(|i| icon(i, button.size.icon_size()).font_maybe(button.icon_font));
+
+        let content = row![icon, label,]
+            .align_y(Alignment::Center)
+            .spacing(button.size.spacing());
 
         let button_widget = iced_widget::button(center(content))
             .width(button.size.width())
