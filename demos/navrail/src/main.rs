@@ -2,14 +2,15 @@ use std::sync::LazyLock;
 
 use fonts::{icons_filled, icons_outlined, text_regular};
 use iced::{
-    Element, Font, Length, Task, padding,
-    widget::{column, container, row, text::IntoFragment, toggler},
+    Alignment, Element, Font, Length, Task, padding,
+    widget::{column, container, row, text::IntoFragment},
 };
 use iced_m3::{
     theme::{ColorScheme, Mode, Theme},
     widget::{
         Badge, Icon, OnPress, button,
-        navrail::{self, Fab, Item, ItemAlignment, Menu, Status},
+        navrail::{self, Fab, Item, ItemAlignment, Status},
+        switch,
     },
 };
 
@@ -18,8 +19,6 @@ static STAR: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe8d0).unwrap());
 static FAVORITE: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe87d).unwrap());
 static SEARCH: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe8b6).unwrap());
 static SETTINGS: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe8b8).unwrap());
-static MENU: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe5d2).unwrap());
-static MENU_OPEN: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe9bd).unwrap());
 static EDIT: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe3c9).unwrap());
 
 #[derive(Clone, Copy, Default)]
@@ -141,16 +140,7 @@ impl State {
             .status(status)
             .fab_maybe(self.fab.then_some(fab))
             .item_alignment(self.alignment)
-            .menu_maybe(self.menu.then_some(Menu {
-                icon: Box::new(|expanded| {
-                    if expanded {
-                        MENU_OPEN.to_string().into_fragment()
-                    } else {
-                        MENU.to_string().into_fragment()
-                    }
-                }),
-                on_press: Box::new(|_| Message::ToggleExpanded),
-            }));
+            .on_menu_pressed_maybe(self.menu.then_some(|_| Message::ToggleExpanded));
 
         let content = column![
             iced::widget::text("Alignment").color(self.theme.on_surface()),
@@ -164,14 +154,16 @@ impl State {
             ]
             .spacing(8),
             row![
-                iced::widget::text("Menu:").color(self.theme.on_surface()),
-                toggler(self.menu).on_toggle(|_| Message::ToggleMenu)
+                iced::widget::text("Menu").color(self.theme.on_surface()),
+                switch(&self.theme, self.menu).on_toggle(Message::ToggleMenu)
             ]
+            .align_y(Alignment::Center)
             .spacing(8),
             row![
-                iced::widget::text("Floating Action Button:").color(self.theme.on_surface()),
-                toggler(self.fab).on_toggle(|_| Message::ToggleFAB)
+                iced::widget::text("Floating Action Button").color(self.theme.on_surface()),
+                switch(&self.theme, self.fab).on_toggle(Message::ToggleFAB)
             ]
+            .align_y(Alignment::Center)
             .spacing(8),
             iced::widget::text(format!("Current tab: {}", self.tab)).color(self.theme.on_surface())
         ]

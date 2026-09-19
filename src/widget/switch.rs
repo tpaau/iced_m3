@@ -11,9 +11,8 @@ const TRACK_SIZE: Size<f32> = Size {
     height: 32.0,
 };
 const TRACK_DISABLED_OUTLINE_WIDTH: f32 = 2.0;
-const HANDLE_SIZE_DISABLED_NO_ICON: f32 = 16.0;
-const HANDLE_SIZE_DISABLED_WITH_ICON: f32 = 24.0;
-const HANDLE_SIZE_ENABLED: f32 = 24.0;
+const HANDLE_SIZE_NO_ICON: f32 = 16.0;
+const HANDLE_SIZE_WITH_ICON: f32 = 24.0;
 const HANDLE_SIZE_PRESSED: f32 = 28.0;
 const STATE_LAYER_SIZE: f32 = 40.0;
 const ICON_SIZE: f32 = 16.0;
@@ -46,8 +45,8 @@ impl Default for State {
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum IconMode {
     Never,
-    WhenToggled,
     #[default]
+    WhenEnabled,
     Always,
 }
 
@@ -57,7 +56,7 @@ where
 {
     theme: &'a dyn ColorScheme,
     icon_mode: IconMode,
-    toggled: bool,
+    enabled: bool,
     on_toggle: Option<Message>,
 }
 
@@ -66,11 +65,11 @@ where
     Message: Clone,
 {
     #[must_use]
-    pub fn new(theme: &'a dyn ColorScheme, toggled: bool) -> Self {
+    pub fn new(theme: &'a dyn ColorScheme, enabled: bool) -> Self {
         Self {
             theme,
             icon_mode: IconMode::default(),
-            toggled,
+            enabled,
             on_toggle: None,
         }
     }
@@ -128,19 +127,21 @@ where
         _renderer: &Renderer,
         _limits: &iced::advanced::layout::Limits,
     ) -> Node {
+        // const HANDLE_SIZE_NO_ICON: f32 = 16.0;
+        // const HANDLE_SIZE_WITH_ICON: f32 = 24.0;
+        // const HANDLE_SIZE_PRESSED: f32 = 28.0;
+
         let state = tree.state.downcast_ref::<State>();
         let handle_size = if state.is_pressed && self.on_toggle.is_some() {
             HANDLE_SIZE_PRESSED
-        } else if self.toggled {
-            HANDLE_SIZE_ENABLED
-        } else if !self.toggled && (self.icon_mode == IconMode::Never || self.on_toggle.is_none()) {
-            HANDLE_SIZE_DISABLED_NO_ICON
+        } else if self.icon_mode == IconMode::Always || self.enabled {
+            HANDLE_SIZE_WITH_ICON
         } else {
-            HANDLE_SIZE_DISABLED_WITH_ICON
+            HANDLE_SIZE_NO_ICON
         };
 
         let padding = (TRACK_SIZE.height - handle_size) / 2.0;
-        let handle_x = if self.toggled {
+        let handle_x = if self.enabled {
             TRACK_SIZE.width - handle_size - padding
         } else {
             padding
@@ -188,7 +189,7 @@ where
                 .on_surface()
                 .scale_alpha(OUTLINE_DISABLED_OPACITY),
         };
-        let (track_color, handle_color, icon_color, icon_opacity, border_width) = match self.toggled
+        let (track_color, handle_color, icon_color, icon_opacity, border_width) = match self.enabled
         {
             true => match enabled {
                 true => (
@@ -251,14 +252,14 @@ where
 
         let icon = if self.icon_mode == IconMode::Always {
             let state = tree.state.downcast_ref::<State>();
-            match self.toggled {
+            match self.enabled {
                 true => Some(Svg::new(state.check_icon.clone())),
                 false => match self.on_toggle.is_some() {
                     true => Some(Svg::new(state.close_icon.clone())),
                     false => None,
                 },
             }
-        } else if self.icon_mode == IconMode::WhenToggled && self.toggled {
+        } else if self.icon_mode == IconMode::WhenEnabled && self.enabled {
             let state = tree.state.downcast_ref::<State>();
             Some(Svg::new(state.check_icon.clone()))
         } else {
@@ -350,9 +351,8 @@ where
         _viewport: &iced::Rectangle,
         _translation: iced::Vector,
     ) -> Option<iced::advanced::overlay::Element<'b, Message, Theme, Renderer>> {
-        let state = tree.state.downcast_ref::<State>();
-        state.is_hovered.then_some({
-            let color = match self.toggled {
+        (self.on_toggle.is_some() && tree.state.downcast_ref::<State>().is_hovered).then_some({
+            let color = match self.enabled {
                 true => self.theme.primary(),
                 false => self.theme.on_surface(),
             }

@@ -1,4 +1,8 @@
-use iced::{Alignment, Element, Length, Padding, Pixels, advanced::text, padding};
+use iced::{
+    Alignment, Element, Length, Padding, Pixels,
+    advanced::{svg, text},
+    padding,
+};
 use iced_widget::{column, container, row, space, text::LineHeight};
 
 use crate::{
@@ -7,6 +11,7 @@ use crate::{
     widget::{
         self, Icon, OnPress,
         button::{self},
+        common_icons::{MENU, MENU_OPEN},
     },
 };
 
@@ -47,12 +52,6 @@ pub enum ItemAlignment {
     Top,
     Center,
     Bottom,
-}
-
-pub struct Menu<'a, Message> {
-    // FIX: Shouldn't be configurable - switch to an SVG
-    pub icon: Box<dyn Fn(bool) -> text::Fragment<'a> + 'a>,
-    pub on_press: Box<dyn Fn(bool) -> Message + 'a>,
 }
 
 pub struct Fab<'a, Message> {
@@ -102,7 +101,7 @@ where
 {
     theme: &'a dyn ColorScheme,
     status: Status,
-    menu: Option<Menu<'a, Message>>,
+    on_menu_pressed: Option<Box<dyn Fn(bool) -> Message + 'a>>,
     fab: Option<Fab<'a, Message>>,
     items: Vec<Item<'a, Message>>,
     label_font: Option<iced::Font>,
@@ -123,7 +122,7 @@ where
         Self {
             theme,
             status: Status::default(),
-            menu: None,
+            on_menu_pressed: None,
             fab: None,
             items,
             label_font: None,
@@ -163,14 +162,18 @@ where
     }
 
     #[must_use]
-    pub fn menu(mut self, menu: Menu<'a, Message>) -> Self {
-        self.menu = Some(menu);
+    pub fn on_menu_pressed(mut self, on_press: impl Fn(bool) -> Message + 'a) -> Self {
+        self.on_menu_pressed = Some(Box::new(on_press));
         self
     }
 
     #[must_use]
-    pub fn menu_maybe(mut self, maybe_menu: Option<Menu<'a, Message>>) -> Self {
-        self.menu = maybe_menu;
+    pub fn on_menu_pressed_maybe(
+        mut self,
+        on_press: Option<impl Fn(bool) -> Message + 'a>,
+    ) -> Self {
+        self.on_menu_pressed =
+            on_press.map(|callback| Box::new(callback) as Box<dyn Fn(bool) -> Message + 'a>);
         self
     }
 
@@ -366,34 +369,52 @@ where
         let expanded = value.status.expanded();
         let container_width = value.status.width();
 
-        let menu = value.menu.map(|menu| {
-            crate::widget::button(
-                value.theme,
-                widget::button::Content::Icon((menu.icon)(expanded)),
-            )
-            .icon_font_maybe(value.icon_font)
-            .label_font_maybe(value.label_font)
-            .style(button::Style::Custom {
+        let menu = value.on_menu_pressed.map(|on_press| {
+            let handle = match expanded {
+                true => svg::Handle::from_memory(MENU_OPEN),
+                false => svg::Handle::from_memory(MENU),
+            };
+            let icon = iced_widget::svg(handle)
+                .height(MENU_ICON_SIZE)
+                .width(MENU_ICON_SIZE)
+                .style(|_, _| iced_widget::svg::Style {
+                    color: Some(value.theme.on_surface()),
+                });
+            let style = button::Style::Custom {
                 surface: None,
                 content: value.theme.on_surface(),
                 outline: None,
                 surface_disabled: None,
                 content_disabled: value.theme.on_surface(),
                 outline_disabled: None,
-            })
-            .size(button::Size::Custom {
+            };
+            let corner_style = button::CornerStyle::Custom {
+                resting: f32::MAX.into(),
+                pressed: f32::MAX.into(),
+            };
+            let size = button::Size::Custom {
                 width: Length::Shrink,
                 height: Length::Shrink,
                 spacing: 0.0,
                 padding: Padding::from(MENU_BUTTON_PADDING),
                 icon_size: MENU_ICON_SIZE,
                 font_size: 0.0,
-            })
-            .corner_style(button::CornerStyle::Custom {
-                resting: f32::MAX.into(),
-                pressed: f32::MAX.into(),
-            })
-            .on_press((menu.on_press)(expanded))
+            };
+
+            iced_widget::button(icon)
+                .padding(Padding::from(MENU_BUTTON_PADDING))
+                .style(move |_, status| {
+                    crate::widget::button::style(
+                        status,
+                        None,
+                        Elevation::default(),
+                        size,
+                        style,
+                        corner_style,
+                        value.theme,
+                    )
+                })
+                .on_press((on_press)(expanded))
         });
         let menu = menu.map(|menu| {
             column![
