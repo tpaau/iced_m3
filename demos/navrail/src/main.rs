@@ -8,7 +8,7 @@ use iced::{
 use iced_m3::{
     theme::{ColorScheme, Mode, Theme},
     widget::{
-        Badge, Icon, OnPress, button,
+        Badge, BadgeIcon, OnPress, button,
         navrail::{self, Fab, Item, ItemAlignment, Status},
         switch,
     },
@@ -84,7 +84,7 @@ impl State {
     fn view(&self) -> Element<'_, Message> {
         let items = vec![
             Item {
-                icon: Icon {
+                icon: BadgeIcon {
                     icon: STAR.into_fragment(),
                     badge: None,
                 },
@@ -92,7 +92,7 @@ impl State {
                 on_press: OnPress::Direct(Message::GoTo(Tab::Star)),
             },
             Item {
-                icon: Icon {
+                icon: BadgeIcon {
                     icon: FAVORITE.into_fragment(),
                     badge: None,
                 },
@@ -100,7 +100,7 @@ impl State {
                 on_press: OnPress::Direct(Message::GoTo(Tab::Favorites)),
             },
             Item {
-                icon: Icon {
+                icon: BadgeIcon {
                     icon: SEARCH.into_fragment(),
                     badge: Some(Badge { label: None }),
                 },
@@ -108,7 +108,7 @@ impl State {
                 on_press: OnPress::Direct(Message::GoTo(Tab::Search)),
             },
             Item {
-                icon: Icon {
+                icon: BadgeIcon {
                     icon: SETTINGS.into_fragment(),
                     badge: Some(Badge {
                         label: Some("3".into_fragment()),

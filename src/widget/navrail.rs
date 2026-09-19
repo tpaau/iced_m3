@@ -9,7 +9,7 @@ use crate::{
     style::Elevation,
     theme::ColorScheme,
     widget::{
-        self, Icon, OnPress,
+        self, BadgeIcon, OnPress,
         button::{self},
         common_icons::{MENU, MENU_OPEN},
     },
@@ -62,7 +62,7 @@ pub struct Fab<'a, Message> {
 }
 
 pub struct Item<'a, Message> {
-    pub icon: Icon<'a>,
+    pub icon: BadgeIcon<'a>,
     pub label: text::Fragment<'a>,
     pub on_press: OnPress<'a, Message>,
 }
