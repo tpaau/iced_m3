@@ -50,6 +50,7 @@ pub enum ItemAlignment {
 }
 
 pub struct Menu<'a, Message> {
+    // FIX: Shouldn't be configurable - switch to an SVG
     pub icon: Box<dyn Fn(bool) -> text::Fragment<'a> + 'a>,
     pub on_press: Box<dyn Fn(bool) -> Message + 'a>,
 }

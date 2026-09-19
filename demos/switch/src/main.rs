@@ -1,24 +1,29 @@
 use iced::{
     Element, Font, Length, Task,
-    widget::{container, text},
+    widget::{column, container, text},
 };
-use iced_m3::theme::{ColorScheme, Mode, Theme};
+use iced_m3::{
+    theme::{ColorScheme, Mode, Theme},
+    widget::switch,
+};
 
-const APP_NAME: &str = "Demo Template";
+const APP_NAME: &str = "Switch Demo";
 
 #[derive(Clone)]
 enum Message {
-    Noop,
+    Toggle,
 }
 
 struct State {
     theme: Theme,
+    toggled: bool,
 }
 
 impl Default for State {
     fn default() -> Self {
         Self {
             theme: Theme::default(Mode::Dark),
+            toggled: false,
         }
     }
 }
@@ -26,10 +31,16 @@ impl Default for State {
 impl State {
     fn view(&self) -> Element<'_, Message> {
         container(
-            text(APP_NAME)
-                .font(fonts::text_bold())
-                .size(24.0)
-                .color(self.theme.on_surface()),
+            column![
+                text(APP_NAME)
+                    .font(fonts::text_bold())
+                    .size(24.0)
+                    .color(self.theme.on_surface()),
+                switch(&self.theme, self.toggled).on_toggle(Message::Toggle),
+                switch(&self.theme, false),
+                switch(&self.theme, true),
+            ]
+            .spacing(20.0),
         )
         .padding(10.0)
         .width(Length::Fill)
@@ -40,8 +51,9 @@ impl State {
 
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::Noop => Task::none(),
+            Message::Toggle => self.toggled = !self.toggled,
         }
+        Task::none()
     }
 }
 

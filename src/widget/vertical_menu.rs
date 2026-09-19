@@ -47,6 +47,7 @@ pub struct Menu<'a, Message> {
     icon_font: Option<Font>,
     width: Option<f32>,
     theme: &'a dyn ColorScheme,
+    // FIX: Shouldn't be configurable - switch to an SVG
     trailing_icon: &'a char,
 }
 

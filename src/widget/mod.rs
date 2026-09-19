@@ -4,6 +4,7 @@ pub mod advanced;
 pub(crate) mod advanced;
 pub mod badge;
 pub mod button;
+mod common_icons;
 mod common_types;
 pub mod dialog;
 pub mod fab;
@@ -12,6 +13,7 @@ pub mod navbar;
 pub mod navrail;
 pub mod progress_bar;
 pub mod slider;
+pub mod switch;
 pub mod text_input;
 pub mod vertical_menu;
 mod wrappers;
@@ -28,7 +30,7 @@ use crate::{
     theme::ColorScheme,
     widget::{
         button::Button, dialog::Dialog, fab::Fab, fab_menu::FABMenu, navbar::Navbar,
-        navrail::NavRail, progress_bar::ProgressBar, text_input::TextInput,
+        navrail::NavRail, progress_bar::ProgressBar, switch::Switch, text_input::TextInput,
     },
 };
 
@@ -154,4 +156,12 @@ where
     Message: 'a + Clone,
 {
     NavRail::new(theme, items)
+}
+
+#[must_use]
+pub fn switch<'a, Message>(theme: &'a dyn ColorScheme, toggled: bool) -> Switch<'a, Message>
+where
+    Message: Clone,
+{
+    Switch::new(theme, toggled)
 }

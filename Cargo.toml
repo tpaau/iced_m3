@@ -7,7 +7,7 @@ license = "MIT"
 
 [dependencies]
 iced = { version = "0.14.0", features = [ "advanced" ] }
-iced_widget = "0.14.2"
+iced_widget = {version = "0.14.2", features = [ "svg" ] }
 num-traits = "0.2.19"
 pollster = "1.0.1"
 unicode-segmentation = "1.13.3"
@@ -24,7 +24,8 @@ members = [
   "demos/progress_indicators",
   "demos/fab",
   "demos/badges",
-  "demos/navrail"
+  "demos/navrail",
+  "demos/switch"
 ]
 
 [package.metadata.docs.rs]
