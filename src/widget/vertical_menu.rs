@@ -1,13 +1,13 @@
 use std::sync::LazyLock;
 
 use iced::{Alignment, Border, Color, Element, Font, Length, Pixels, border::Radius, padding};
-use iced_widget::{button, column, container, row, space, text};
+use iced_widget::{button, column, container, row, space, svg, svg::Handle, text};
 
 use crate::{
     DIM_ALPHA, HOVER_STATE_LAYER_OPACITY, PRESSED_STATE_LAYER_OPACITY,
     style::{Elevation, shadow},
     theme::ColorScheme,
-    widget::spacer,
+    widget::{common_icons::ARROW_RIGHT, spacer},
 };
 
 pub enum Action<'a, Message> {
@@ -47,11 +47,7 @@ pub struct Menu<'a, Message> {
     icon_font: Option<Font>,
     width: Option<f32>,
     theme: &'a dyn ColorScheme,
-    // FIX: Shouldn't be configurable - switch to an SVG
-    trailing_icon: &'a char,
 }
-
-pub static ARROW_RIGHT: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe5df).unwrap());
 
 impl<'a, Message> Menu<'a, Message> {
     #[must_use]
@@ -63,7 +59,6 @@ impl<'a, Message> Menu<'a, Message> {
             icon_font: None,
             width: Some(192.0),
             theme,
-            trailing_icon: &ARROW_RIGHT,
         }
     }
 
@@ -111,7 +106,7 @@ where
         let font = menu.font.unwrap_or_default();
         let icon_font = menu.icon_font.unwrap_or_default();
         let shadow_color = menu.theme.shadow();
-        let trailing_icon = menu.trailing_icon;
+        let trailing_icon = LazyLock::new(|| Handle::from_memory(ARROW_RIGHT));
         let container_width = match menu.width {
             Some(pixels) => Length::Fixed(pixels),
             None => Length::Shrink,
@@ -194,7 +189,8 @@ where
                                 Action::Message(message) => message.is_none(),
                             };
                             let content_alpha = if button_disabled { DIM_ALPHA } else { 1.0 };
-                            let trailing_icon_visible = matches!(action, Action::Menu(_));
+                            let trailing_icon =
+                                matches!(action, Action::Menu(_)).then_some(trailing_icon.clone());
                             let content = move || -> Element<'a, Message> {
                                 row![
                                     icon.map(|i| crate::widget::icon(i, ICON_SIZE)
@@ -235,15 +231,17 @@ where
                                         space().height(Length::Fill),
                                     ],
                                     space().width(Length::Fill),
-                                    trailing_icon_visible.then_some(
-                                        crate::widget::icon(trailing_icon, ICON_SIZE)
-                                            .font(icon_font)
-                                            .color(if error {
-                                                error_content_color.scale_alpha(content_alpha)
-                                            } else {
-                                                icon_color.scale_alpha(content_alpha)
-                                            }),
-                                    ),
+                                    trailing_icon.clone().map(|icon| {
+                                        let color = if error {
+                                            error_content_color.scale_alpha(content_alpha)
+                                        } else {
+                                            icon_color.scale_alpha(content_alpha)
+                                        };
+                                        svg(icon)
+                                            .width(ICON_SIZE)
+                                            .height(ICON_SIZE)
+                                            .style(move |_, _| svg::Style { color: Some(color) })
+                                    })
                                 ]
                                 .spacing(8.0)
                                 .align_y(Alignment::Center)
