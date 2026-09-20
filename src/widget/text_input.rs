@@ -62,7 +62,7 @@ use iced_widget::core::{
     Pixels, Point, Rectangle, Shell, Size, Theme, Vector, Widget,
 };
 
-use crate::DIM_ALPHA;
+use crate::style::DIM_ALPHA;
 use crate::theme::ColorScheme;
 
 /// A field that can be filled with text.

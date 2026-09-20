@@ -54,14 +54,20 @@ pub enum ItemAlignment {
     Bottom,
 }
 
-pub struct Fab<'a, Message> {
+pub struct Fab<'a, Message>
+where
+    Message: Clone,
+{
     pub icon: text::Fragment<'a>,
     pub label: text::Fragment<'a>,
     pub style: crate::widget::fab::Style,
     pub on_press: OnPress<'a, Message>,
 }
 
-pub struct Item<'a, Message> {
+pub struct Item<'a, Message>
+where
+    Message: Clone,
+{
     pub icon: BadgeIcon<'a>,
     pub label: text::Fragment<'a>,
     pub on_press: OnPress<'a, Message>,

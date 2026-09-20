@@ -4,8 +4,7 @@ use iced::{Alignment, Border, Color, Element, Font, Length, Pixels, border::Radi
 use iced_widget::{button, column, container, row, space, svg, svg::Handle, text};
 
 use crate::{
-    DIM_ALPHA, HOVER_STATE_LAYER_OPACITY, PRESSED_STATE_LAYER_OPACITY,
-    style::{Elevation, shadow},
+    style::{DIM_ALPHA, Elevation, HOVER_STATE_LAYER_OPACITY, PRESSED_STATE_LAYER_OPACITY, shadow},
     theme::ColorScheme,
     widget::{common_icons::ARROW_RIGHT, spacer},
 };

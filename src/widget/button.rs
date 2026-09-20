@@ -2,8 +2,10 @@ use iced::{Alignment, Color, Element, Length, Padding, border::Radius, padding};
 use iced_widget::{center, row, text};
 
 use crate::{
-    DISABLED_STATE_LAYER_OPACITY, HOVER_STATE_LAYER_OPACITY, PRESSED_STATE_LAYER_OPACITY,
-    style::{Elevation, mix_colors, shadow},
+    style::{
+        DISABLED_STATE_LAYER_OPACITY, Elevation, HOVER_STATE_LAYER_OPACITY,
+        PRESSED_STATE_LAYER_OPACITY, mix_colors, shadow,
+    },
     theme::{Accent, ColorScheme},
     widget::{OnPress, icon},
 };
@@ -11,6 +13,8 @@ use crate::{
 const DISABLED_CONTAINER_OPACITY: f32 = 0.1;
 const DISABLED_LABEL_OPACITY: f32 = DISABLED_STATE_LAYER_OPACITY;
 
+// TODO: Convert this to a struct
+// TODO: Custom state layers
 #[derive(Clone, Copy)]
 pub enum Style {
     Elevated(Accent),
@@ -572,7 +576,10 @@ impl<'a> Content<'a> {
     }
 }
 
-pub struct Button<'a, Message> {
+pub struct Button<'a, Message>
+where
+    Message: Clone,
+{
     on_press: Option<OnPress<'a, Message>>,
     clip: bool,
     theme: &'a dyn ColorScheme,
@@ -586,7 +593,10 @@ pub struct Button<'a, Message> {
     selected: Option<bool>,
 }
 
-impl<'a, Message> Button<'a, Message> {
+impl<'a, Message> Button<'a, Message>
+where
+    Message: Clone,
+{
     #[must_use]
     pub fn new(theme: &'a dyn ColorScheme, content: Content<'a>) -> Self {
         Self {

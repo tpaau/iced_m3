@@ -428,6 +428,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "card"
+version = "0.1.0"
+dependencies = [
+ "fonts",
+ "iced",
+ "iced_m3",
+]
+
+[[package]]
 name = "cc"
 version = "1.2.67"
 source = "registry+https://github.com/rust-lang/crates.io-index"

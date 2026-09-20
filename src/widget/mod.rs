@@ -4,6 +4,7 @@ pub mod advanced;
 pub(crate) mod advanced;
 pub mod badge;
 pub mod button;
+pub mod card;
 mod common_icons;
 mod common_types;
 pub mod dialog;
@@ -29,7 +30,7 @@ use iced_widget::rule;
 use crate::{
     theme::ColorScheme,
     widget::{
-        button::Button, dialog::Dialog, fab::Fab, fab_menu::FABMenu, navbar::Navbar,
+        button::Button, card::Card, dialog::Dialog, fab::Fab, fab_menu::FABMenu, navbar::Navbar,
         navrail::NavRail, progress_bar::ProgressBar, switch::Switch, text_input::TextInput,
     },
 };
@@ -63,7 +64,10 @@ pub fn navbar<'a, Message, Theme, Renderer>(
 pub fn button<'a, Message>(
     theme: &'a dyn ColorScheme,
     content: button::Content<'a>,
-) -> Button<'a, Message> {
+) -> Button<'a, Message>
+where
+    Message: Clone,
+{
     Button::new(theme, content)
 }
 
@@ -164,4 +168,15 @@ where
     Message: Clone,
 {
     Switch::new(theme, toggled)
+}
+
+#[must_use]
+pub fn card<'a, Message, Theme, Renderer>(
+    style: card::Style,
+    content: impl Into<Element<'a, Message, Theme, Renderer>>,
+) -> Card<'a, Message, Theme, Renderer>
+where
+    Message: Clone,
+{
+    Card::new(style, content)
 }
