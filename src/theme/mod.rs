@@ -125,7 +125,7 @@ pub struct Palette {
 }
 
 impl Palette {
-    pub fn default_dark() -> Self {
+    pub const fn default_dark() -> Self {
         Self {
             primary: color!(0xD0BCFF),
             on_primary: color!(0x381E72),
@@ -183,7 +183,7 @@ impl Palette {
         }
     }
 
-    pub fn default_light() -> Self {
+    pub const fn default_light() -> Self {
         Self {
             primary: color!(0x6750A4),
             on_primary: color!(0xFFFFFF),
