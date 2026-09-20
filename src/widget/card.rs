@@ -338,15 +338,12 @@ where
             );
         }
 
-        let child_tree = &tree.children[0];
-        let child_layout = layout.children().next().unwrap();
-
         self.content.as_widget().draw(
-            child_tree,
+            &tree.children[0],
             renderer,
             theme,
             style,
-            child_layout,
+            layout.children().next().unwrap(),
             cursor,
             viewport,
         );
@@ -360,18 +357,22 @@ where
         viewport: &iced::Rectangle,
         renderer: &Renderer,
     ) -> mouse::Interaction {
-        let interaction = self
-            .content
-            .as_widget()
-            .mouse_interaction(tree, layout, cursor, viewport, renderer);
+        let interaction = self.content.as_widget().mouse_interaction(
+            &tree.children[0],
+            layout.children().next().unwrap(),
+            cursor,
+            viewport,
+            renderer,
+        );
 
-        if cursor.is_over(layout.bounds())
-            && interaction == mouse::Interaction::None
-            && matches!(self.interaction, Interaction::Press(_))
-        {
+        if interaction != mouse::Interaction::None {
+            return interaction;
+        }
+
+        if cursor.is_over(layout.bounds()) && matches!(self.interaction, Interaction::Press(_)) {
             mouse::Interaction::Pointer
         } else {
-            interaction
+            mouse::Interaction::default()
         }
     }
 
@@ -387,7 +388,14 @@ where
         viewport: &iced::Rectangle,
     ) {
         self.content.as_widget_mut().update(
-            tree, event, layout, cursor, renderer, clipboard, shell, viewport,
+            &mut tree.children[0],
+            event,
+            layout.children().next().unwrap(),
+            cursor,
+            renderer,
+            clipboard,
+            shell,
+            viewport,
         );
 
         if shell.is_event_captured() || !matches!(self.interaction, Interaction::Press(_)) {
