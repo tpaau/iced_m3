@@ -130,6 +130,13 @@ TODOs:
 
 ~[demo]()~
 
+### Switch
+![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/switch.gif)
+
+[reference](https://m3.material.io/components/switch/overview)
+
+[demo](https://github.com/tpaau/iced_m3/blob/main/demos/fab_menu)
+
 ### Text Field
 ~![showcase]()~
 

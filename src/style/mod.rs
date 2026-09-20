@@ -14,11 +14,11 @@ pub const FOCUS_STATE_LAYER_OPACITY: f32 = 0.1;
 pub const HOVER_STATE_LAYER_OPACITY: f32 = 0.08;
 pub const DISABLED_STATE_LAYER_OPACITY: f32 = 0.38;
 
-// TODO: Dragged state layer color
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StateLayer {
     pub idle: Color,
     pub hovered: Color,
+    pub focused: Color,
     pub pressed: Color,
     pub dragged: Color,
 }
@@ -28,6 +28,7 @@ impl StateLayer {
         Self {
             idle: Color::TRANSPARENT,
             hovered: color.scale_alpha(HOVER_STATE_LAYER_OPACITY),
+            focused: color.scale_alpha(FOCUS_STATE_LAYER_OPACITY),
             pressed: color.scale_alpha(PRESSED_STATE_LAYER_OPACITY),
             dragged: color.scale_alpha(DRAGGED_STATE_LAYER_OPACITY),
         }
