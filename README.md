@@ -56,6 +56,17 @@ TODOs:
 - Animated ripple effect
 - Corner radius animation
 
+### Cards
+![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/cards.gif)
+
+[reference](https://m3.material.io/components/cards/overview)
+
+[demo](https://github.com/tpaau/iced_m3/blob/main/demos/cards)
+
+TODOs:
+- Animated ripple affect
+- Drag-and-drop
+
 ### Dialog
 ~![showcase]()~
 
@@ -136,6 +147,9 @@ TODOs:
 [reference](https://m3.material.io/components/switch/overview)
 
 [demo](https://github.com/tpaau/iced_m3/blob/main/demos/fab_menu)
+
+TODOs:
+- Animation
 
 ### Text Field
 ~![showcase]()~
