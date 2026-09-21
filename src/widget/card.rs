@@ -27,12 +27,12 @@ struct State {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Style {
-    container_color: Color,
-    border: Border,
-    state_layer: StateLayer,
-    shadow_color: Color,
-    elevation: Elevation,
-    container_color_disabled: Color,
+    pub container_color: Color,
+    pub border: Border,
+    pub state_layer: StateLayer,
+    pub shadow_color: Color,
+    pub elevation: Elevation,
+    pub container_color_disabled: Color,
 }
 
 impl Style {
@@ -76,61 +76,6 @@ impl Style {
             elevation: Elevation::default(),
             container_color_disabled: container_color.scale_alpha(DISABLED_STATE_LAYER_OPACITY),
         }
-    }
-
-    #[must_use]
-    pub fn custom(
-        container_color: Color,
-        border: Border,
-        state_layer: StateLayer,
-        shadow_color: Color,
-        elevation: Elevation,
-        container_color_disabled: Color,
-    ) -> Self {
-        Self {
-            container_color,
-            border,
-            state_layer,
-            shadow_color,
-            elevation,
-            container_color_disabled,
-        }
-    }
-
-    #[must_use]
-    pub fn container_color(mut self, color: Color) -> Self {
-        self.container_color = color;
-        self
-    }
-
-    #[must_use]
-    pub fn border(mut self, border: Border) -> Self {
-        self.border = border;
-        self
-    }
-
-    #[must_use]
-    pub fn state_layer(mut self, state_layer: StateLayer) -> Self {
-        self.state_layer = state_layer;
-        self
-    }
-
-    #[must_use]
-    pub fn shadow_color(mut self, color: Color) -> Self {
-        self.shadow_color = color;
-        self
-    }
-
-    #[must_use]
-    pub fn elevation(mut self, elevation: Elevation) -> Self {
-        self.elevation = elevation;
-        self
-    }
-
-    #[must_use]
-    pub fn container_color_disabled(mut self, color: Color) -> Self {
-        self.container_color_disabled = color;
-        self
     }
 }
 
@@ -313,10 +258,6 @@ where
         cursor: mouse::Cursor,
         viewport: &iced::Rectangle,
     ) {
-        let container_color = match self.interaction {
-            Interaction::Disabled => self.style.container_color_disabled,
-            _ => self.style.container_color,
-        };
         renderer.fill_quad(
             iced::advanced::renderer::Quad {
                 bounds: layout.bounds(),
@@ -324,7 +265,11 @@ where
                 shadow: shadow(self.style.shadow_color, self.style.elevation),
                 ..Default::default()
             },
-            container_color,
+            if matches!(self.interaction, Interaction::Disabled) {
+                self.style.container_color_disabled
+            } else {
+                self.style.container_color
+            },
         );
 
         let state_layer_color = match self.interaction {

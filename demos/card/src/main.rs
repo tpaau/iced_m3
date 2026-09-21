@@ -88,9 +88,11 @@ impl<'a> State<'a> {
                     self.theme.on_surface()
                 ),
                 card(
-                    Style::filled(&self.theme)
-                        .container_color(self.theme.tertiary_container())
-                        .state_layer(StateLayer::new(self.theme.on_tertiary_container())),
+                    Style {
+                        container_color: self.theme.tertiary_container(),
+                        state_layer: StateLayer::new(self.theme.on_tertiary_container()),
+                        ..Style::filled(&self.theme)
+                    },
                     "Custom",
                     self.theme.on_tertiary_container()
                 )
