@@ -64,21 +64,23 @@ impl State {
                     .size(24.0)
                     .color(self.theme.on_surface()),
                 text("Determinate indicators").color(self.theme.on_surface()),
-                progress_bar(&self.theme).progress(0.0),
-                progress_bar(&self.theme).progress(0.25),
-                progress_bar(&self.theme).progress(0.5),
-                progress_bar(&self.theme).progress(0.75),
-                progress_bar(&self.theme).progress(1.0),
+                progress_bar(progress_bar::Style::new(&self.theme)).progress(0.0),
+                progress_bar(progress_bar::Style::new(&self.theme)).progress(0.25),
+                progress_bar(progress_bar::Style::new(&self.theme)).progress(0.5),
+                progress_bar(progress_bar::Style::new(&self.theme)).progress(0.75),
+                progress_bar(progress_bar::Style::new(&self.theme)).progress(1.0),
                 text("You can change height (thick)").color(self.theme.on_surface()),
-                progress_bar(&self.theme).progress(0.5).height(16.0),
+                progress_bar(progress_bar::Style::new(&self.theme))
+                    .progress(0.5)
+                    .height(16.0),
                 text("In action!").color(self.theme.on_surface()),
-                progress_bar(&self.theme).progress(self.progress),
-                progress_bar(&self.theme)
+                progress_bar(progress_bar::Style::new(&self.theme)).progress(self.progress),
+                progress_bar(progress_bar::Style::new(&self.theme))
                     .progress(self.progress)
                     .height(16.0),
                 text("Indeterminate!").color(self.theme.on_surface()),
-                progress_bar(&self.theme),
-                progress_bar(&self.theme).height(16.0),
+                progress_bar(progress_bar::Style::new(&self.theme)),
+                progress_bar(progress_bar::Style::new(&self.theme)).height(16.0),
             ]
             .width(500.0)
             .spacing(20.0),

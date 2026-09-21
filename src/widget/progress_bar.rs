@@ -24,21 +24,37 @@ impl State {
     }
 }
 
+pub struct Style {
+    pub bar_color: Color,
+    pub track_color: Color,
+    pub stop_indicator_color: Color,
+}
+
+impl Style {
+    pub fn new(theme: &impl ColorScheme) -> Self {
+        Self {
+            bar_color: theme.primary(),
+            track_color: theme.secondary_container(),
+            stop_indicator_color: theme.primary(),
+        }
+    }
+}
+
 // TODO: Wavy variant!!
-pub struct ProgressBar<'a> {
+pub struct ProgressBar {
     progress: Option<f32>,
     height: Option<f32>,
-    theme: &'a dyn ColorScheme,
+    style: Style,
     width: Length,
 }
 
-impl<'a> ProgressBar<'a> {
+impl ProgressBar {
     #[must_use]
-    pub fn new(theme: &'a dyn ColorScheme) -> Self {
+    pub fn new(style: Style) -> Self {
         Self {
             progress: None,
             height: None,
-            theme,
+            style,
             width: Length::Fill,
         }
     }
@@ -68,7 +84,7 @@ impl<'a> ProgressBar<'a> {
     }
 }
 
-impl<'a, Message> Widget<Message, iced::Theme, iced::Renderer> for ProgressBar<'a> {
+impl<'a, Message> Widget<Message, iced::Theme, iced::Renderer> for ProgressBar {
     fn tag(&self) -> iced::advanced::widget::tree::Tag {
         tree::Tag::of::<State>()
     }
@@ -162,7 +178,7 @@ impl<'a, Message> Widget<Message, iced::Theme, iced::Renderer> for ProgressBar<'
                     bounds.x + bounds.width - bar_width,
                     bar_width,
                     bar_height,
-                    self.theme.secondary_container(),
+                    self.style.track_color,
                 );
 
                 draw_quad(
@@ -171,12 +187,17 @@ impl<'a, Message> Widget<Message, iced::Theme, iced::Renderer> for ProgressBar<'
                         - (target_height - STOP_INDICATOR_SIZE) / 2.0,
                     STOP_INDICATOR_SIZE,
                     STOP_INDICATOR_SIZE,
-                    self.theme.primary(),
+                    self.style.bar_color,
                 );
 
                 let bar_width = ((bounds.width * progress) - (gap * (1.0 - progress))).max(0.0);
                 let bar_height = bar_width.min(target_height);
-                draw_quad(bounds.x, bar_width, bar_height, self.theme.primary());
+                draw_quad(
+                    bounds.x,
+                    bar_width,
+                    bar_height,
+                    self.style.stop_indicator_color,
+                );
             }
             None => {
                 let state = tree.state.downcast_ref::<State>();
@@ -230,46 +251,38 @@ impl<'a, Message> Widget<Message, iced::Theme, iced::Renderer> for ProgressBar<'
                 };
 
                 // Track segment 1.
-                draw_normalized(
-                    0.0,
-                    first_start - gap / 2.0,
-                    self.theme.secondary_container(),
-                );
+                draw_normalized(0.0, first_start - gap / 2.0, self.style.track_color);
 
                 // Track segment 2.
                 draw_normalized(
                     first_end + gap / 2.0,
                     second_start - gap / 2.0,
-                    self.theme.secondary_container(),
+                    self.style.track_color,
                 );
 
                 // Track segment 3.
-                draw_normalized(
-                    second_end + gap / 2.0,
-                    1.0,
-                    self.theme.secondary_container(),
-                );
+                draw_normalized(second_end + gap / 2.0, 1.0, self.style.track_color);
 
                 // Primary segment 1.
                 draw_normalized(
                     first_start + gap / 2.0,
                     first_end - gap / 2.0,
-                    self.theme.primary(),
+                    self.style.bar_color,
                 );
 
                 // Primary segment 2.
                 draw_normalized(
                     second_start + gap / 2.0,
                     second_end - gap / 2.0,
-                    self.theme.primary(),
+                    self.style.bar_color,
                 );
             }
         }
     }
 }
 
-impl<'a, Message> From<ProgressBar<'a>> for Element<'a, Message> {
-    fn from(progress: ProgressBar<'a>) -> Self {
+impl<'a, Message> From<ProgressBar> for Element<'a, Message> {
+    fn from(progress: ProgressBar) -> Self {
         Element::new(progress)
     }
 }
