@@ -313,7 +313,7 @@ impl State {
 
         let dark_mode_toggler = row![
             text("Dark mode").color(self.theme.on_surface()),
-            toggler(self.theme.mode.is_dark()).on_toggle(|_| Message::ToggleDarkTheme)
+            toggler(self.theme.mode == Mode::Dark).on_toggle(|_| Message::ToggleDarkTheme)
         ]
         .align_y(Alignment::Center)
         .spacing(8.0);
@@ -351,6 +351,7 @@ impl State {
                 self.theme.mode = match self.theme.mode {
                     Mode::Light => Mode::Dark,
                     Mode::Dark => Mode::Light,
+                    Mode::Black => Mode::Light,
                 }
             }
             Message::ToggleSquareButtons => self.square = !self.square,

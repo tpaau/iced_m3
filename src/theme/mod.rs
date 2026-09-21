@@ -240,6 +240,25 @@ impl Palette {
             outline_variant: color!(0xCAC4D0),
         }
     }
+
+    /// Converts a dark theme to a black theme by shifting color roles down and assigning some to black.
+    ///
+    /// Please don't use this on a light theme, it'll look very weird.
+    pub fn black(self) -> Self {
+        Self {
+            surface: color!(0x000000),
+            background: color!(0x000000),
+            surface_container_highest: self.surface_container_high,
+            surface_container_high: self.surface_container,
+            surface_container: self.surface_container_low,
+            surface_container_low: self.surface_container_lowest,
+            surface_container_lowest: color!(0x000000),
+            surface_bright: self.surface,
+            surface_dim: color!(0x000000),
+            surface_variant: color!(0x000000),
+            ..self
+        }
+    }
 }
 
 impl ColorScheme for Palette {
@@ -442,21 +461,14 @@ pub enum Mode {
     #[default]
     Light,
     Dark,
-}
-
-impl Mode {
-    pub fn is_dark(&self) -> bool {
-        match self {
-            Mode::Light => false,
-            Mode::Dark => true,
-        }
-    }
+    Black,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Theme {
     pub dark: Palette,
     pub light: Palette,
+    pub black: Palette,
     pub mode: Mode,
 }
 
@@ -465,6 +477,7 @@ impl Theme {
         match self.mode {
             Mode::Light => &self.light,
             Mode::Dark => &self.dark,
+            Mode::Black => &self.black,
         }
     }
 
@@ -472,6 +485,7 @@ impl Theme {
         Self {
             dark: Palette::default_dark(),
             light: Palette::default_light(),
+            black: Palette::default_dark().black(),
             mode,
         }
     }
