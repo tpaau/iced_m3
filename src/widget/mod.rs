@@ -124,7 +124,7 @@ pub fn dialog<'a, Message>(
 }
 
 #[must_use]
-pub fn progress_bar<'a>(theme: &'a impl ColorScheme) -> ProgressBar<'a> {
+pub fn progress_bar<'a>(theme: &'a dyn ColorScheme) -> ProgressBar<'a> {
     ProgressBar::new(theme)
 }
 

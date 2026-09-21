@@ -478,6 +478,8 @@ where
             Status::Active | Status::Hovered => HANDLE_WIDTH_IDLE,
             Status::Dragged => HANDLE_WIDTH_DRAGGED,
         };
+
+        // TODO: Clip it instead of doing whatever the fuck this is
         let handle_x = bounds.x + offset - handle_width / 2.0;
         let stop_indicator_width = (bounds.x + bounds.width
             - STOP_INDICATOR_TRAILING_SPACE

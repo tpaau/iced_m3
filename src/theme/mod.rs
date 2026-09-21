@@ -437,7 +437,7 @@ impl ColorScheme for Palette {
 }
 
 // TODO: Default variant
-#[derive(Default, Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Mode {
     #[default]
     Light,

@@ -34,7 +34,7 @@ pub struct ProgressBar<'a> {
 
 impl<'a> ProgressBar<'a> {
     #[must_use]
-    pub fn new(theme: &'a impl ColorScheme) -> Self {
+    pub fn new(theme: &'a dyn ColorScheme) -> Self {
         Self {
             progress: None,
             height: None,

@@ -37,7 +37,7 @@ pub struct Style {
 
 impl Style {
     #[must_use]
-    pub fn elevated(theme: &impl ColorScheme) -> Self {
+    pub fn elevated(theme: &dyn ColorScheme) -> Self {
         let container_color = theme.surface_container_low();
         Self {
             container_color,
@@ -50,7 +50,7 @@ impl Style {
     }
 
     #[must_use]
-    pub fn filled(theme: &impl ColorScheme) -> Self {
+    pub fn filled(theme: &dyn ColorScheme) -> Self {
         let container_color = theme.surface_container_highest();
         Self {
             container_color,
@@ -63,7 +63,7 @@ impl Style {
     }
 
     #[must_use]
-    pub fn outlined(theme: &impl ColorScheme) -> Self {
+    pub fn outlined(theme: &dyn ColorScheme) -> Self {
         let container_color = theme.surface();
         Self {
             container_color,
@@ -226,6 +226,20 @@ where
     pub fn height_maybe(self, maybe_height: Option<impl Into<Length>>) -> Self {
         match maybe_height {
             Some(height) => self.height(height),
+            None => self,
+        }
+    }
+
+    #[must_use]
+    pub fn padding(mut self, padding: Padding) -> Self {
+        self.padding = padding;
+        self
+    }
+
+    #[must_use]
+    pub fn padding_maybe(self, maybe_padding: Option<Padding>) -> Self {
+        match maybe_padding {
+            Some(padding) => self.padding(padding),
             None => self,
         }
     }
