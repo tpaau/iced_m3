@@ -11,6 +11,72 @@ pub enum Accent {
     Tertiary,
 }
 
+impl Accent {
+    pub fn color(&self, theme: &impl ColorScheme) -> Color {
+        match self {
+            Accent::Primary => theme.primary(),
+            Accent::Secondary => theme.secondary(),
+            Accent::Tertiary => theme.tertiary(),
+        }
+    }
+
+    pub fn on_color(&self, theme: &impl ColorScheme) -> Color {
+        match self {
+            Accent::Primary => theme.on_primary(),
+            Accent::Secondary => theme.on_secondary(),
+            Accent::Tertiary => theme.on_tertiary(),
+        }
+    }
+
+    pub fn color_container(&self, theme: &impl ColorScheme) -> Color {
+        match self {
+            Accent::Primary => theme.primary_container(),
+            Accent::Secondary => theme.secondary_container(),
+            Accent::Tertiary => theme.tertiary_container(),
+        }
+    }
+
+    pub fn on_color_container(&self, theme: &impl ColorScheme) -> Color {
+        match self {
+            Accent::Primary => theme.on_primary_container(),
+            Accent::Secondary => theme.on_secondary_container(),
+            Accent::Tertiary => theme.on_tertiary_container(),
+        }
+    }
+
+    pub fn color_fixed(&self, theme: &impl ColorScheme) -> Color {
+        match self {
+            Accent::Primary => theme.primary_fixed(),
+            Accent::Secondary => theme.secondary_fixed(),
+            Accent::Tertiary => theme.tertiary_fixed(),
+        }
+    }
+
+    pub fn on_color_fixed(&self, theme: &impl ColorScheme) -> Color {
+        match self {
+            Accent::Primary => theme.on_primary_fixed(),
+            Accent::Secondary => theme.on_secondary_fixed(),
+            Accent::Tertiary => theme.on_tertiary_fixed(),
+        }
+    }
+
+    pub fn color_fixed_dim(&self, theme: &impl ColorScheme) -> Color {
+        match self {
+            Accent::Primary => theme.primary_fixed_dim(),
+            Accent::Secondary => theme.secondary_fixed_dim(),
+            Accent::Tertiary => theme.tertiary_fixed_dim(),
+        }
+    }
+
+    pub fn on_color_fixed_variant(&self, theme: &impl ColorScheme) -> Color {
+        match self {
+            Accent::Primary => theme.on_primary_fixed_variant(),
+            Accent::Secondary => theme.on_secondary_fixed_variant(),
+            Accent::Tertiary => theme.on_tertiary_fixed_variant(),
+        }
+    }
+}
+
 pub trait ColorScheme {
     fn primary(&self) -> Color;
     fn on_primary(&self) -> Color;
@@ -455,7 +521,7 @@ impl ColorScheme for Palette {
     }
 }
 
-// TODO: Default variant
+// TODO: Get the light/dark theme preference from the system
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Mode {
     #[default]
