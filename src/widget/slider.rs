@@ -18,64 +18,57 @@ const INNER_CORNER_RADIUS: f32 = 2.0;
 const STOP_INDICATOR_SIZE: f32 = 4.0;
 const STOP_INDICATOR_TRAILING_SPACE: f32 = 4.0;
 
-// TODO: Should be a struct
-#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
-pub enum Size {
-    #[default]
-    ExtraSmall,
-    Small,
-    Medium,
-    Large,
-    ExtraLarge,
-    Custom {
-        rail_height: f32,
-        handle_height: f32,
-        corner_radius: f32,
-    },
+pub struct Size {
+    pub track_height: f32,
+    pub handle_height: f32,
+    pub corner_radius: f32,
 }
 
 impl Size {
-    pub fn rail_height(&self) -> f32 {
-        match self {
-            Size::ExtraSmall => 16.0,
-            Size::Small => 24.0,
-            Size::Medium => 40.0,
-            Size::Large => 56.0,
-            Size::ExtraLarge => 96.0,
-            Size::Custom {
-                rail_height,
-                handle_height: _,
-                corner_radius: _,
-            } => *rail_height,
+    pub fn extra_small() -> Self {
+        Self {
+            track_height: 16.0,
+            handle_height: 44.0,
+            corner_radius: 8.0,
         }
     }
 
-    pub fn handle_height(&self) -> f32 {
-        match self {
-            Size::ExtraSmall | Size::Small => 44.0,
-            Size::Medium => 52.0,
-            Size::Large => 68.0,
-            Size::ExtraLarge => 108.0,
-            Size::Custom {
-                rail_height: _,
-                handle_height,
-                corner_radius: _,
-            } => *handle_height,
+    pub fn small() -> Self {
+        Self {
+            track_height: 24.0,
+            handle_height: 44.0,
+            corner_radius: 8.0,
         }
     }
 
-    pub fn corner_radius(&self) -> f32 {
-        match self {
-            Size::ExtraSmall | Size::Small => 8.0,
-            Size::Medium => 12.0,
-            Size::Large => 16.0,
-            Size::ExtraLarge => 28.0,
-            Size::Custom {
-                rail_height: _,
-                handle_height: _,
-                corner_radius,
-            } => *corner_radius,
+    pub fn medium() -> Self {
+        Self {
+            track_height: 40.0,
+            handle_height: 52.0,
+            corner_radius: 12.0,
         }
+    }
+
+    pub fn large() -> Self {
+        Self {
+            track_height: 56.0,
+            handle_height: 68.0,
+            corner_radius: 16.0,
+        }
+    }
+
+    pub fn extra_large() -> Self {
+        Self {
+            track_height: 96.0,
+            handle_height: 108.0,
+            corner_radius: 28.0,
+        }
+    }
+}
+
+impl Default for Size {
+    fn default() -> Self {
+        Self::extra_small()
     }
 }
 
@@ -233,7 +226,7 @@ where
     fn size(&self) -> iced::Size<Length> {
         iced::Size {
             width: self.width,
-            height: iced::Length::Fixed(self.size.handle_height()),
+            height: iced::Length::Fixed(self.size.handle_height),
         }
     }
 
@@ -243,7 +236,7 @@ where
         _renderer: &Renderer,
         limits: &iced::advanced::layout::Limits,
     ) -> layout::Node {
-        layout::atomic(limits, self.width, self.size.handle_height())
+        layout::atomic(limits, self.width, self.size.handle_height)
     }
 
     fn update(
@@ -449,7 +442,7 @@ where
         };
 
         let rail_y = bounds.y + bounds.height / 2.0;
-        let rail_height = self.size.rail_height();
+        let rail_height = self.size.track_height;
         let rail_bounds = Rectangle {
             x: bounds.x + offset + HANDLE_WIDTH_IDLE / 2.0 + HANDLE_GAP,
             y: rail_y - rail_height / 2.0,
@@ -462,8 +455,8 @@ where
                 bounds: rail_bounds,
                 border: Border::default().rounded(Radius {
                     top_left: INNER_CORNER_RADIUS,
-                    top_right: self.size.corner_radius(),
-                    bottom_right: self.size.corner_radius(),
+                    top_right: self.size.corner_radius,
+                    bottom_right: self.size.corner_radius,
                     bottom_left: INNER_CORNER_RADIUS,
                 }),
                 ..renderer::Quad::default()
@@ -480,10 +473,10 @@ where
                     height: rail_height,
                 },
                 border: Border::default().rounded(Radius {
-                    top_left: self.size.corner_radius(),
+                    top_left: self.size.corner_radius,
                     top_right: INNER_CORNER_RADIUS,
                     bottom_right: INNER_CORNER_RADIUS,
-                    bottom_left: self.size.corner_radius(),
+                    bottom_left: self.size.corner_radius,
                 }),
                 ..renderer::Quad::default()
             },
@@ -517,9 +510,9 @@ where
             renderer::Quad {
                 bounds: Rectangle {
                     x: handle_x,
-                    y: rail_y - self.size.handle_height() / 2.0,
+                    y: rail_y - self.size.handle_height / 2.0,
                     width: handle_width,
-                    height: self.size.handle_height(),
+                    height: self.size.handle_height,
                 },
                 border: Border::default().rounded(f32::MAX),
                 ..renderer::Quad::default()
