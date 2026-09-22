@@ -482,7 +482,6 @@ impl Size {
         }
     }
 
-    // TODO: Implement the typography system and get the sizes from there
     pub fn font_size(&self) -> f32 {
         match self {
             Size::ExtraSmall | Size::Small => 14.0,

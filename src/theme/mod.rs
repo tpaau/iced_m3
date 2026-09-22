@@ -521,13 +521,21 @@ impl ColorScheme for Palette {
     }
 }
 
-// TODO: Get the light/dark theme preference from the system
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Mode {
     #[default]
     Light,
     Dark,
     Black,
+}
+
+impl From<iced::theme::Mode> for Mode {
+    fn from(value: iced::theme::Mode) -> Self {
+        match value {
+            iced::theme::Mode::None | iced::theme::Mode::Light => Self::Light,
+            iced::theme::Mode::Dark => Self::Dark,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
