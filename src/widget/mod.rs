@@ -131,7 +131,6 @@ pub fn progress_bar(style: progress_bar::Style) -> ProgressBar {
 
 #[must_use]
 pub fn fab<'a, Message>(
-    theme: &(impl ColorScheme + ?Sized),
     style: fab::Style,
     content: fab::Content<'a>,
     on_press: OnPress<'a, Message>,
@@ -139,7 +138,7 @@ pub fn fab<'a, Message>(
 where
     Message: 'a + Clone,
 {
-    Fab::new(theme, style, content, on_press)
+    Fab::new(style, content, on_press)
 }
 
 #[must_use]

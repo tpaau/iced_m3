@@ -285,6 +285,14 @@ impl Style {
         }
     }
 
+    pub fn fab_vibrant(theme: &(impl ColorScheme + ?Sized), accent: Accent) -> Self {
+        Self::filled(theme, accent)
+    }
+
+    pub fn fab_tonal(theme: &(impl ColorScheme + ?Sized), accent: Accent) -> Self {
+        Self::tonal(theme, accent)
+    }
+
     pub fn state_layer(&self, selected: Option<bool>) -> &StateLayer {
         match selected {
             Some(selected) => match selected {

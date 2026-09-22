@@ -5,9 +5,9 @@ use iced::{
     widget::{column, container, row, text, text::IntoFragment},
 };
 use iced_m3::{
-    theme::{ColorScheme, Theme},
+    theme::{Accent, ColorScheme, Theme},
     widget::{
-        OnPress, fab,
+        OnPress,
         fab::{Content, Size, Style},
     },
 };
@@ -35,12 +35,12 @@ enum Message {
 impl State {
     fn view(&self) -> Element<'_, Message> {
         let styles = [
-            Style::TonalPrimary,
-            Style::TonalSecondary,
-            Style::TonalTertiary,
-            Style::Primary,
-            Style::Secondary,
-            Style::Tertiary,
+            Style::fab_vibrant(&self.theme, Accent::Primary),
+            Style::fab_vibrant(&self.theme, Accent::Secondary),
+            Style::fab_vibrant(&self.theme, Accent::Tertiary),
+            Style::fab_tonal(&self.theme, Accent::Primary),
+            Style::fab_tonal(&self.theme, Accent::Secondary),
+            Style::fab_tonal(&self.theme, Accent::Tertiary),
         ];
         let sizes = [Size::Regular, Size::Medium, Size::Large];
         let content = Content::Reguar {
@@ -48,14 +48,9 @@ impl State {
         };
         let fabs = row(sizes.into_iter().map(|size| {
             column(styles.into_iter().map(|style| {
-                fab(
-                    &self.theme,
-                    style,
-                    content.clone(),
-                    OnPress::Direct(Message::Noop),
-                )
-                .size(size)
-                .into()
+                iced_m3::widget::fab(style, content.clone(), OnPress::Direct(Message::Noop))
+                    .size(size)
+                    .into()
             }))
             .spacing(20.0)
             .into()
@@ -68,14 +63,9 @@ impl State {
         };
         let extended_fabs = row(sizes.into_iter().map(|size| {
             column(styles.into_iter().map(|style| {
-                fab(
-                    &self.theme,
-                    style,
-                    content.clone(),
-                    OnPress::Direct(Message::Noop),
-                )
-                .size(size)
-                .into()
+                iced_m3::widget::fab(style, content.clone(), OnPress::Direct(Message::Noop))
+                    .size(size)
+                    .into()
             }))
             .spacing(20.0)
             .into()

@@ -128,7 +128,7 @@ impl State {
         let fab = Fab {
             icon: EDIT.to_string().into_fragment(),
             label: "Edit".into_fragment(),
-            style: iced_m3::widget::fab::Style::TonalPrimary,
+            style: iced_m3::widget::fab::Style::fab_tonal(&self.theme, Accent::Primary),
             on_press: OnPress::Direct(Message::Noop),
         };
 

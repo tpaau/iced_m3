@@ -5,9 +5,10 @@ pub const EDGE_SPACING: f32 = 16.0;
 
 use crate::{
     style::Elevation,
-    theme::{Accent, ColorScheme},
     widget::{OnPress, button},
 };
+
+pub type Style = button::Style;
 
 #[derive(Default, Clone, Copy)]
 pub enum Size {
@@ -123,30 +124,6 @@ impl<'a> From<Content<'a>> for button::Content<'a> {
     }
 }
 
-#[derive(Default, Clone, Copy)]
-pub enum Style {
-    #[default]
-    TonalPrimary,
-    TonalSecondary,
-    TonalTertiary,
-    Primary,
-    Secondary,
-    Tertiary,
-}
-
-impl Style {
-    fn into_button_style(self, theme: &(impl ColorScheme + ?Sized)) -> button::Style {
-        match self {
-            Style::TonalPrimary => button::Style::tonal(theme, Accent::Primary),
-            Style::TonalSecondary => button::Style::tonal(theme, Accent::Secondary),
-            Style::TonalTertiary => button::Style::tonal(theme, Accent::Tertiary),
-            Style::Primary => button::Style::filled(theme, Accent::Primary),
-            Style::Secondary => button::Style::filled(theme, Accent::Secondary),
-            Style::Tertiary => button::Style::filled(theme, Accent::Tertiary),
-        }
-    }
-}
-
 pub struct Fab<'a, Message, Renderer = iced_widget::Renderer>
 where
     Message: 'a + Clone,
@@ -154,7 +131,7 @@ where
 {
     content: Content<'a>,
     size: Size,
-    style: button::Style,
+    style: Style,
     label_font: Option<Renderer::Font>,
     icon_font: Option<Renderer::Font>,
     on_press: OnPress<'a, Message>,
@@ -166,16 +143,11 @@ where
     Renderer: iced::advanced::text::Renderer,
 {
     #[must_use]
-    pub fn new(
-        theme: &(impl ColorScheme + ?Sized),
-        style: Style,
-        content: Content<'a>,
-        on_press: OnPress<'a, Message>,
-    ) -> Self {
+    pub fn new(style: Style, content: Content<'a>, on_press: OnPress<'a, Message>) -> Self {
         Self {
             content,
             size: Size::default(),
-            style: style.into_button_style(theme),
+            style,
             label_font: None,
             icon_font: None,
             on_press: on_press,
