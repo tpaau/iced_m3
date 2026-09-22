@@ -24,8 +24,7 @@ pub use wrappers::*;
 
 use std::ops::RangeInclusive;
 
-use iced::{Element, advanced::text, border::Radius};
-use iced_widget::rule;
+use iced::{Element, advanced::text};
 
 use crate::{
     theme::{Accent, ColorScheme},
@@ -98,21 +97,6 @@ where
     f64: std::convert::From<T>,
 {
     slider::Slider::new(range, value, on_change, style)
-}
-
-#[must_use]
-pub fn spacer<'a, Message>(theme: &'a dyn ColorScheme) -> Element<'a, Message>
-where
-    Message: 'a,
-{
-    rule::horizontal(1.0)
-        .style(|_| rule::Style {
-            color: theme.outline_variant(),
-            radius: Radius::default(),
-            fill_mode: rule::FillMode::Full,
-            snap: true,
-        })
-        .into()
 }
 
 #[must_use]

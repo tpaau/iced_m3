@@ -300,7 +300,11 @@ where
                             }
                         }
                         Entry::Separator => {
-                            let separator = container(spacer(theme))
+                            let color = match vibrant {
+                                true => theme.tertiary().scale_alpha(DIM_ALPHA),
+                                false => theme.outline_variant(),
+                            };
+                            let separator = container(spacer(color))
                                 .width(Length::Fill)
                                 .padding(padding::horizontal(8.0).vertical(2.0))
                                 .into();

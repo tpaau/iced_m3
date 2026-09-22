@@ -37,7 +37,7 @@ pub struct Style {
 
 impl Style {
     #[must_use]
-    pub fn elevated(theme: &dyn ColorScheme) -> Self {
+    pub fn elevated(theme: &(impl ColorScheme + ?Sized)) -> Self {
         let container_color = theme.surface_container_low();
         Self {
             container_color,
@@ -50,7 +50,7 @@ impl Style {
     }
 
     #[must_use]
-    pub fn filled(theme: &dyn ColorScheme) -> Self {
+    pub fn filled(theme: &(impl ColorScheme + ?Sized)) -> Self {
         let container_color = theme.surface_container_highest();
         Self {
             container_color,
@@ -63,7 +63,7 @@ impl Style {
     }
 
     #[must_use]
-    pub fn outlined(theme: &dyn ColorScheme) -> Self {
+    pub fn outlined(theme: &(impl ColorScheme + ?Sized)) -> Self {
         let container_color = theme.surface();
         Self {
             container_color,
