@@ -435,15 +435,16 @@ where
 
         let rail_y = bounds.y + bounds.height / 2.0;
         let rail_height = self.size.rail_height();
+        let rail_bounds = Rectangle {
+            x: bounds.x + offset + HANDLE_WIDTH_IDLE / 2.0 + HANDLE_GAP,
+            y: rail_y - rail_height / 2.0,
+            width: bounds.width - offset - HANDLE_WIDTH_IDLE / 2.0 - HANDLE_GAP,
+            height: rail_height,
+        };
 
         renderer.fill_quad(
             renderer::Quad {
-                bounds: Rectangle {
-                    x: bounds.x + offset + HANDLE_WIDTH_IDLE / 2.0 + HANDLE_GAP,
-                    y: rail_y - rail_height / 2.0,
-                    width: bounds.width - offset - HANDLE_WIDTH_IDLE / 2.0 - HANDLE_GAP,
-                    height: rail_height,
-                },
+                bounds: rail_bounds,
                 border: Border::default().rounded(Radius {
                     top_left: INNER_CORNER_RADIUS,
                     top_right: self.size.corner_radius(),
@@ -474,36 +475,29 @@ where
             self.theme.primary(),
         );
 
+        renderer.with_layer(rail_bounds, |renderer| {
+            renderer.fill_quad(
+                renderer::Quad {
+                    bounds: Rectangle {
+                        x: bounds.x + bounds.width
+                            - STOP_INDICATOR_TRAILING_SPACE
+                            - STOP_INDICATOR_SIZE,
+                        y: rail_y - STOP_INDICATOR_SIZE / 2.0,
+                        width: STOP_INDICATOR_SIZE,
+                        height: STOP_INDICATOR_SIZE,
+                    },
+                    border: Border::default().rounded(f32::MAX),
+                    ..renderer::Quad::default()
+                },
+                self.theme.primary(),
+            );
+        });
+
         let handle_width = match status {
             Status::Active | Status::Hovered => HANDLE_WIDTH_IDLE,
             Status::Dragged => HANDLE_WIDTH_DRAGGED,
         };
-
-        // TODO: Clip it instead of doing whatever the fuck this is
         let handle_x = bounds.x + offset - handle_width / 2.0;
-        let stop_indicator_width = (bounds.x + bounds.width
-            - STOP_INDICATOR_TRAILING_SPACE
-            - STOP_INDICATOR_SIZE
-            - handle_x
-            - HANDLE_GAP
-            + 1.0)
-            .clamp(0.0, STOP_INDICATOR_SIZE);
-        renderer.fill_quad(
-            renderer::Quad {
-                bounds: Rectangle {
-                    x: bounds.x + bounds.width
-                        - STOP_INDICATOR_TRAILING_SPACE
-                        - stop_indicator_width,
-                    y: rail_y - STOP_INDICATOR_SIZE / 2.0,
-                    width: stop_indicator_width,
-                    height: STOP_INDICATOR_SIZE,
-                },
-                border: Border::default().rounded(f32::MAX),
-                ..renderer::Quad::default()
-            },
-            self.theme.primary(),
-        );
-
         renderer.fill_quad(
             renderer::Quad {
                 bounds: Rectangle {
