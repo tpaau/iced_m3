@@ -2,10 +2,10 @@ use std::sync::LazyLock;
 
 use iced::{
     Element, Font, Length, Task,
-    widget::{bottom_right, column, container, text},
+    widget::{bottom_right, column, container, text::IntoFragment},
 };
 use iced_m3::{
-    theme::{ColorScheme, Theme},
+    theme::{Accent, ColorScheme, Theme},
     widget::fab_menu,
 };
 
@@ -60,13 +60,20 @@ impl State {
                     icon: Some(&*FOLDER_SHARED),
                 },
             ],
-            &|opened| if opened { *CLOSE } else { *ADD },
+            &|opened| {
+                if opened {
+                    CLOSE.into_fragment()
+                } else {
+                    ADD.into_fragment()
+                }
+            },
             &self.theme,
+            Accent::default(),
         )
         .icon_font(fonts::icons_filled());
 
         let content = column![
-            text(APP_NAME)
+            iced::widget::text(APP_NAME)
                 .font(fonts::text_bold())
                 .color(self.theme.on_surface())
                 .size(20.0),

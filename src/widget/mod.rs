@@ -24,11 +24,11 @@ pub use wrappers::*;
 
 use std::ops::RangeInclusive;
 
-use iced::{Element, border::Radius};
+use iced::{Element, advanced::text, border::Radius};
 use iced_widget::rule;
 
 use crate::{
-    theme::ColorScheme,
+    theme::{Accent, ColorScheme},
     widget::{
         button::Button, card::Card, dialog::Dialog, fab::Fab, fab_menu::FABMenu, navbar::Navbar,
         navrail::NavRail, progress_bar::ProgressBar, switch::Switch, text_input::TextInput,
@@ -62,25 +62,26 @@ pub fn navbar<'a, Message, Theme, Renderer>(
 
 #[must_use]
 pub fn button<'a, Message>(
-    theme: &'a dyn ColorScheme,
+    style: button::Style,
     content: button::Content<'a>,
 ) -> Button<'a, Message>
 where
     Message: Clone,
 {
-    Button::new(theme, content)
+    Button::new(style, content)
 }
 
 #[must_use]
 pub fn fab_menu<'a, Message, I>(
     entries: I,
-    icon: &'a dyn Fn(bool) -> char,
-    theme: &'a dyn ColorScheme,
+    icon: &'a dyn Fn(bool) -> text::Fragment<'a>,
+    theme: &impl ColorScheme,
+    accent: Accent,
 ) -> FABMenu<'a, Message>
 where
     I: IntoIterator<Item = fab_menu::Entry<'a, Message>>,
 {
-    FABMenu::new(entries, icon, theme)
+    FABMenu::new(entries, icon, accent, theme)
 }
 
 #[must_use]
@@ -130,14 +131,15 @@ pub fn progress_bar(style: progress_bar::Style) -> ProgressBar {
 
 #[must_use]
 pub fn fab<'a, Message>(
-    theme: &'a dyn ColorScheme,
+    theme: &(impl ColorScheme + ?Sized),
+    style: fab::Style,
     content: fab::Content<'a>,
     on_press: OnPress<'a, Message>,
 ) -> Fab<'a, Message>
 where
     Message: 'a + Clone,
 {
-    Fab::new(theme, content, on_press)
+    Fab::new(theme, style, content, on_press)
 }
 
 #[must_use]

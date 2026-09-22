@@ -172,9 +172,8 @@ where
             let mut content = Vec::with_capacity(value.buttons.len() + 1);
             content.push(space().width(Length::Fill).into());
             content.extend(value.buttons.into_iter().map(|b| {
-                crate::widget::button(value.theme, button::Content::Label(b.label.into()))
+                crate::widget::button(b.style, button::Content::Label(b.label.into()))
                     .label_font_maybe(value.button_label_font)
-                    .style(b.style)
                     .on_press_maybe(b.on_press)
                     .into()
             }));

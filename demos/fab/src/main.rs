@@ -48,10 +48,14 @@ impl State {
         };
         let fabs = row(sizes.into_iter().map(|size| {
             column(styles.into_iter().map(|style| {
-                fab(&self.theme, content.clone(), OnPress::Direct(Message::Noop))
-                    .style(style)
-                    .size(size)
-                    .into()
+                fab(
+                    &self.theme,
+                    style,
+                    content.clone(),
+                    OnPress::Direct(Message::Noop),
+                )
+                .size(size)
+                .into()
             }))
             .spacing(20.0)
             .into()
@@ -64,10 +68,14 @@ impl State {
         };
         let extended_fabs = row(sizes.into_iter().map(|size| {
             column(styles.into_iter().map(|style| {
-                fab(&self.theme, content.clone(), OnPress::Direct(Message::Noop))
-                    .style(style)
-                    .size(size)
-                    .into()
+                fab(
+                    &self.theme,
+                    style,
+                    content.clone(),
+                    OnPress::Direct(Message::Noop),
+                )
+                .size(size)
+                .into()
             }))
             .spacing(20.0)
             .into()

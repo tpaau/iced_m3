@@ -2,16 +2,13 @@ use iced::{Alignment, Color, Element, Length, Padding, border::Radius, padding};
 use iced_widget::{center, row, text};
 
 use crate::{
-    style::{
-        DISABLED_STATE_LAYER_OPACITY, Elevation, HOVER_STATE_LAYER_OPACITY,
-        PRESSED_STATE_LAYER_OPACITY, StateLayer, mix_colors, shadow,
-    },
+    style::{DISABLED_STATE_LAYER_OPACITY, Elevation, StateLayer, mix_colors, shadow},
     theme::{Accent, ColorScheme},
     widget::{OnPress, icon},
 };
 
 const DISABLED_CONTAINER_OPACITY: f32 = 0.1;
-const DISABLED_LABEL_OPACITY: f32 = DISABLED_STATE_LAYER_OPACITY;
+const DISABLED_CONTENT_OPACITY: f32 = DISABLED_STATE_LAYER_OPACITY;
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct Outline {
@@ -32,6 +29,7 @@ impl Default for Outline {
 pub struct StateStyle {
     pub container: Option<Color>,
     pub label: Color,
+    // FIX: This is currently unused
     pub icon: Color,
     pub outline: Outline,
 }
@@ -46,12 +44,12 @@ pub struct ElevationStates {
 }
 
 impl ElevationStates {
-    pub fn elevation(&self, status: iced_widget::button::Status) -> &Elevation {
+    pub fn elevation(&self, status: iced_widget::button::Status) -> Elevation {
         match status {
-            iced_widget::button::Status::Active => &self.idle,
-            iced_widget::button::Status::Hovered => &self.hover,
-            iced_widget::button::Status::Pressed => &self.press,
-            iced_widget::button::Status::Disabled => &self.disabled,
+            iced_widget::button::Status::Active => self.idle,
+            iced_widget::button::Status::Hovered => self.hover,
+            iced_widget::button::Status::Pressed => self.press,
+            iced_widget::button::Status::Disabled => self.disabled,
         }
     }
 }
@@ -69,7 +67,7 @@ impl ElevationStates {
 }
 
 #[derive(Clone, Copy, PartialEq)]
-pub struct StyleNew {
+pub struct Style {
     pub regular: StateStyle,
     pub unselected: StateStyle,
     pub selected: StateStyle,
@@ -82,12 +80,12 @@ pub struct StyleNew {
     pub state_layer_selected: StateLayer,
 }
 
-impl StyleNew {
-    pub fn elevated(theme: &impl ColorScheme, accent: Accent) -> Self {
+impl Style {
+    pub fn elevated(theme: &(impl ColorScheme + ?Sized), accent: Accent) -> Self {
         let disabled = StateStyle {
-            container: Some(theme.on_surface()),
-            label: theme.on_surface(),
-            icon: theme.on_surface(),
+            container: Some(theme.on_surface().scale_alpha(DISABLED_CONTAINER_OPACITY)),
+            label: theme.on_surface().scale_alpha(DISABLED_CONTENT_OPACITY),
+            icon: theme.on_surface().scale_alpha(DISABLED_CONTENT_OPACITY),
             outline: Outline::default(),
         };
         Self {
@@ -125,11 +123,11 @@ impl StyleNew {
         }
     }
 
-    pub fn filled(theme: &impl ColorScheme, accent: Accent) -> Self {
+    pub fn filled(theme: &(impl ColorScheme + ?Sized), accent: Accent) -> Self {
         let disabled = StateStyle {
-            container: Some(theme.on_surface()),
-            label: theme.on_surface(),
-            icon: theme.on_surface(),
+            container: Some(theme.on_surface().scale_alpha(DISABLED_CONTAINER_OPACITY)),
+            label: theme.on_surface().scale_alpha(DISABLED_CONTENT_OPACITY),
+            icon: theme.on_surface().scale_alpha(DISABLED_CONTENT_OPACITY),
             outline: Outline::default(),
         };
         Self {
@@ -161,11 +159,11 @@ impl StyleNew {
         }
     }
 
-    pub fn tonal(theme: &impl ColorScheme, accent: Accent) -> Self {
+    pub fn tonal(theme: &(impl ColorScheme + ?Sized), accent: Accent) -> Self {
         let disabled = StateStyle {
-            container: Some(theme.on_surface()),
-            label: theme.on_surface(),
-            icon: theme.on_surface(),
+            container: Some(theme.on_surface().scale_alpha(DISABLED_CONTAINER_OPACITY)),
+            label: theme.on_surface().scale_alpha(DISABLED_CONTENT_OPACITY),
+            icon: theme.on_surface().scale_alpha(DISABLED_CONTENT_OPACITY),
             outline: Outline::default(),
         };
         Self {
@@ -197,7 +195,7 @@ impl StyleNew {
         }
     }
 
-    pub fn outlined(theme: &impl ColorScheme) -> Self {
+    pub fn outlined(theme: &(impl ColorScheme + ?Sized)) -> Self {
         Self {
             regular: StateStyle {
                 container: None,
@@ -228,8 +226,8 @@ impl StyleNew {
             },
             disabled: StateStyle {
                 container: None,
-                label: theme.on_surface(),
-                icon: theme.on_surface(),
+                label: theme.on_surface().scale_alpha(DISABLED_CONTENT_OPACITY),
+                icon: theme.on_surface().scale_alpha(DISABLED_CONTENT_OPACITY),
                 outline: Outline {
                     width: 1.0,
                     color: theme.outline_variant(),
@@ -237,17 +235,17 @@ impl StyleNew {
             },
             disabled_unselected: StateStyle {
                 container: None,
-                label: theme.on_surface(),
-                icon: theme.on_surface(),
+                label: theme.on_surface().scale_alpha(DISABLED_CONTENT_OPACITY),
+                icon: theme.on_surface().scale_alpha(DISABLED_CONTENT_OPACITY),
                 outline: Outline {
                     width: 1.0,
                     color: theme.outline_variant(),
                 },
             },
             disabled_selected: StateStyle {
-                container: Some(theme.on_surface()),
-                label: theme.on_surface(),
-                icon: theme.on_surface(),
+                container: Some(theme.on_surface().scale_alpha(DISABLED_CONTAINER_OPACITY)),
+                label: theme.on_surface().scale_alpha(DISABLED_CONTENT_OPACITY),
+                icon: theme.on_surface().scale_alpha(DISABLED_CONTENT_OPACITY),
                 outline: Outline {
                     width: 1.0,
                     color: theme.outline_variant(),
@@ -260,7 +258,7 @@ impl StyleNew {
         }
     }
 
-    pub fn text(theme: &impl ColorScheme, accent: Accent) -> Self {
+    pub fn text(theme: &(impl ColorScheme + ?Sized), accent: Accent) -> Self {
         let regular = StateStyle {
             container: None,
             label: accent.color(theme),
@@ -268,9 +266,9 @@ impl StyleNew {
             outline: Outline::default(),
         };
         let disabled = StateStyle {
-            container: Some(theme.on_surface()),
-            label: theme.on_surface(),
-            icon: theme.on_surface(),
+            container: Some(theme.on_surface().scale_alpha(DISABLED_CONTAINER_OPACITY)),
+            label: theme.on_surface().scale_alpha(DISABLED_CONTENT_OPACITY),
+            icon: theme.on_surface().scale_alpha(DISABLED_CONTENT_OPACITY),
             outline: Outline::default(),
         };
         Self {
@@ -313,223 +311,6 @@ impl StyleNew {
                 },
                 None => &self.regular,
             },
-        }
-    }
-
-    pub fn container_color(&self, disabled: bool, selected: Option<bool>) -> Option<Color> {
-        self.state_style(disabled, selected).container
-    }
-
-    pub fn label_color(&self, disabled: bool, selected: Option<bool>) -> Color {
-        self.state_style(disabled, selected).label
-    }
-
-    pub fn icon_color(&self, disabled: bool, selected: Option<bool>) -> Color {
-        self.state_style(disabled, selected).icon
-    }
-
-    pub fn outline(&self, disabled: bool, selected: Option<bool>) -> Outline {
-        self.state_style(disabled, selected).outline
-    }
-}
-
-#[derive(Clone, Copy)]
-pub enum Style {
-    Elevated(Accent),
-    Filled(Accent),
-    Tonal(Accent),
-    Outlined,
-    Text(Accent),
-    Custom {
-        surface: Option<Color>,
-        content: Color,
-        outline: Option<Color>,
-        surface_disabled: Option<Color>,
-        content_disabled: Color,
-        outline_disabled: Option<Color>,
-    },
-}
-
-impl Default for Style {
-    fn default() -> Self {
-        Self::Filled(Accent::default())
-    }
-}
-
-impl Style {
-    // surface, content, outline
-    fn colors(
-        &self,
-        status: iced_widget::button::Status,
-        selected: Option<bool>,
-        theme: &(impl ColorScheme + ?Sized),
-    ) -> (Color, Color, Option<Color>) {
-        let state_layer_alpha = match status {
-            iced_widget::button::Status::Active => 0.0,
-            iced_widget::button::Status::Hovered => HOVER_STATE_LAYER_OPACITY,
-            iced_widget::button::Status::Pressed => PRESSED_STATE_LAYER_OPACITY,
-            iced_widget::button::Status::Disabled => 0.0,
-        };
-
-        match self {
-            Style::Elevated(accent) => {
-                if status == iced_widget::button::Status::Disabled {
-                    (
-                        theme.on_surface().scale_alpha(DISABLED_CONTAINER_OPACITY),
-                        theme.on_surface().scale_alpha(DISABLED_LABEL_OPACITY),
-                        None,
-                    )
-                } else {
-                    let content = match selected.unwrap_or(false) {
-                        true => match accent {
-                            Accent::Primary => theme.on_primary(),
-                            Accent::Secondary => theme.on_secondary(),
-                            Accent::Tertiary => theme.on_tertiary(),
-                        },
-                        false => match accent {
-                            Accent::Primary => theme.primary(),
-                            Accent::Secondary => theme.secondary(),
-                            Accent::Tertiary => theme.tertiary(),
-                        },
-                    };
-                    let surface = match selected.unwrap_or(false) {
-                        true => match accent {
-                            Accent::Primary => theme.primary(),
-                            Accent::Secondary => theme.secondary(),
-                            Accent::Tertiary => theme.tertiary(),
-                        },
-                        false => theme.surface_container_low(),
-                    };
-                    let surface = mix_colors(surface, content, state_layer_alpha);
-                    (surface, content, None)
-                }
-            }
-            Style::Filled(accent) => {
-                if status == iced_widget::button::Status::Disabled {
-                    (
-                        theme.on_surface().scale_alpha(DISABLED_CONTAINER_OPACITY),
-                        theme.on_surface().scale_alpha(DISABLED_LABEL_OPACITY),
-                        None,
-                    )
-                } else {
-                    let content = match selected.unwrap_or(true) {
-                        true => match accent {
-                            Accent::Primary => theme.on_primary(),
-                            Accent::Secondary => theme.on_secondary(),
-                            Accent::Tertiary => theme.on_tertiary(),
-                        },
-                        false => theme.on_surface_variant(),
-                    };
-                    let surface = match selected.unwrap_or(true) {
-                        true => match accent {
-                            Accent::Primary => theme.primary(),
-                            Accent::Secondary => theme.secondary(),
-                            Accent::Tertiary => theme.tertiary(),
-                        },
-                        false => theme.surface_container(),
-                    };
-                    let surface = mix_colors(surface, content, state_layer_alpha);
-                    (surface, content, None)
-                }
-            }
-            Style::Tonal(accent) => {
-                if status == iced_widget::button::Status::Disabled {
-                    (
-                        theme.on_surface().scale_alpha(DISABLED_CONTAINER_OPACITY),
-                        theme.on_surface().scale_alpha(DISABLED_LABEL_OPACITY),
-                        None,
-                    )
-                } else {
-                    let content = match selected.unwrap_or(false) {
-                        true => match accent {
-                            Accent::Primary => theme.on_primary(),
-                            Accent::Secondary => theme.on_secondary(),
-                            Accent::Tertiary => theme.on_tertiary(),
-                        },
-                        false => match accent {
-                            Accent::Primary => theme.on_primary_container(),
-                            Accent::Secondary => theme.on_secondary_container(),
-                            Accent::Tertiary => theme.on_tertiary_container(),
-                        },
-                    };
-                    let surface = match selected.unwrap_or(false) {
-                        true => match accent {
-                            Accent::Primary => theme.primary(),
-                            Accent::Secondary => theme.secondary(),
-                            Accent::Tertiary => theme.tertiary(),
-                        },
-                        false => match accent {
-                            Accent::Primary => theme.primary_container(),
-                            Accent::Secondary => theme.secondary_container(),
-                            Accent::Tertiary => theme.tertiary_container(),
-                        },
-                    };
-                    let surface = mix_colors(surface, content, state_layer_alpha);
-                    (surface, content, None)
-                }
-            }
-            Style::Outlined => {
-                if status == iced_widget::button::Status::Disabled {
-                    (
-                        theme.on_surface().scale_alpha(DISABLED_CONTAINER_OPACITY),
-                        theme.on_surface().scale_alpha(DISABLED_LABEL_OPACITY),
-                        Some(theme.outline_variant()),
-                    )
-                } else {
-                    let content = match selected.unwrap_or(false) {
-                        true => theme.inverse_on_surface(),
-                        false => theme.on_surface_variant(),
-                    };
-                    let surface = match selected.unwrap_or(false) {
-                        true => mix_colors(theme.inverse_surface(), content, state_layer_alpha),
-                        false => content.scale_alpha(state_layer_alpha),
-                    };
-                    let outline = match selected.unwrap_or(false) {
-                        true => None,
-                        false => Some(theme.outline_variant()),
-                    };
-                    (surface, content, outline)
-                }
-            }
-            Style::Text(accent) => {
-                if status == iced_widget::button::Status::Disabled {
-                    (
-                        theme.on_surface().scale_alpha(DISABLED_CONTAINER_OPACITY),
-                        theme.on_surface().scale_alpha(DISABLED_LABEL_OPACITY),
-                        None,
-                    )
-                } else {
-                    let content = match accent {
-                        Accent::Primary => theme.primary(),
-                        Accent::Secondary => theme.secondary(),
-                        Accent::Tertiary => theme.tertiary(),
-                    };
-                    let surface = content.scale_alpha(state_layer_alpha);
-                    (surface, content, None)
-                }
-            }
-            Style::Custom {
-                surface,
-                content,
-                outline,
-                surface_disabled,
-                content_disabled,
-                outline_disabled,
-            } => {
-                if status == iced_widget::button::Status::Disabled {
-                    (
-                        surface_disabled.unwrap_or(Color::TRANSPARENT),
-                        *content_disabled,
-                        *outline_disabled,
-                    )
-                } else {
-                    let surface = match surface {
-                        Some(surface) => mix_colors(*surface, *content, state_layer_alpha),
-                        None => content.scale_alpha(state_layer_alpha),
-                    };
-                    (surface, *content, *outline)
-                }
-            }
         }
     }
 }
@@ -792,13 +573,12 @@ impl CornerStyle {
 pub(crate) fn style(
     status: iced_widget::button::Status,
     selected: Option<bool>,
-    elevation: Elevation,
     button_size: Size,
-    button_style: Style,
+    style: Style,
     corner_style: CornerStyle,
-    theme: &(impl ColorScheme + ?Sized),
 ) -> iced_widget::button::Style {
-    let (surface, content, outline) = button_style.colors(status, selected, theme);
+    let is_disabled = status == iced_widget::button::Status::Disabled;
+    let state_style = style.state_style(is_disabled, selected);
     let corner_radius = if status == iced_widget::button::Status::Pressed {
         corner_style.pressed(&button_size, selected.unwrap_or(false))
     } else {
@@ -806,15 +586,36 @@ pub(crate) fn style(
     };
     let border = iced::Border {
         radius: corner_radius,
-        color: outline.unwrap_or(Color::TRANSPARENT),
-        width: if outline.is_some() { 1.0 } else { 0.0 },
+        color: state_style.outline.color,
+        width: state_style.outline.width,
+    };
+    let state_layer_color = match status {
+        iced_widget::button::Status::Active | iced_widget::button::Status::Disabled => {
+            style.state_layer.idle
+        }
+        iced_widget::button::Status::Hovered => style.state_layer.hovered,
+        iced_widget::button::Status::Pressed => style.state_layer.pressed,
+    };
+    let container_color = match state_style.container {
+        Some(color) => mix_colors(
+            color,
+            Color {
+                a: 1.0,
+                ..state_layer_color
+            },
+            state_layer_color.a,
+        ),
+        None => state_layer_color,
     };
 
     iced_widget::button::Style {
-        background: Some(iced::Background::Color(surface)),
-        text_color: content,
+        background: Some(iced::Background::Color(container_color)),
+        text_color: state_style.label,
         border,
-        shadow: shadow(theme.shadow(), elevation),
+        shadow: shadow(
+            style.elevation.shadow_color,
+            style.elevation.elevation(status),
+        ),
         snap: true,
     }
 }
@@ -899,15 +700,14 @@ pub struct Button<'a, Message>
 where
     Message: Clone,
 {
+    style: Style,
     on_press: Option<OnPress<'a, Message>>,
     clip: bool,
-    theme: &'a dyn ColorScheme,
     content: Content<'a>,
     label_font: Option<iced::Font>,
     icon_font: Option<iced::Font>,
     size: Size,
     corner_style: CornerStyle,
-    style: Style,
     elevation: Elevation,
     selected: Option<bool>,
 }
@@ -917,17 +717,16 @@ where
     Message: Clone,
 {
     #[must_use]
-    pub fn new(theme: &'a dyn ColorScheme, content: Content<'a>) -> Self {
+    pub fn new(style: Style, content: Content<'a>) -> Self {
         Self {
+            style,
             on_press: None,
             clip: false,
-            theme,
             content,
             label_font: None,
             icon_font: None,
             size: Size::default(),
             corner_style: CornerStyle::default(),
-            style: Style::default(),
             elevation: Elevation::default(),
             selected: None,
         }
@@ -966,12 +765,6 @@ where
     #[must_use]
     pub fn corner_style(mut self, corner_style: CornerStyle) -> Self {
         self.corner_style = corner_style;
-        self
-    }
-
-    #[must_use]
-    pub fn style(mut self, style: Style) -> Self {
-        self.style = style;
         self
     }
 
@@ -1040,11 +833,9 @@ where
                 style(
                     status,
                     button.selected,
-                    button.elevation,
                     button.size,
                     button.style,
                     button.corner_style,
-                    button.theme,
                 )
             });
 

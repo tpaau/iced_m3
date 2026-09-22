@@ -12,7 +12,7 @@ pub enum Accent {
 }
 
 impl Accent {
-    pub fn color(&self, theme: &impl ColorScheme) -> Color {
+    pub fn color(&self, theme: &(impl ColorScheme + ?Sized)) -> Color {
         match self {
             Accent::Primary => theme.primary(),
             Accent::Secondary => theme.secondary(),
@@ -20,7 +20,7 @@ impl Accent {
         }
     }
 
-    pub fn on_color(&self, theme: &impl ColorScheme) -> Color {
+    pub fn on_color(&self, theme: &(impl ColorScheme + ?Sized)) -> Color {
         match self {
             Accent::Primary => theme.on_primary(),
             Accent::Secondary => theme.on_secondary(),
@@ -28,7 +28,7 @@ impl Accent {
         }
     }
 
-    pub fn color_container(&self, theme: &impl ColorScheme) -> Color {
+    pub fn color_container(&self, theme: &(impl ColorScheme + ?Sized)) -> Color {
         match self {
             Accent::Primary => theme.primary_container(),
             Accent::Secondary => theme.secondary_container(),
@@ -36,7 +36,7 @@ impl Accent {
         }
     }
 
-    pub fn on_color_container(&self, theme: &impl ColorScheme) -> Color {
+    pub fn on_color_container(&self, theme: &(impl ColorScheme + ?Sized)) -> Color {
         match self {
             Accent::Primary => theme.on_primary_container(),
             Accent::Secondary => theme.on_secondary_container(),
@@ -44,7 +44,7 @@ impl Accent {
         }
     }
 
-    pub fn color_fixed(&self, theme: &impl ColorScheme) -> Color {
+    pub fn color_fixed(&self, theme: &(impl ColorScheme + ?Sized)) -> Color {
         match self {
             Accent::Primary => theme.primary_fixed(),
             Accent::Secondary => theme.secondary_fixed(),
@@ -52,7 +52,7 @@ impl Accent {
         }
     }
 
-    pub fn on_color_fixed(&self, theme: &impl ColorScheme) -> Color {
+    pub fn on_color_fixed(&self, theme: &(impl ColorScheme + ?Sized)) -> Color {
         match self {
             Accent::Primary => theme.on_primary_fixed(),
             Accent::Secondary => theme.on_secondary_fixed(),
@@ -60,7 +60,7 @@ impl Accent {
         }
     }
 
-    pub fn color_fixed_dim(&self, theme: &impl ColorScheme) -> Color {
+    pub fn color_fixed_dim(&self, theme: &(impl ColorScheme + ?Sized)) -> Color {
         match self {
             Accent::Primary => theme.primary_fixed_dim(),
             Accent::Secondary => theme.secondary_fixed_dim(),
@@ -68,7 +68,7 @@ impl Accent {
         }
     }
 
-    pub fn on_color_fixed_variant(&self, theme: &impl ColorScheme) -> Color {
+    pub fn on_color_fixed_variant(&self, theme: &(impl ColorScheme + ?Sized)) -> Color {
         match self {
             Accent::Primary => theme.on_primary_fixed_variant(),
             Accent::Secondary => theme.on_secondary_fixed_variant(),

@@ -4,10 +4,10 @@ use iced::{
 };
 use iced_m3::{
     style::StateLayer,
-    theme::{ColorScheme, Mode, Theme},
+    theme::{Accent, ColorScheme, Mode, Theme},
     widget::{
         OnPress,
-        button::Content,
+        button::{self, Content},
         card::{Interaction, MAX_CARD_BETWEEN_PADDING, Style},
     },
 };
@@ -58,12 +58,21 @@ impl<'a> State<'a> {
             };
 
         let buttons = row![
-            iced_m3::widget::button(&self.theme, Content::Label("Non-interactive".into()))
-                .on_press(Message::SetNonInteractive),
-            iced_m3::widget::button(&self.theme, Content::Label("Disabled".into()))
-                .on_press(Message::SetDisabled),
-            iced_m3::widget::button(&self.theme, Content::Label("Clickable".into()))
-                .on_press(Message::SetPressable),
+            iced_m3::widget::button(
+                button::Style::elevated(&self.theme, Accent::default()),
+                Content::Label("Non-interactive".into())
+            )
+            .on_press(Message::SetNonInteractive),
+            iced_m3::widget::button(
+                button::Style::elevated(&self.theme, Accent::default()),
+                Content::Label("Disabled".into())
+            )
+            .on_press(Message::SetDisabled),
+            iced_m3::widget::button(
+                button::Style::elevated(&self.theme, Accent::default()),
+                Content::Label("Clickable".into())
+            )
+            .on_press(Message::SetPressable),
         ]
         .spacing(4.0);
 

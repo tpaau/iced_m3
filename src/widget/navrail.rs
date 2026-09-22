@@ -1,17 +1,17 @@
 use iced::{
-    Alignment, Element, Length, Padding, Pixels,
+    Alignment, Border, Color, Element, Length, Padding, Pixels,
     advanced::{svg, text},
     padding,
 };
 use iced_widget::{column, container, row, space, text::LineHeight};
 
 use crate::{
-    style::Elevation,
+    style::{HOVER_STATE_LAYER_OPACITY, PRESSED_STATE_LAYER_OPACITY, mix_colors},
     theme::ColorScheme,
     widget::{
         self, BadgeIcon, OnPress,
-        button::{self},
         common_icons::{MENU, MENU_OPEN},
+        fab,
     },
 };
 
@@ -306,18 +306,6 @@ where
         false => icon,
     };
 
-    let style = button::Style::Custom {
-        surface: active.then_some(theme.secondary_container()),
-        content: if active {
-            theme.on_secondary_container()
-        } else {
-            theme.on_surface()
-        },
-        outline: None,
-        surface_disabled: None,
-        content_disabled: theme.on_surface(),
-        outline_disabled: None,
-    };
     let (width, height) = match expanded {
         true => (Length::Shrink, Length::Fixed(INDICATOR_HORIZONTAL_HEIGHT)),
         false => (
@@ -327,19 +315,32 @@ where
     };
     let button = iced_widget::button(container(content).center_y(Length::Fill))
         .padding(padding::horizontal(INDICATOR_CONTENT_PADDING))
+        // FIX: Should use a custom widget, not a styled button!
         .style(move |_, status| {
-            crate::widget::button::style(
-                status,
-                None,
-                Elevation::Level0,
-                button::Size::Medium,
-                style,
-                button::CornerStyle::Custom {
-                    resting: f32::MAX.into(),
-                    pressed: f32::MAX.into(),
-                },
-                theme,
-            )
+            let container_color = active.then_some(theme.secondary_container());
+            let content_color = match active {
+                true => theme.on_secondary_container(),
+                false => theme.on_surface(),
+            };
+            let state_layer_opacity = match status {
+                iced_widget::button::Status::Active => 0.0,
+                iced_widget::button::Status::Hovered => HOVER_STATE_LAYER_OPACITY,
+                iced_widget::button::Status::Pressed => PRESSED_STATE_LAYER_OPACITY,
+                iced_widget::button::Status::Disabled => 0.0,
+            };
+            let background = container_color
+                .map(|c| mix_colors(c, theme.on_secondary_container(), state_layer_opacity))
+                .unwrap_or(
+                    theme
+                        .on_secondary_container()
+                        .scale_alpha(state_layer_opacity),
+                );
+            iced_widget::button::Style {
+                background: Some(iced::Background::Color(background)),
+                text_color: content_color,
+                border: Border::default().rounded(f32::MAX),
+                ..Default::default()
+            }
         })
         .width(width)
         .height(height);
@@ -386,39 +387,27 @@ where
                 .style(|_, _| iced_widget::svg::Style {
                     color: Some(value.theme.on_surface()),
                 });
-            let style = button::Style::Custom {
-                surface: None,
-                content: value.theme.on_surface(),
-                outline: None,
-                surface_disabled: None,
-                content_disabled: value.theme.on_surface(),
-                outline_disabled: None,
-            };
-            let corner_style = button::CornerStyle::Custom {
-                resting: f32::MAX.into(),
-                pressed: f32::MAX.into(),
-            };
-            let size = button::Size::Custom {
-                width: Length::Shrink,
-                height: Length::Shrink,
-                spacing: 0.0,
-                padding: Padding::from(MENU_BUTTON_PADDING),
-                icon_size: MENU_ICON_SIZE,
-                font_size: 0.0,
-            };
 
             iced_widget::button(icon)
                 .padding(Padding::from(MENU_BUTTON_PADDING))
                 .style(move |_, status| {
-                    crate::widget::button::style(
-                        status,
-                        None,
-                        Elevation::default(),
-                        size,
-                        style,
-                        corner_style,
-                        value.theme,
-                    )
+                    let content_color = value.theme.on_surface();
+                    let state_layer_color = match status {
+                        iced_widget::button::Status::Active
+                        | iced_widget::button::Status::Disabled => Color::TRANSPARENT,
+                        iced_widget::button::Status::Hovered => {
+                            content_color.scale_alpha(HOVER_STATE_LAYER_OPACITY)
+                        }
+                        iced_widget::button::Status::Pressed => {
+                            content_color.scale_alpha(PRESSED_STATE_LAYER_OPACITY)
+                        }
+                    };
+                    iced_widget::button::Style {
+                        background: Some(iced::Background::Color(state_layer_color)),
+                        text_color: content_color,
+                        border: Border::default().rounded(f32::MAX),
+                        ..Default::default()
+                    }
                 })
                 .on_press((on_press)(expanded))
         });
@@ -438,10 +427,9 @@ where
                 false => widget::fab::Content::Reguar { icon: fab.icon },
             };
 
-            widget::fab(value.theme, content, fab.on_press)
+            widget::fab(value.theme, fab::Style::default(), content, fab.on_press)
                 .label_font_maybe(value.label_font)
                 .icon_font_maybe(value.icon_font)
-                .style(fab.style)
         });
         let fab = fab.map(|fab| {
             column![

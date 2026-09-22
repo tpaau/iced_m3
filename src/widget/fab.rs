@@ -134,15 +134,15 @@ pub enum Style {
     Tertiary,
 }
 
-impl From<Style> for button::Style {
-    fn from(value: Style) -> Self {
-        match value {
-            Style::TonalPrimary => button::Style::Tonal(Accent::Primary),
-            Style::TonalSecondary => button::Style::Tonal(Accent::Secondary),
-            Style::TonalTertiary => button::Style::Tonal(Accent::Tertiary),
-            Style::Primary => button::Style::Filled(Accent::Primary),
-            Style::Secondary => button::Style::Filled(Accent::Secondary),
-            Style::Tertiary => button::Style::Filled(Accent::Tertiary),
+impl Style {
+    fn into_button_style(self, theme: &(impl ColorScheme + ?Sized)) -> button::Style {
+        match self {
+            Style::TonalPrimary => button::Style::tonal(theme, Accent::Primary),
+            Style::TonalSecondary => button::Style::tonal(theme, Accent::Secondary),
+            Style::TonalTertiary => button::Style::tonal(theme, Accent::Tertiary),
+            Style::Primary => button::Style::filled(theme, Accent::Primary),
+            Style::Secondary => button::Style::filled(theme, Accent::Secondary),
+            Style::Tertiary => button::Style::filled(theme, Accent::Tertiary),
         }
     }
 }
@@ -154,10 +154,9 @@ where
 {
     content: Content<'a>,
     size: Size,
-    style: Style,
+    style: button::Style,
     label_font: Option<Renderer::Font>,
     icon_font: Option<Renderer::Font>,
-    theme: &'a dyn ColorScheme,
     on_press: OnPress<'a, Message>,
 }
 
@@ -168,17 +167,17 @@ where
 {
     #[must_use]
     pub fn new(
-        theme: &'a dyn ColorScheme,
+        theme: &(impl ColorScheme + ?Sized),
+        style: Style,
         content: Content<'a>,
         on_press: OnPress<'a, Message>,
     ) -> Self {
         Self {
             content,
             size: Size::default(),
-            style: Style::default(),
+            style: style.into_button_style(theme),
             label_font: None,
             icon_font: None,
-            theme,
             on_press: on_press,
         }
     }
@@ -220,20 +219,6 @@ where
         self.label_font = maybe_label_font;
         self
     }
-
-    #[must_use]
-    pub fn style(mut self, style: Style) -> Self {
-        self.style = style;
-        self
-    }
-
-    #[must_use]
-    pub fn style_maybe(self, maybe_style: Option<Style>) -> Self {
-        match maybe_style {
-            Some(style) => self.style(style),
-            None => self,
-        }
-    }
 }
 
 impl<'a, Message> From<Fab<'a, Message>> for Element<'a, Message>
@@ -242,11 +227,10 @@ where
 {
     fn from(value: Fab<'a, Message>) -> Self {
         let is_extended_fab = matches!(value.content, Content::Extended { icon: _, label: _ });
-        let button = crate::widget::button(value.theme, value.content.into())
+        let button = crate::widget::button(value.style, value.content.into())
             .corner_style(value.size.to_corner_style())
             .icon_font_maybe(value.icon_font)
             .label_font_maybe(value.label_font)
-            .style(value.style.into())
             .size(value.size.to_button_size(is_extended_fab))
             .elevation(Elevation::Level3);
 

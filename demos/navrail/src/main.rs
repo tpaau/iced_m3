@@ -6,7 +6,7 @@ use iced::{
     widget::{column, container, row, text::IntoFragment},
 };
 use iced_m3::{
-    theme::{ColorScheme, Mode, Theme},
+    theme::{Accent, ColorScheme, Mode, Theme},
     widget::{
         Badge, BadgeIcon, OnPress, button,
         navrail::{self, Fab, Item, ItemAlignment, Status},
@@ -145,12 +145,21 @@ impl State {
         let content = column![
             iced::widget::text("Alignment").color(self.theme.on_surface()),
             row![
-                button(&self.theme, button::Content::Label("Top".into()))
-                    .on_press(Message::SetAlignment(ItemAlignment::Top)),
-                button(&self.theme, button::Content::Label("Center".into()))
-                    .on_press(Message::SetAlignment(ItemAlignment::Center)),
-                button(&self.theme, button::Content::Label("Bottom".into()))
-                    .on_press(Message::SetAlignment(ItemAlignment::Bottom)),
+                button(
+                    button::Style::elevated(&self.theme, Accent::default()),
+                    button::Content::Label("Top".into())
+                )
+                .on_press(Message::SetAlignment(ItemAlignment::Top)),
+                button(
+                    button::Style::elevated(&self.theme, Accent::default()),
+                    button::Content::Label("Center".into())
+                )
+                .on_press(Message::SetAlignment(ItemAlignment::Center)),
+                button(
+                    button::Style::elevated(&self.theme, Accent::default()),
+                    button::Content::Label("Bottom".into())
+                )
+                .on_press(Message::SetAlignment(ItemAlignment::Bottom)),
             ]
             .spacing(8),
             row![

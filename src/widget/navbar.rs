@@ -214,6 +214,7 @@ where
             } else {
                 if compact {
                     let mut buttons = Vec::with_capacity(navbar.items.len());
+                    // TODO: Should use a custom widget instead
                     for (i, item) in navbar.items.iter().enumerate() {
                         let active = i == navbar.focused_index;
                         let label_color = if active {
