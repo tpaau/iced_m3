@@ -7,11 +7,10 @@ use iced_widget::{column, container, row, space, text::LineHeight};
 
 use crate::{
     style::{HOVER_STATE_LAYER_OPACITY, PRESSED_STATE_LAYER_OPACITY, mix_colors},
-    theme::{Accent, ColorScheme},
+    theme::ColorScheme,
     widget::{
         self, BadgeIcon, OnPress,
         common_icons::{MENU, MENU_OPEN},
-        fab,
     },
 };
 
@@ -427,13 +426,9 @@ where
                 false => widget::fab::Content::Reguar { icon: fab.icon },
             };
 
-            widget::fab(
-                fab::Style::fab_tonal(value.theme, Accent::Primary),
-                content,
-                fab.on_press,
-            )
-            .label_font_maybe(value.label_font)
-            .icon_font_maybe(value.icon_font)
+            widget::fab(fab.style, content, fab.on_press)
+                .label_font_maybe(value.label_font)
+                .icon_font_maybe(value.icon_font)
         });
         let fab = fab.map(|fab| {
             column![
