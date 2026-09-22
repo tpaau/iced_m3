@@ -1,7 +1,7 @@
 use std::ops::RangeInclusive;
 
 use iced::{
-    Border, Element, Event, Length, Point, Rectangle,
+    Border, Color, Element, Event, Length, Point, Rectangle,
     advanced::{Widget, layout, mouse},
     border::Radius,
     keyboard::{self, Key, key},
@@ -18,6 +18,7 @@ const INNER_CORNER_RADIUS: f32 = 2.0;
 const STOP_INDICATOR_SIZE: f32 = 4.0;
 const STOP_INDICATOR_TRAILING_SPACE: f32 = 4.0;
 
+// TODO: Should be a struct
 #[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
 pub enum Size {
     #[default]
@@ -95,6 +96,25 @@ enum Status {
     Dragged,
 }
 
+#[derive(Clone, Copy, PartialEq)]
+pub struct Style {
+    pub active_track: Color,
+    pub inactive_track: Color,
+    pub handle_color: Color,
+    pub stop_indicator: Color,
+}
+
+impl Style {
+    pub fn new(theme: &(impl ColorScheme + ?Sized)) -> Self {
+        Self {
+            active_track: theme.primary(),
+            inactive_track: theme.secondary_container(),
+            handle_color: theme.primary(),
+            stop_indicator: theme.primary(),
+        }
+    }
+}
+
 pub struct Slider<'a, T, Message> {
     range: RangeInclusive<T>,
     step: T,
@@ -104,7 +124,7 @@ pub struct Slider<'a, T, Message> {
     on_change: Box<dyn Fn(T) -> Message + 'a>,
     on_release: Option<Message>,
     width: Length,
-    theme: &'a dyn ColorScheme,
+    style: Style,
     size: Size,
     status: Option<Status>,
 }
@@ -114,12 +134,7 @@ where
     T: Copy + From<u8> + PartialOrd,
     Message: Clone,
 {
-    pub fn new<F>(
-        range: RangeInclusive<T>,
-        value: T,
-        on_change: F,
-        theme: &'a impl ColorScheme,
-    ) -> Self
+    pub fn new<F>(range: RangeInclusive<T>, value: T, on_change: F, style: Style) -> Self
     where
         F: 'a + Fn(T) -> Message,
     {
@@ -144,7 +159,7 @@ where
             on_change: Box::new(on_change),
             on_release: None,
             width: Length::Fill,
-            theme,
+            style,
             size: Size::default(),
             status: None,
         }
@@ -453,7 +468,7 @@ where
                 }),
                 ..renderer::Quad::default()
             },
-            self.theme.secondary_container(),
+            self.style.inactive_track,
         );
 
         renderer.fill_quad(
@@ -472,7 +487,7 @@ where
                 }),
                 ..renderer::Quad::default()
             },
-            self.theme.primary(),
+            self.style.active_track,
         );
 
         renderer.with_layer(rail_bounds, |renderer| {
@@ -489,7 +504,7 @@ where
                     border: Border::default().rounded(f32::MAX),
                     ..renderer::Quad::default()
                 },
-                self.theme.primary(),
+                self.style.stop_indicator,
             );
         });
 
@@ -509,7 +524,7 @@ where
                 border: Border::default().rounded(f32::MAX),
                 ..renderer::Quad::default()
             },
-            self.theme.primary(),
+            self.style.handle_color,
         );
     }
 

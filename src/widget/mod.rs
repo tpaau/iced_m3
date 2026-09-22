@@ -89,7 +89,7 @@ pub fn slider<'a, F, T, Message>(
     range: RangeInclusive<T>,
     value: T,
     on_change: F,
-    theme: &'a impl ColorScheme,
+    style: slider::Style,
 ) -> slider::Slider<'a, T, Message>
 where
     F: 'a + Fn(T) -> Message,
@@ -97,7 +97,7 @@ where
     Message: 'a + Clone,
     f64: std::convert::From<T>,
 {
-    slider::Slider::new(range, value, on_change, theme)
+    slider::Slider::new(range, value, on_change, style)
 }
 
 #[must_use]
