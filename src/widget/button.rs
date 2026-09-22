@@ -4,7 +4,7 @@ use iced_widget::{center, row, text};
 use crate::{
     style::{
         DISABLED_STATE_LAYER_OPACITY, Elevation, HOVER_STATE_LAYER_OPACITY,
-        PRESSED_STATE_LAYER_OPACITY, mix_colors, shadow,
+        PRESSED_STATE_LAYER_OPACITY, StateLayer, mix_colors, shadow,
     },
     theme::{Accent, ColorScheme},
     widget::{OnPress, icon},
@@ -13,8 +13,326 @@ use crate::{
 const DISABLED_CONTAINER_OPACITY: f32 = 0.1;
 const DISABLED_LABEL_OPACITY: f32 = DISABLED_STATE_LAYER_OPACITY;
 
-// TODO: Convert this to a struct
-// TODO: Custom state layers
+#[derive(Clone, Copy, PartialEq)]
+pub struct Outline {
+    pub width: f32,
+    pub color: Color,
+}
+
+impl Default for Outline {
+    fn default() -> Self {
+        Self {
+            width: 0.0,
+            color: Color::TRANSPARENT,
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub struct StateStyle {
+    pub container: Option<Color>,
+    pub label: Color,
+    pub icon: Color,
+    pub outline: Outline,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub struct ElevationStates {
+    pub shadow_color: Color,
+    pub idle: Elevation,
+    pub disabled: Elevation,
+    pub hover: Elevation,
+    pub press: Elevation,
+}
+
+impl ElevationStates {
+    pub fn elevation(&self, status: iced_widget::button::Status) -> &Elevation {
+        match status {
+            iced_widget::button::Status::Active => &self.idle,
+            iced_widget::button::Status::Hovered => &self.hover,
+            iced_widget::button::Status::Pressed => &self.press,
+            iced_widget::button::Status::Disabled => &self.disabled,
+        }
+    }
+}
+
+impl ElevationStates {
+    pub fn new(shadow_color: Color) -> Self {
+        Self {
+            shadow_color,
+            idle: Elevation::default(),
+            disabled: Elevation::default(),
+            hover: Elevation::default(),
+            press: Elevation::default(),
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub struct StyleNew {
+    pub regular: StateStyle,
+    pub unselected: StateStyle,
+    pub selected: StateStyle,
+    pub disabled: StateStyle,
+    pub disabled_unselected: StateStyle,
+    pub disabled_selected: StateStyle,
+    pub elevation: ElevationStates,
+    pub state_layer: StateLayer,
+    pub state_layer_unselected: StateLayer,
+    pub state_layer_selected: StateLayer,
+}
+
+impl StyleNew {
+    pub fn elevated(theme: &impl ColorScheme, accent: Accent) -> Self {
+        let disabled = StateStyle {
+            container: Some(theme.on_surface()),
+            label: theme.on_surface(),
+            icon: theme.on_surface(),
+            outline: Outline::default(),
+        };
+        Self {
+            regular: StateStyle {
+                container: Some(theme.surface_container_low()),
+                label: accent.color(theme),
+                icon: accent.color(theme),
+                outline: Outline::default(),
+            },
+            unselected: StateStyle {
+                container: Some(theme.surface_container_low()),
+                label: accent.color(theme),
+                icon: accent.color(theme),
+                outline: Outline::default(),
+            },
+            selected: StateStyle {
+                container: Some(accent.color(theme)),
+                label: accent.on_color(theme),
+                icon: accent.on_color(theme),
+                outline: Outline::default(),
+            },
+            disabled,
+            disabled_unselected: disabled,
+            disabled_selected: disabled,
+            elevation: ElevationStates {
+                shadow_color: theme.shadow(),
+                idle: Elevation::Level1,
+                disabled: Elevation::Level0,
+                hover: Elevation::Level1,
+                press: Elevation::Level1,
+            },
+            state_layer: StateLayer::new(accent.color(theme)),
+            state_layer_unselected: StateLayer::new(accent.color(theme)),
+            state_layer_selected: StateLayer::new(accent.on_color(theme)),
+        }
+    }
+
+    pub fn filled(theme: &impl ColorScheme, accent: Accent) -> Self {
+        let disabled = StateStyle {
+            container: Some(theme.on_surface()),
+            label: theme.on_surface(),
+            icon: theme.on_surface(),
+            outline: Outline::default(),
+        };
+        Self {
+            regular: StateStyle {
+                container: Some(accent.color(theme)),
+                label: accent.on_color(theme),
+                icon: accent.on_color(theme),
+                outline: Outline::default(),
+            },
+            unselected: StateStyle {
+                container: Some(theme.surface_container()),
+                label: theme.on_surface_variant(),
+                icon: theme.on_surface_variant(),
+                outline: Outline::default(),
+            },
+            selected: StateStyle {
+                container: Some(accent.color(theme)),
+                label: accent.on_color(theme),
+                icon: accent.on_color(theme),
+                outline: Outline::default(),
+            },
+            disabled,
+            disabled_unselected: disabled,
+            disabled_selected: disabled,
+            elevation: ElevationStates::new(theme.shadow()),
+            state_layer: StateLayer::new(accent.on_color(theme)),
+            state_layer_unselected: StateLayer::new(theme.on_surface_variant()),
+            state_layer_selected: StateLayer::new(accent.on_color(theme)),
+        }
+    }
+
+    pub fn tonal(theme: &impl ColorScheme, accent: Accent) -> Self {
+        let disabled = StateStyle {
+            container: Some(theme.on_surface()),
+            label: theme.on_surface(),
+            icon: theme.on_surface(),
+            outline: Outline::default(),
+        };
+        Self {
+            regular: StateStyle {
+                container: Some(accent.color_container(theme)),
+                label: accent.on_color_container(theme),
+                icon: accent.on_color_container(theme),
+                outline: Outline::default(),
+            },
+            unselected: StateStyle {
+                container: Some(accent.color_container(theme)),
+                label: accent.on_color_container(theme),
+                icon: accent.on_color_container(theme),
+                outline: Outline::default(),
+            },
+            selected: StateStyle {
+                container: Some(accent.color(theme)),
+                label: accent.on_color(theme),
+                icon: accent.on_color(theme),
+                outline: Outline::default(),
+            },
+            disabled,
+            disabled_unselected: disabled,
+            disabled_selected: disabled,
+            elevation: ElevationStates::new(theme.shadow()),
+            state_layer: StateLayer::new(accent.on_color_container(theme)),
+            state_layer_unselected: StateLayer::new(accent.on_color_container(theme)),
+            state_layer_selected: StateLayer::new(accent.on_color(theme)),
+        }
+    }
+
+    pub fn outlined(theme: &impl ColorScheme) -> Self {
+        Self {
+            regular: StateStyle {
+                container: None,
+                label: theme.on_surface_variant(),
+                icon: theme.on_surface_variant(),
+                outline: Outline {
+                    width: 1.0,
+                    color: theme.outline_variant(),
+                },
+            },
+            unselected: StateStyle {
+                container: None,
+                label: theme.on_surface_variant(),
+                icon: theme.on_surface_variant(),
+                outline: Outline {
+                    width: 1.0,
+                    color: theme.on_surface_variant(),
+                },
+            },
+            selected: StateStyle {
+                container: Some(theme.inverse_surface()),
+                label: theme.inverse_on_surface(),
+                icon: theme.inverse_on_surface(),
+                outline: Outline {
+                    width: 1.0,
+                    color: theme.outline_variant(),
+                },
+            },
+            disabled: StateStyle {
+                container: None,
+                label: theme.on_surface(),
+                icon: theme.on_surface(),
+                outline: Outline {
+                    width: 1.0,
+                    color: theme.outline_variant(),
+                },
+            },
+            disabled_unselected: StateStyle {
+                container: None,
+                label: theme.on_surface(),
+                icon: theme.on_surface(),
+                outline: Outline {
+                    width: 1.0,
+                    color: theme.outline_variant(),
+                },
+            },
+            disabled_selected: StateStyle {
+                container: Some(theme.on_surface()),
+                label: theme.on_surface(),
+                icon: theme.on_surface(),
+                outline: Outline {
+                    width: 1.0,
+                    color: theme.outline_variant(),
+                },
+            },
+            elevation: ElevationStates::new(theme.shadow()),
+            state_layer: StateLayer::new(theme.on_surface_variant()),
+            state_layer_unselected: StateLayer::new(theme.on_surface_variant()),
+            state_layer_selected: StateLayer::new(theme.inverse_on_surface()),
+        }
+    }
+
+    pub fn text(theme: &impl ColorScheme, accent: Accent) -> Self {
+        let regular = StateStyle {
+            container: None,
+            label: accent.color(theme),
+            icon: accent.color(theme),
+            outline: Outline::default(),
+        };
+        let disabled = StateStyle {
+            container: Some(theme.on_surface()),
+            label: theme.on_surface(),
+            icon: theme.on_surface(),
+            outline: Outline::default(),
+        };
+        Self {
+            regular,
+            unselected: regular,
+            selected: regular,
+            disabled,
+            disabled_unselected: disabled,
+            disabled_selected: disabled,
+            elevation: ElevationStates::new(theme.shadow()),
+            state_layer: StateLayer::new(accent.color(theme)),
+            state_layer_unselected: StateLayer::new(accent.color(theme)),
+            state_layer_selected: StateLayer::new(accent.color(theme)),
+        }
+    }
+
+    pub fn state_layer(&self, selected: Option<bool>) -> &StateLayer {
+        match selected {
+            Some(selected) => match selected {
+                true => &self.state_layer_selected,
+                false => &self.state_layer_unselected,
+            },
+            None => &self.state_layer,
+        }
+    }
+
+    pub fn state_style(&self, disabled: bool, selected: Option<bool>) -> &StateStyle {
+        match disabled {
+            true => match selected {
+                Some(selected) => match selected {
+                    true => &self.disabled_selected,
+                    false => &self.disabled_unselected,
+                },
+                None => &self.disabled,
+            },
+            false => match selected {
+                Some(selected) => match selected {
+                    true => &self.selected,
+                    false => &self.unselected,
+                },
+                None => &self.regular,
+            },
+        }
+    }
+
+    pub fn container_color(&self, disabled: bool, selected: Option<bool>) -> Option<Color> {
+        self.state_style(disabled, selected).container
+    }
+
+    pub fn label_color(&self, disabled: bool, selected: Option<bool>) -> Color {
+        self.state_style(disabled, selected).label
+    }
+
+    pub fn icon_color(&self, disabled: bool, selected: Option<bool>) -> Color {
+        self.state_style(disabled, selected).icon
+    }
+
+    pub fn outline(&self, disabled: bool, selected: Option<bool>) -> Outline {
+        self.state_style(disabled, selected).outline
+    }
+}
+
 #[derive(Clone, Copy)]
 pub enum Style {
     Elevated(Accent),
@@ -378,9 +696,10 @@ impl Size {
     // TODO: Implement the typography system and get the sizes from there
     pub fn font_size(&self) -> f32 {
         match self {
-            Size::ExtraSmall => 14.0,
-            Size::Medium | Size::Small => 16.0,
-            Size::Large | Size::ExtraLarge => 22.0,
+            Size::ExtraSmall | Size::Small => 14.0,
+            Size::Medium => 16.0,
+            Size::Large => 24.0,
+            Size::ExtraLarge => 32.0,
             Size::Custom {
                 width: _,
                 height: _,
