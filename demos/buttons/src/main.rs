@@ -450,7 +450,6 @@ impl State {
                 self.theme.mode = match self.theme.mode {
                     Mode::Light => Mode::Dark,
                     Mode::Dark => Mode::Light,
-                    Mode::Black => Mode::Light,
                 }
             }
             Message::ToggleSquareButtons => self.square = !self.square,
