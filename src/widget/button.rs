@@ -4,7 +4,7 @@ use iced_widget::{center, row, text};
 use crate::{
     style::{DISABLED_STATE_LAYER_OPACITY, Elevation, StateLayer, mix_colors, shadow},
     theme::{Accent, ColorScheme},
-    widget::{OnPress, icon},
+    widget::{self, OnPress, hybrid_icon::Icon},
 };
 
 const DISABLED_CONTAINER_OPACITY: f32 = 0.1;
@@ -603,6 +603,7 @@ pub(crate) fn style(
         iced_widget::button::Status::Hovered => style.state_layer.hovered,
         iced_widget::button::Status::Pressed => style.state_layer.pressed,
     };
+    // TODO: The state layer should be displayed over button content
     let container_color = match state_style.container {
         Some(color) => mix_colors(
             color,
@@ -629,10 +630,10 @@ pub(crate) fn style(
 
 #[derive(Clone)]
 pub enum Content<'a> {
-    Icon(text::Fragment<'a>),
+    Icon(Icon<'a>),
     Label(text::Fragment<'a>),
     Full {
-        icon: text::Fragment<'a>,
+        icon: Icon<'a>,
         label: text::Fragment<'a>,
     },
 }
@@ -662,22 +663,16 @@ impl<'a> Content<'a> {
     }
 
     #[must_use]
-    pub fn icon(self, icon: impl text::IntoFragment<'a>) -> Self {
+    pub fn icon(self, icon: Icon<'a>) -> Self {
         match self {
-            Content::Icon(_) => Self::Icon(icon.into_fragment()),
-            Content::Label(label) => Self::Full {
-                icon: icon.into_fragment(),
-                label,
-            },
-            Content::Full { icon: _, label } => Self::Full {
-                icon: icon.into_fragment(),
-                label,
-            },
+            Content::Icon(_) => Self::Icon(icon),
+            Content::Label(label) => Self::Full { icon: icon, label },
+            Content::Full { icon: _, label } => Self::Full { icon: icon, label },
         }
     }
 
     #[must_use]
-    pub fn icon_maybe(self, maybe_icon: Option<char>) -> Self {
+    pub fn icon_maybe(self, maybe_icon: Option<Icon<'a>>) -> Self {
         match maybe_icon {
             Some(icon) => self.icon(icon),
             None => self,
@@ -685,7 +680,7 @@ impl<'a> Content<'a> {
     }
 
     #[must_use]
-    fn get_icon(self) -> Option<text::Fragment<'a>> {
+    fn get_icon(self) -> Option<Icon<'a>> {
         match self {
             Content::Icon(icon) => Some(icon),
             Content::Label(_) => None,
@@ -712,7 +707,6 @@ where
     clip: bool,
     content: Content<'a>,
     label_font: Option<iced::Font>,
-    icon_font: Option<iced::Font>,
     size: Size,
     corner_style: CornerStyle,
     elevation: Elevation,
@@ -731,7 +725,6 @@ where
             clip: false,
             content,
             label_font: None,
-            icon_font: None,
             size: Size::default(),
             corner_style: CornerStyle::default(),
             elevation: Elevation::default(),
@@ -748,18 +741,6 @@ where
     #[must_use]
     pub fn label_font_maybe(mut self, maybe_font: Option<iced::Font>) -> Self {
         self.label_font = maybe_font;
-        self
-    }
-
-    #[must_use]
-    pub fn icon_font(mut self, font: iced::Font) -> Self {
-        self.icon_font = Some(font);
-        self
-    }
-
-    #[must_use]
-    pub fn icon_font_maybe(mut self, maybe_font: Option<iced::Font>) -> Self {
-        self.icon_font = maybe_font;
         self
     }
 
@@ -823,10 +804,10 @@ where
                 .size(button.size.font_size())
                 .font_maybe(button.label_font)
         });
-        let icon = button
-            .content
-            .get_icon()
-            .map(|i| icon(i, button.size.icon_size()).font_maybe(button.icon_font));
+        // FIX: Doesn't change color with the button
+        let icon = button.content.get_icon().map(|icon| {
+            widget::hybrid_icon(icon, button.size.icon_size(), button.style.regular.icon)
+        });
 
         let content = row![icon, label,]
             .align_y(Alignment::Center)

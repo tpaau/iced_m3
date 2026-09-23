@@ -9,6 +9,7 @@ use iced_m3::{
     widget::{
         OnPress,
         fab::{Content, Size, Style},
+        hybrid_icon::Icon,
     },
 };
 
@@ -43,9 +44,11 @@ impl State {
             Style::fab_tonal(&self.theme, Accent::Tertiary),
         ];
         let sizes = [Size::Regular, Size::Medium, Size::Large];
-        let content = Content::Reguar {
-            icon: EDIT.to_string().into_fragment().clone(),
+        let icon = Icon::Text {
+            text: EDIT.to_string().into_fragment(),
+            font: Some(fonts::icons_filled()),
         };
+        let content = Content::Reguar { icon: icon.clone() };
         let fabs = row(sizes.into_iter().map(|size| {
             column(styles.into_iter().map(|style| {
                 iced_m3::widget::fab(style, content.clone(), OnPress::Direct(Message::Noop))
@@ -58,7 +61,7 @@ impl State {
         .spacing(20.0);
 
         let content = Content::Extended {
-            icon: EDIT.to_string().into_fragment().clone(),
+            icon,
             label: "Compose".into(),
         };
         let extended_fabs = row(sizes.into_iter().map(|size| {

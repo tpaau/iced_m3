@@ -9,8 +9,9 @@ use crate::{
     style::{HOVER_STATE_LAYER_OPACITY, PRESSED_STATE_LAYER_OPACITY, mix_colors},
     theme::ColorScheme,
     widget::{
-        self, BadgeIcon, OnPress,
+        self, Badge, OnPress,
         common_icons::{MENU, MENU_OPEN},
+        hybrid_icon::Icon,
     },
 };
 
@@ -57,7 +58,7 @@ pub struct Fab<'a, Message>
 where
     Message: Clone,
 {
-    pub icon: text::Fragment<'a>,
+    pub icon: Icon<'a>,
     pub label: text::Fragment<'a>,
     pub style: crate::widget::fab::Style,
     pub on_press: OnPress<'a, Message>,
@@ -67,7 +68,9 @@ pub struct Item<'a, Message>
 where
     Message: Clone,
 {
-    pub icon: BadgeIcon<'a>,
+    pub icon_active: Icon<'a>,
+    pub icon_inactive: Icon<'a>,
+    pub badge: Option<Badge<'a>>,
     pub label: text::Fragment<'a>,
     pub on_press: OnPress<'a, Message>,
 }
@@ -110,9 +113,6 @@ where
     fab: Option<Fab<'a, Message>>,
     items: Vec<Item<'a, Message>>,
     label_font: Option<iced::Font>,
-    icon_font: Option<iced::Font>,
-    icon_font_inactive: Option<iced::Font>,
-    icon_font_active: Option<iced::Font>,
     active_index: usize,
     item_alignment: ItemAlignment,
     container_vertical_padding: Option<f32>,
@@ -131,9 +131,6 @@ where
             fab: None,
             items,
             label_font: None,
-            icon_font: None,
-            icon_font_inactive: None,
-            icon_font_active: None,
             active_index: 0,
             item_alignment: ItemAlignment::default(),
             container_vertical_padding: None,
@@ -200,48 +197,6 @@ where
         self
     }
 
-    /// Sets the icon font for the menu and FAB.
-    #[must_use]
-    pub fn icon_font(mut self, font: iced::Font) -> Self {
-        self.icon_font = Some(font);
-        self
-    }
-
-    /// Sets the icon font for the menu and FAB.
-    #[must_use]
-    pub fn icon_font_maybe(mut self, maybe_font: Option<iced::Font>) -> Self {
-        self.icon_font = maybe_font;
-        self
-    }
-
-    /// Sets the icon font for active item icons.
-    #[must_use]
-    pub fn icon_font_active(mut self, font: iced::Font) -> Self {
-        self.icon_font_active = Some(font);
-        self
-    }
-
-    /// Sets the icon font for active item icons.
-    #[must_use]
-    pub fn icon_font_active_maybe(mut self, maybe_font: Option<iced::Font>) -> Self {
-        self.icon_font_active = maybe_font;
-        self
-    }
-
-    /// Sets the icon font for inactive item icons.
-    #[must_use]
-    pub fn icon_font_inactive(mut self, font: iced::Font) -> Self {
-        self.icon_font_inactive = Some(font);
-        self
-    }
-
-    /// Sets the icon font for inactive item icons.
-    #[must_use]
-    pub fn icon_font_inactive_maybe(mut self, maybe_font: Option<iced::Font>) -> Self {
-        self.icon_font_inactive = maybe_font;
-        self
-    }
-
     #[must_use]
     pub fn item_alignment(mut self, alignment: ItemAlignment) -> Self {
         self.item_alignment = alignment;
@@ -274,19 +229,21 @@ fn item_widget<'a, Message>(
     active: bool,
     expanded: bool,
     label_font: Option<iced::Font>,
-    icon_font_active: Option<iced::Font>,
-    icon_font_inactive: Option<iced::Font>,
     item: Item<'a, Message>,
 ) -> Element<'a, Message>
 where
     Message: 'a + Clone,
 {
-    let icon_font = match active {
-        true => icon_font_active,
-        false => icon_font_inactive,
+    let icon_data = match active {
+        true => item.icon_active,
+        false => item.icon_inactive,
     };
-    let icon = crate::widget::icon(item.icon.icon, ITEM_ICON_SIZE).font_maybe(icon_font);
-    let icon: Element<'_, Message> = match item.icon.badge {
+    let content_color = match active {
+        true => theme.on_secondary_container(),
+        false => theme.on_surface(),
+    };
+    let icon = widget::hybrid_icon(icon_data, ITEM_ICON_SIZE, content_color);
+    let icon: Element<'_, Message> = match item.badge {
         Some(badge) => crate::widget::badge(theme, icon)
             .label_maybe(badge.label)
             .into(),
@@ -317,10 +274,6 @@ where
         // FIX: Should use a custom widget, not a styled button!
         .style(move |_, status| {
             let container_color = active.then_some(theme.secondary_container());
-            let content_color = match active {
-                true => theme.on_secondary_container(),
-                false => theme.on_surface(),
-            };
             let state_layer_opacity = match status {
                 iced_widget::button::Status::Active => 0.0,
                 iced_widget::button::Status::Hovered => HOVER_STATE_LAYER_OPACITY,
@@ -426,9 +379,7 @@ where
                 false => widget::fab::Content::Reguar { icon: fab.icon },
             };
 
-            widget::fab(fab.style, content, fab.on_press)
-                .label_font_maybe(value.label_font)
-                .icon_font_maybe(value.icon_font)
+            widget::fab(fab.style, content, fab.on_press).label_font_maybe(value.label_font)
         });
         let fab = fab.map(|fab| {
             column![
@@ -441,15 +392,7 @@ where
         let active_index = value.active_index.min(value.items.len());
         let items = value.items.into_iter().enumerate().map(|(i, item)| {
             let active = i == active_index;
-            item_widget(
-                value.theme,
-                active,
-                expanded,
-                value.label_font,
-                value.icon_font_active,
-                value.icon_font_inactive,
-                item,
-            )
+            item_widget(value.theme, active, expanded, value.label_font, item)
         });
         let spacing = match expanded {
             true => 0.0,

@@ -8,7 +8,8 @@ use iced::{
 use iced_m3::{
     theme::{Accent, ColorScheme, Mode, Theme},
     widget::{
-        Badge, BadgeIcon, OnPress, button,
+        Badge, OnPress, button,
+        hybrid_icon::Icon,
         navrail::{self, Fab, Item, ItemAlignment, Status},
         switch,
     },
@@ -84,36 +85,56 @@ impl State {
     fn view(&self) -> Element<'_, Message> {
         let items = vec![
             Item {
-                icon: BadgeIcon {
-                    icon: STAR.into_fragment(),
-                    badge: None,
+                icon_active: Icon::Text {
+                    text: STAR.into_fragment(),
+                    font: Some(icons_filled()),
                 },
+                icon_inactive: Icon::Text {
+                    text: STAR.into_fragment(),
+                    font: Some(icons_outlined()),
+                },
+                badge: None,
                 label: "Star".into_fragment(),
                 on_press: OnPress::Direct(Message::GoTo(Tab::Star)),
             },
             Item {
-                icon: BadgeIcon {
-                    icon: FAVORITE.into_fragment(),
-                    badge: None,
+                icon_active: Icon::Text {
+                    text: FAVORITE.into_fragment(),
+                    font: Some(icons_filled()),
                 },
+                icon_inactive: Icon::Text {
+                    text: FAVORITE.into_fragment(),
+                    font: Some(icons_outlined()),
+                },
+                badge: None,
                 label: "Favorites".into_fragment(),
                 on_press: OnPress::Direct(Message::GoTo(Tab::Favorites)),
             },
             Item {
-                icon: BadgeIcon {
-                    icon: SEARCH.into_fragment(),
-                    badge: Some(Badge { label: None }),
+                icon_active: Icon::Text {
+                    text: SEARCH.into_fragment(),
+                    font: Some(icons_filled()),
                 },
+                icon_inactive: Icon::Text {
+                    text: SEARCH.into_fragment(),
+                    font: Some(icons_outlined()),
+                },
+                badge: Some(Badge { label: None }),
                 label: "Search".into_fragment(),
                 on_press: OnPress::Direct(Message::GoTo(Tab::Search)),
             },
             Item {
-                icon: BadgeIcon {
-                    icon: SETTINGS.into_fragment(),
-                    badge: Some(Badge {
-                        label: Some("3".into_fragment()),
-                    }),
+                icon_active: Icon::Text {
+                    text: SETTINGS.into_fragment(),
+                    font: Some(icons_filled()),
                 },
+                icon_inactive: Icon::Text {
+                    text: SETTINGS.into_fragment(),
+                    font: Some(icons_outlined()),
+                },
+                badge: Some(Badge {
+                    label: Some("3".into_fragment()),
+                }),
                 label: "Settings".into_fragment(),
                 on_press: OnPress::Direct(Message::GoTo(Tab::Settings)),
             },
@@ -126,7 +147,10 @@ impl State {
             false => Status::Collapsed,
         };
         let fab = Fab {
-            icon: EDIT.to_string().into_fragment(),
+            icon: Icon::Text {
+                text: EDIT.into_fragment(),
+                font: Some(icons_filled()),
+            },
             label: "Edit".into_fragment(),
             style: iced_m3::widget::fab::Style::fab_tonal(&self.theme, Accent::Primary),
             on_press: OnPress::Direct(Message::Noop),
@@ -135,8 +159,6 @@ impl State {
         let navrail = iced_m3::widget::navrail(&self.theme, items)
             .active(current_index)
             .label_font(text_regular())
-            .icon_font(icons_filled())
-            .icon_font_inactive(icons_outlined())
             .status(status)
             .fab_maybe(self.fab.then_some(fab))
             .item_alignment(self.alignment)

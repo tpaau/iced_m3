@@ -1,10 +1,10 @@
-use iced::{Alignment, Border, Element, Font, Length, advanced::text};
+use iced::{Alignment, Border, Element, Font, Length};
 use iced_widget::{center, column, space};
 
 use crate::{
     style::{Elevation, shadow},
     theme::{Accent, ColorScheme},
-    widget::{button, icon},
+    widget::{self, button, hybrid_icon::Icon},
 };
 
 pub use crate::widget::advanced::drop_down_menu::Placement;
@@ -32,21 +32,20 @@ fn trigger_style(style: button::Style, opened: bool) -> iced_widget::container::
 pub struct Entry<'a, Message> {
     pub message: Message,
     pub label: &'a str,
-    pub icon: Option<&'a char>,
+    pub icon: Option<Icon<'a>>,
 }
 
 pub struct FABMenu<'a, Message> {
     label_font: Option<Font>,
-    icon_font: Option<Font>,
     style: button::Style,
     entries: Vec<Entry<'a, Message>>,
-    icon: &'a dyn Fn(bool) -> text::Fragment<'a>,
+    icon: &'a dyn Fn(bool) -> Icon<'a>,
 }
 
 impl<'a, Message> FABMenu<'a, Message> {
     pub fn new<I>(
         entries: I,
-        icon: &'a dyn Fn(bool) -> text::Fragment<'a>,
+        icon: &'a dyn Fn(bool) -> Icon<'a>,
         accent: Accent,
         theme: &impl ColorScheme,
     ) -> Self
@@ -55,7 +54,6 @@ impl<'a, Message> FABMenu<'a, Message> {
     {
         Self {
             label_font: None,
-            icon_font: None,
             style: button::Style::tonal(theme, accent),
             entries: entries.into_iter().collect(),
             icon,
@@ -71,18 +69,6 @@ impl<'a, Message> FABMenu<'a, Message> {
     #[must_use]
     pub fn label_font_maybe(mut self, maybe_font: Option<Font>) -> Self {
         self.label_font = maybe_font;
-        self
-    }
-
-    #[must_use]
-    pub fn icon_font(mut self, font: Font) -> Self {
-        self.icon_font = Some(font);
-        self
-    }
-
-    #[must_use]
-    pub fn icon_font_maybe(mut self, maybe_font: Option<Font>) -> Self {
-        self.icon_font = maybe_font;
         self
     }
 
@@ -109,12 +95,11 @@ impl<'a, Message: 'a + Clone> From<FABMenu<'a, Message>> for Element<'a, Message
             .map(|e| {
                 crate::widget::button(
                     menu.style,
-                    button::Content::Label(e.label.into()).icon_maybe(e.icon.copied()),
+                    button::Content::Label(e.label.into()).icon_maybe(e.icon),
                 )
                 .on_press(e.message)
                 .size(crate::widget::button::Size::Medium) // TEST: Height should be 56px
                 .label_font_maybe(menu.label_font)
-                .icon_font_maybe(menu.icon_font)
                 .corner_style(button::CornerStyle::Custom {
                     resting: f32::MAX.into(),
                     pressed: f32::MAX.into(),
@@ -130,11 +115,16 @@ impl<'a, Message: 'a + Clone> From<FABMenu<'a, Message>> for Element<'a, Message
 
         super::advanced::drop_down_menu(
             move |opened| {
-                center(icon((menu.icon)(opened), TRIGGER_ICON_SIZE).font_maybe(menu.icon_font))
-                    .width(Length::Fixed(TRIGGER_SIZE))
-                    .height(Length::Fixed(TRIGGER_SIZE))
-                    .style(move |_| trigger_style(menu.style, opened))
-                    .into()
+                // FIX: Doesn't change the color
+                center(widget::hybrid_icon(
+                    (menu.icon)(opened),
+                    TRIGGER_ICON_SIZE,
+                    menu.style.regular.icon,
+                ))
+                .width(Length::Fixed(TRIGGER_SIZE))
+                .height(Length::Fixed(TRIGGER_SIZE))
+                .style(move |_| trigger_style(menu.style, opened))
+                .into()
             },
             Some(
                 column(buttons)

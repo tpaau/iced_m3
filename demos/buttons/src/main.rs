@@ -8,6 +8,7 @@ use iced_m3::{
     theme::{Accent, ColorScheme, Mode, Theme},
     widget::{
         button::{Button, Content, CornerStyle, Style},
+        hybrid_icon::Icon,
         switch,
     },
 };
@@ -46,10 +47,6 @@ const CONTAINER_WIDTH: f32 = 250.0;
 
 fn button<'a>(state: &'a State, style: Style, content: Content<'a>) -> Button<'a, Message> {
     iced_m3::widget::button(style, content)
-        .icon_font(match state.icons_filled {
-            true => fonts::icons_filled(),
-            false => fonts::icons_outlined(),
-        })
         .corner_style(match state.square {
             true => CornerStyle::Square,
             false => CornerStyle::Round,
@@ -65,7 +62,13 @@ fn wrapper<'a>(content: impl Into<Element<'a, Message>>) -> Container<'a, Messag
 
 impl State {
     fn view(&self) -> Element<'_, Message> {
-        let icon = self.icon.to_string().into_fragment();
+        let icon = Icon::Text {
+            text: self.icon.into_fragment(),
+            font: Some(match self.icons_filled {
+                true => fonts::icons_filled(),
+                false => fonts::icons_outlined(),
+            }),
+        };
         let buttons = container(
             row![
                 column![

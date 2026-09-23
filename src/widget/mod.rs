@@ -10,6 +10,7 @@ mod common_types;
 pub mod dialog;
 pub mod fab;
 pub mod fab_menu;
+pub mod hybrid_icon;
 pub mod navbar;
 pub mod navrail;
 pub mod progress_bar;
@@ -24,13 +25,22 @@ pub use wrappers::*;
 
 use std::ops::RangeInclusive;
 
-use iced::{Element, advanced::text};
+use iced::{Color, Element, Pixels};
 
 use crate::{
     theme::{Accent, ColorScheme},
     widget::{
-        button::Button, card::Card, dialog::Dialog, fab::Fab, fab_menu::FABMenu, navbar::Navbar,
-        navrail::NavRail, progress_bar::ProgressBar, switch::Switch, text_input::TextInput,
+        button::Button,
+        card::Card,
+        dialog::Dialog,
+        fab::Fab,
+        fab_menu::FABMenu,
+        hybrid_icon::{HybridIcon, Icon},
+        navbar::Navbar,
+        navrail::NavRail,
+        progress_bar::ProgressBar,
+        switch::Switch,
+        text_input::TextInput,
     },
 };
 
@@ -73,7 +83,7 @@ where
 #[must_use]
 pub fn fab_menu<'a, Message, I>(
     entries: I,
-    icon: &'a dyn Fn(bool) -> text::Fragment<'a>,
+    icon: &'a dyn Fn(bool) -> Icon<'a>,
     theme: &impl ColorScheme,
     accent: Accent,
 ) -> FABMenu<'a, Message>
@@ -164,4 +174,9 @@ where
     Message: Clone,
 {
     Card::new(style, content)
+}
+
+#[must_use]
+pub fn hybrid_icon<'a>(icon: Icon<'a>, size: impl Into<Pixels>, color: Color) -> HybridIcon<'a> {
+    HybridIcon::new(icon, size, color)
 }

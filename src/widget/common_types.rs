@@ -1,5 +1,7 @@
 use iced_widget::text;
 
+use crate::widget::hybrid_icon::Icon;
+
 pub enum OnPress<'a, Message>
 where
     Message: Clone,
@@ -25,6 +27,6 @@ pub struct Badge<'a> {
 }
 
 pub struct BadgeIcon<'a> {
-    pub icon: text::Fragment<'a>,
+    pub icon: Icon<'a>,
     pub badge: Option<Badge<'a>>,
 }

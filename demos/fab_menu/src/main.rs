@@ -6,7 +6,7 @@ use iced::{
 };
 use iced_m3::{
     theme::{Accent, ColorScheme, Theme},
-    widget::fab_menu,
+    widget::{fab_menu, hybrid_icon::Icon},
 };
 
 const APP_NAME: &str = "FAB Menu demo";
@@ -47,30 +47,39 @@ impl State {
                 fab_menu::Entry {
                     message: Message::Noop,
                     label: "Document",
-                    icon: Some(&*DOCUMENT),
+                    icon: Some(Icon::Text {
+                        text: DOCUMENT.into_fragment(),
+                        font: Some(fonts::icons_filled()),
+                    }),
                 },
                 fab_menu::Entry {
                     message: Message::Noop,
                     label: "Message",
-                    icon: Some(&*CHAT),
+                    icon: Some(Icon::Text {
+                        text: CHAT.into_fragment(),
+                        font: Some(fonts::icons_filled()),
+                    }),
                 },
                 fab_menu::Entry {
                     message: Message::Noop,
                     label: "Folder",
-                    icon: Some(&*FOLDER_SHARED),
+                    icon: Some(Icon::Text {
+                        text: FOLDER_SHARED.into_fragment(),
+                        font: Some(fonts::icons_filled()),
+                    }),
                 },
             ],
-            &|opened| {
-                if opened {
+            &|opened| Icon::Text {
+                text: if opened {
                     CLOSE.into_fragment()
                 } else {
                     ADD.into_fragment()
-                }
+                },
+                font: Some(fonts::icons_filled()),
             },
             &self.theme,
             Accent::default(),
-        )
-        .icon_font(fonts::icons_filled());
+        );
 
         let content = column![
             iced::widget::text(APP_NAME)

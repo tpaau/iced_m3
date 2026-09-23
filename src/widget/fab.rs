@@ -5,7 +5,7 @@ pub const EDGE_SPACING: f32 = 16.0;
 
 use crate::{
     style::Elevation,
-    widget::{OnPress, button},
+    widget::{OnPress, button, hybrid_icon::Icon},
 };
 
 pub type Style = button::Style;
@@ -91,25 +91,25 @@ impl Size {
 #[derive(Clone)]
 pub enum Content<'a> {
     Reguar {
-        icon: text::Fragment<'a>,
+        icon: Icon<'a>,
     },
     Extended {
-        icon: text::Fragment<'a>,
+        icon: Icon<'a>,
         label: text::Fragment<'a>,
     },
 }
 
 impl<'a> Content<'a> {
-    fn icon(&'a self) -> text::Fragment<'a> {
+    fn icon(&'a self) -> &'a Icon<'a> {
         match self {
-            Content::Reguar { icon } => std::borrow::Cow::Borrowed(icon),
-            Content::Extended { icon, label: _ } => std::borrow::Cow::Borrowed(icon),
+            Content::Reguar { icon } => icon,
+            Content::Extended { icon, label: _ } => icon,
         }
     }
 
     pub fn with_label(&'a mut self, label: impl IntoFragment<'a>) -> Self {
         Self::Extended {
-            icon: self.icon(),
+            icon: self.icon().clone(),
             label: label.into_fragment(),
         }
     }
@@ -133,7 +133,6 @@ where
     size: Size,
     style: Style,
     label_font: Option<Renderer::Font>,
-    icon_font: Option<Renderer::Font>,
     on_press: OnPress<'a, Message>,
 }
 
@@ -149,7 +148,6 @@ where
             size: Size::default(),
             style,
             label_font: None,
-            icon_font: None,
             on_press: on_press,
         }
     }
@@ -166,18 +164,6 @@ where
             Some(size) => self.size(size),
             None => self,
         }
-    }
-
-    #[must_use]
-    pub fn icon_font(mut self, icon_font: Renderer::Font) -> Self {
-        self.icon_font = Some(icon_font);
-        self
-    }
-
-    #[must_use]
-    pub fn icon_font_maybe(mut self, maybe_icon_font: Option<Renderer::Font>) -> Self {
-        self.icon_font = maybe_icon_font;
-        self
     }
 
     #[must_use]
@@ -201,7 +187,6 @@ where
         let is_extended_fab = matches!(value.content, Content::Extended { icon: _, label: _ });
         let button = crate::widget::button(value.style, value.content.into())
             .corner_style(value.size.to_corner_style())
-            .icon_font_maybe(value.icon_font)
             .label_font_maybe(value.label_font)
             .size(value.size.to_button_size(is_extended_fab))
             .elevation(Elevation::Level3);
