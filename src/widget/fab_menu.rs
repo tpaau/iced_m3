@@ -19,7 +19,7 @@ fn trigger_style(style: button::Style, opened: bool) -> iced_widget::container::
 
     iced_widget::container::Style {
         text_color: Some(state_style.icon),
-        background: state_style.container.map(|c| iced::Background::Color(c)),
+        background: Some(iced::Background::Color(state_style.container)),
         border: Border::default().rounded(match opened {
             true => f32::MAX,
             false => 16.0,

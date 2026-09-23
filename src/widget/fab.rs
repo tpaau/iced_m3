@@ -35,7 +35,7 @@ impl Size {
         }
     }
 
-    fn font_size(&self) -> f32 {
+    fn label_size(&self) -> f32 {
         match self {
             Size::Regular => 16.0,
             Size::Medium => 22.0,
@@ -70,7 +70,7 @@ impl Size {
             spacing: self.content_spacing(),
             padding: padding::horizontal(padding),
             icon_size: self.icon_size(),
-            font_size: self.font_size(),
+            label_size: self.label_size(),
         }
     }
 

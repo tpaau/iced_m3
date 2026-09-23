@@ -1,8 +1,8 @@
 use std::sync::LazyLock;
 
 use iced::{
-    Alignment, Element, Font, Length, Task,
-    widget::{Container, center, column, container, row, text, text::IntoFragment},
+    Alignment, Element, Font, Length, Renderer, Task,
+    widget::{Container, center, column, container, row, text::IntoFragment},
 };
 use iced_m3::{
     theme::{Accent, ColorScheme, Mode, Theme},
@@ -45,7 +45,11 @@ static EDIT: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe3c9).unwrap());
 const CONTAINER_HEIGHT: f32 = 50.0;
 const CONTAINER_WIDTH: f32 = 250.0;
 
-fn button<'a>(state: &'a State, style: Style, content: Content<'a>) -> Button<'a, Message> {
+fn button<'a>(
+    state: &'a State,
+    style: Style,
+    content: Content<'a>,
+) -> Button<'a, Message, Renderer> {
     iced_m3::widget::button(style, content)
         .corner_style(match state.square {
             true => CornerStyle::Square,
@@ -414,14 +418,14 @@ impl State {
         .spacing(12.0);
 
         let dark_mode_switch = row![
-            text("Dark mode").color(self.theme.on_surface()),
+            iced::widget::text("Dark mode").color(self.theme.on_surface()),
             switch(&self.theme, self.theme.mode == Mode::Dark).on_toggle(Message::ToggleDarkTheme)
         ]
         .align_y(Alignment::Center)
         .spacing(8.0);
 
         let square_buttons_switch = row![
-            text("Square buttons").color(self.theme.on_surface()),
+            iced::widget::text("Square buttons").color(self.theme.on_surface()),
             switch(&self.theme, self.square).on_toggle(Message::ToggleSquareButtons)
         ]
         .align_y(Alignment::Center)
@@ -429,7 +433,7 @@ impl State {
 
         container(
             column![
-                text(APP_NAME)
+                iced::widget::text(APP_NAME)
                     .font(fonts::text_bold())
                     .size(24.0)
                     .color(self.theme.on_surface()),

@@ -70,12 +70,13 @@ pub fn navbar<'a, Message, Theme, Renderer>(
 }
 
 #[must_use]
-pub fn button<'a, Message>(
+pub fn button<'a, Message, Renderer>(
     style: button::Style,
     content: button::Content<'a>,
-) -> Button<'a, Message>
+) -> Button<'a, Message, Renderer>
 where
     Message: Clone,
+    Renderer: iced::advanced::text::Renderer,
 {
     Button::new(style, content)
 }
