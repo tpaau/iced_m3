@@ -1,6 +1,9 @@
 use iced::{
     Alignment, Border, Element, Font, Length, Size,
-    advanced::{Text, text::Paragraph},
+    advanced::{
+        Text,
+        text::{self, Paragraph},
+    },
     padding,
 };
 use iced_widget::{
@@ -8,7 +11,11 @@ use iced_widget::{
     text::{LineHeight, Shaping, Wrapping},
 };
 
-use crate::{style::mix_colors, theme::ColorScheme, widget::icon};
+use crate::{
+    style::mix_colors,
+    theme::ColorScheme,
+    widget::{self, hybrid_icon::Icon},
+};
 
 const COMPACT_BUTTON_SIZE: Size<f32> = Size {
     width: 56.0,
@@ -66,8 +73,9 @@ pub enum Mode {
 }
 
 pub struct Item<'a, Message> {
-    pub icon: &'a char,
-    pub label: &'a str,
+    pub icon_active: Icon<'a>,
+    pub icon_inactive: Icon<'a>,
+    pub label: text::Fragment<'a>,
     pub message: Message,
 }
 
@@ -75,9 +83,7 @@ pub struct Navbar<'a, Message> {
     compact: bool,
     items: Vec<Item<'a, Message>>,
     theme: &'a dyn ColorScheme,
-    font: Option<Font>,
-    icon_font_active: Option<Font>,
-    icon_font_inactive: Option<Font>,
+    label_font: Font,
     mode: Mode,
     focused_index: usize,
     icon_size: f32,
@@ -86,14 +92,16 @@ pub struct Navbar<'a, Message> {
 
 impl<'a, Message> Navbar<'a, Message> {
     #[must_use]
-    pub fn new(items: Vec<Item<'a, Message>>, theme: &'a impl ColorScheme) -> Self {
+    pub fn new(
+        items: Vec<Item<'a, Message>>,
+        label_font: Font,
+        theme: &'a impl ColorScheme,
+    ) -> Self {
         Self {
             compact: false,
             items,
             theme,
-            font: None,
-            icon_font_active: None,
-            icon_font_inactive: None,
+            label_font,
             mode: Mode::default(),
             focused_index: 0,
             icon_size: DEFAULT_ICON_SIZE,
@@ -110,24 +118,6 @@ impl<'a, Message> Navbar<'a, Message> {
     #[must_use]
     pub fn item(mut self, item: Item<'a, Message>) -> Self {
         self.items.push(item);
-        self
-    }
-
-    #[must_use]
-    pub fn font(mut self, font: Font) -> Self {
-        self.font = Some(font);
-        self
-    }
-
-    #[must_use]
-    pub fn icon_font_active(mut self, font: Font) -> Self {
-        self.icon_font_active = Some(font);
-        self
-    }
-
-    #[must_use]
-    pub fn icon_font_inactive(mut self, font: Font) -> Self {
-        self.icon_font_inactive = Some(font);
         self
     }
 
@@ -161,16 +151,14 @@ where
     Message: 'a + Clone,
 {
     fn from(navbar: Navbar<'a, Message>) -> Self {
-        let font = navbar.font.unwrap_or_default();
-
         let mut max_width = 0.0;
         for item in &navbar.items {
             let p = iced::advanced::graphics::text::Paragraph::with_text(Text {
-                content: item.label,
+                content: &item.label,
                 bounds: Size::INFINITE,
                 size: navbar.label_size.into(),
                 line_height: LineHeight::default(),
-                font,
+                font: navbar.label_font,
                 align_x: iced_widget::text::Alignment::Left,
                 align_y: iced::alignment::Vertical::Top,
                 shaping: Shaping::Advanced,
@@ -202,13 +190,6 @@ where
                 }
             };
 
-            let font = navbar.font.unwrap_or_default();
-            let icon_font_active = navbar
-                .icon_font_active
-                .unwrap_or(navbar.icon_font_inactive.unwrap_or_default());
-            let icon_font_inactive = navbar
-                .icon_font_inactive
-                .unwrap_or(navbar.icon_font_active.unwrap_or_default());
             let buttons = if navbar.items.is_empty() {
                 Vec::new()
             } else {
@@ -227,30 +208,28 @@ where
                         } else {
                             navbar.theme.on_surface_variant()
                         };
-                        let icon_font = if active {
-                            icon_font_active
+                        let icon = if active {
+                            item.icon_active.clone()
                         } else {
-                            icon_font_inactive
+                            item.icon_inactive.clone()
                         };
 
                         buttons.push(
                             center_x(
                                 column![
-                                    button(center(
-                                        crate::widget::icon(item.icon, navbar.icon_size)
-                                            .font(icon_font)
-                                            .color(icon_color)
-                                            .align_x(Alignment::Center)
-                                            .align_y(Alignment::Center)
-                                    ))
+                                    button(center(widget::hybrid_icon(
+                                        icon,
+                                        navbar.icon_size,
+                                        icon_color
+                                    )))
                                     .style(move |_, status| {
                                         item_container_style(status, active, navbar.theme)
                                     })
                                     .on_press(item.message.clone())
                                     .width(Length::Fixed(COMPACT_BUTTON_SIZE.width))
                                     .height(Length::Fixed(COMPACT_BUTTON_SIZE.height)),
-                                    iced_widget::text(item.label)
-                                        .font(font)
+                                    iced_widget::text(item.label.clone())
+                                        .font(navbar.label_font)
                                         .color(label_color)
                                         .size(navbar.label_size)
                                         .wrapping(Wrapping::None),
@@ -276,20 +255,18 @@ where
                         } else {
                             navbar.theme.on_surface_variant()
                         };
-                        let icon_font = if active {
-                            icon_font_active
+                        let icon = if active {
+                            item.icon_active.clone()
                         } else {
-                            icon_font_inactive
+                            item.icon_inactive.clone()
                         };
 
                         buttons.push(
                             button(center(
                                 row![
-                                    icon(item.icon, navbar.icon_size)
-                                        .font(icon_font)
-                                        .color(icon_color),
-                                    iced_widget::text(item.label)
-                                        .font(font)
+                                    widget::hybrid_icon(icon, navbar.icon_size, icon_color),
+                                    iced_widget::text(item.label.clone())
+                                        .font(navbar.label_font)
                                         .color(label_color)
                                         .size(navbar.label_size)
                                 ]

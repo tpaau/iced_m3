@@ -64,9 +64,10 @@ pub fn text_input<'a, Message: Clone, Renderer>(
 #[must_use]
 pub fn navbar<'a, Message, Theme, Renderer>(
     items: Vec<navbar::Item<'a, Message>>,
+    label_font: Font,
     theme: &'a impl ColorScheme,
 ) -> Navbar<'a, Message> {
-    Navbar::new(items, theme)
+    Navbar::new(items, label_font, theme)
 }
 
 #[must_use]
