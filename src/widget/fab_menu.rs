@@ -382,20 +382,11 @@ impl<'a, 'b, Message> iced::advanced::Overlay<Message, iced::Theme, iced::Render
         &self,
         layout: iced::advanced::Layout<'_>,
         cursor: iced::advanced::mouse::Cursor,
-        renderer: &iced::Renderer,
+        _renderer: &iced::Renderer,
     ) -> iced::advanced::mouse::Interaction {
-        let viewport = iced::Rectangle::new(iced::Point::ORIGIN, layout.bounds().size());
-        for (i, item) in self.items.iter().enumerate() {
-            let interaction = item.as_widget().mouse_interaction(
-                &self.tree.children[i + 1],
-                layout.child(0),
-                cursor,
-                &viewport,
-                renderer,
-            );
-
-            if interaction != iced::mouse::Interaction::None {
-                return interaction;
+        for (i, _) in self.items.iter().enumerate() {
+            if cursor.is_over(layout.child(i).bounds()) {
+                return iced::mouse::Interaction::Pointer;
             }
         }
 
