@@ -361,8 +361,12 @@ impl<'a, 'b, Message> iced::advanced::Overlay<Message, iced::Theme, iced::Render
         }
 
         let should_close = match event {
-            Event::Mouse(iced::mouse::Event::ButtonPressed(_)) => !shell.is_event_captured(),
-            Event::Mouse(iced::mouse::Event::ButtonReleased(_)) => true,
+            Event::Mouse(iced::mouse::Event::ButtonPressed(_)) => {
+                !shell.is_event_captured() && !cursor.is_over(self.base_bounds)
+            }
+            Event::Mouse(iced::mouse::Event::ButtonReleased(_)) => {
+                !cursor.is_over(self.base_bounds)
+            }
             _ => false,
         };
 
