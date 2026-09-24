@@ -664,6 +664,8 @@ where
 {
     style: Style,
     on_press: Option<OnPress<'a, Message>>,
+    /// Make the button appear enabled even when there is no message is being emitted on press.
+    force_enabled: bool,
     clip: bool,
     content: Content<'a>,
     label_font: Option<iced::Font>,
@@ -686,6 +688,7 @@ where
         Self {
             style,
             on_press: None,
+            force_enabled: false,
             clip: false,
             content,
             label_font: None,
@@ -756,6 +759,13 @@ where
     #[must_use]
     pub fn clip(mut self, clip: bool) -> Self {
         self.clip = clip;
+        self
+    }
+
+    /// Make the button appear enabled even when there is no message is being emitted on press.
+    #[must_use]
+    pub(crate) fn force_enabled(mut self, force_enabled: bool) -> Self {
+        self.force_enabled = force_enabled;
         self
     }
 }
@@ -922,7 +932,7 @@ where
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerPressed { .. }) => {
-                if self.on_press.is_some() {
+                if self.on_press.is_some() || self.force_enabled {
                     let bounds = layout.bounds();
 
                     if cursor.is_over(bounds) {
@@ -936,7 +946,7 @@ where
             }
             Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerLifted { .. }) => {
-                if let Some(on_press) = &self.on_press {
+                if self.on_press.is_some() || self.force_enabled {
                     let state = tree.state.downcast_mut::<State>();
 
                     if state.is_pressed {
@@ -944,7 +954,9 @@ where
 
                         let bounds = layout.bounds();
 
-                        if cursor.is_over(bounds) {
+                        if cursor.is_over(bounds)
+                            && let Some(on_press) = &self.on_press
+                        {
                             shell.publish(on_press.resolve());
                         }
 
@@ -960,7 +972,7 @@ where
             _ => {}
         }
 
-        let current_status = if self.on_press.is_none() {
+        let current_status = if self.on_press.is_none() && !self.force_enabled {
             Status::Disabled
         } else if cursor.is_over(layout.bounds()) {
             let state = tree.state.downcast_ref::<State>();
@@ -1077,7 +1089,7 @@ where
     ) -> mouse::Interaction {
         let is_mouse_over = cursor.is_over(layout.bounds());
 
-        if is_mouse_over && self.on_press.is_some() {
+        if is_mouse_over && (self.on_press.is_some() || self.force_enabled) {
             mouse::Interaction::Pointer
         } else {
             mouse::Interaction::default()

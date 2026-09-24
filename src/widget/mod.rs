@@ -25,7 +25,7 @@ pub use wrappers::*;
 
 use std::ops::RangeInclusive;
 
-use iced::{Color, Element, Pixels};
+use iced::{Color, Element, Font, Pixels};
 
 use crate::{
     theme::{Accent, ColorScheme},
@@ -81,18 +81,49 @@ where
     Button::new(style, content)
 }
 
+// impl<'a, Message> FABMenu<'a, Message>
+// where
+//     Message: 'a + Clone,
+// {
+//     #[must_use]
+//     pub fn new<I>(
+//         items: I,
+//         size: fab::Size,
+//         label_font: Option<Font>,
+//         theme: &(impl ColorScheme + ?Sized),
+//         accent: Accent,
+//     ) -> Self
+//     where
+//         I: IntoIterator<Item = Item<'a, Message>>,
+//     {
+
 #[must_use]
 pub fn fab_menu<'a, Message, I>(
-    entries: I,
-    icon: &'a dyn Fn(bool) -> Icon<'a>,
-    theme: &impl ColorScheme,
+    items: I,
+    size: fab::Size,
+    label_font: Option<Font>,
+    theme: &(impl ColorScheme + ?Sized),
     accent: Accent,
 ) -> FABMenu<'a, Message>
 where
-    I: IntoIterator<Item = fab_menu::Entry<'a, Message>>,
+    Message: 'a + Clone,
+    I: IntoIterator<Item = fab_menu::Item<'a, Message>>,
 {
-    FABMenu::new(entries, icon, accent, theme)
+    FABMenu::new(items, size, label_font, theme, accent)
 }
+
+// #[must_use]
+// pub fn fab_menu<'a, Message, I>(
+//     entries: I,
+//     icon: &'a dyn Fn(bool) -> Icon<'a>,
+//     theme: &impl ColorScheme,
+//     accent: Accent,
+// ) -> modname::FABMenu<'a, Message>
+// where
+//     I: IntoIterator<Item = fab_menu::Entry<'a, Message>>,
+// {
+//     modname::FABMenu::new(entries, icon, accent, theme)
+// }
 
 #[must_use]
 pub fn slider<'a, F, T, Message>(

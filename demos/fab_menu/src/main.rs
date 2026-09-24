@@ -6,12 +6,10 @@ use iced::{
 };
 use iced_m3::{
     theme::{Accent, ColorScheme, Theme},
-    widget::{fab_menu, hybrid_icon::Icon},
+    widget::{OnPress, fab_menu, hybrid_icon::Icon},
 };
 
 const APP_NAME: &str = "FAB Menu demo";
-static ADD: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe145).unwrap());
-static CLOSE: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe5cd).unwrap());
 static DOCUMENT: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe158).unwrap());
 static CHAT: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe0b7).unwrap());
 static FOLDER_SHARED: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe2c9).unwrap());
@@ -44,39 +42,33 @@ impl State {
     fn view(&self) -> Element<'_, Message> {
         let menu = fab_menu(
             vec![
-                fab_menu::Entry {
-                    message: Message::Noop,
-                    label: "Document",
-                    icon: Some(Icon::Text {
+                fab_menu::Item {
+                    on_press: OnPress::Direct(Message::Noop),
+                    label: "Document".into_fragment(),
+                    icon: Icon::Text {
                         text: DOCUMENT.into_fragment(),
                         font: Some(fonts::icons_filled()),
-                    }),
+                    },
                 },
-                fab_menu::Entry {
-                    message: Message::Noop,
-                    label: "Message",
-                    icon: Some(Icon::Text {
+                fab_menu::Item {
+                    on_press: OnPress::Direct(Message::Noop),
+                    label: "Message".into_fragment(),
+                    icon: Icon::Text {
                         text: CHAT.into_fragment(),
                         font: Some(fonts::icons_filled()),
-                    }),
+                    },
                 },
-                fab_menu::Entry {
-                    message: Message::Noop,
-                    label: "Folder",
-                    icon: Some(Icon::Text {
+                fab_menu::Item {
+                    on_press: OnPress::Direct(Message::Noop),
+                    label: "Folder".into_fragment(),
+                    icon: Icon::Text {
                         text: FOLDER_SHARED.into_fragment(),
                         font: Some(fonts::icons_filled()),
-                    }),
+                    },
                 },
             ],
-            &|opened| Icon::Text {
-                text: if opened {
-                    CLOSE.into_fragment()
-                } else {
-                    ADD.into_fragment()
-                },
-                font: Some(fonts::icons_filled()),
-            },
+            iced_m3::widget::fab::Size::Regular,
+            None,
             &self.theme,
             Accent::default(),
         );
