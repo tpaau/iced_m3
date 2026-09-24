@@ -900,19 +900,25 @@ where
         let intrinsic_size = iced::Size::new(width, height);
         let size = limits.resolve(intrinsic_size.width, intrinsic_size.height, intrinsic_size);
 
+        let content_area_width = size.width - padding.left - padding.right;
+        let content_area_height = size.height - padding.top - padding.bottom;
+
+        let group_x = padding.left + (content_area_width - content_width) / 2.0;
+        let group_y = padding.top + (content_area_height - content_height) / 2.0;
+
         let mut children = Vec::with_capacity(2);
         let mut offset = 0.0;
-        let x = (width - content_width) / 2.0;
 
         if let Some(icon) = icon_node {
+            let y = group_y + (content_height - icon.size().height) / 2.0;
             offset += icon.size().width + spacing;
-            let y = padding.top + (height - icon.size().height) / 2.0;
-            children.push(icon.move_to(iced::Point::new(x, y)));
+            children.push(icon.move_to(iced::Point::new(group_x, y)));
         }
 
         if let Some(label) = label_node {
-            let y = padding.top + (height - label.size().height) / 2.0;
-            children.push(label.move_to(iced::Point::new(x + offset, y)));
+            let y = group_y + (content_height - label.size().height) / 2.0;
+
+            children.push(label.move_to(iced::Point::new(group_x + offset, y)));
         }
 
         layout::Node::with_children(size, children)
