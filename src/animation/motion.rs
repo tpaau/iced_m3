@@ -1,21 +1,70 @@
 mod constants {
     use crate::animation::motion::Spring;
 
-    pub const FAST_SPATIAL: Spring = Spring::new(0.9, 1400.0);
-    pub const FAST_EFFECTS: Spring = Spring::new(1.0, 3800.0);
-    pub const DEFAULT_SPATIAL: Spring = Spring::new(0.9, 700.0);
-    pub const DEFAULT_EFFECTS: Spring = Spring::new(1.0, 1600.0);
-    pub const SLOW_SPATIAL: Spring = Spring::new(0.9, 300.0);
-    pub const SLOW_EFFECTS: Spring = Spring::new(1.0, 800.0);
+    pub const FAST_SPATIAL_STANDARD: Spring = Spring::new(0.9, 1400.0);
+    pub const FAST_EFFECTS_STANDARD: Spring = Spring::new(1.0, 3800.0);
+    pub const DEFAULT_SPATIAL_STANDARD: Spring = Spring::new(0.9, 700.0);
+    pub const DEFAULT_EFFECTS_STANDARD: Spring = Spring::new(1.0, 1600.0);
+    pub const SLOW_SPATIAL_STANDARD: Spring = Spring::new(0.9, 300.0);
+    pub const SLOW_EFFECTS_STANDARD: Spring = Spring::new(1.0, 800.0);
+
+    pub const FAST_SPATIAL_EXPRESSIVE: Spring = Spring::new(0.6, 800.0);
+    pub const FAST_EFFECTS_EXPRESSIVE: Spring = Spring::new(1.0, 3800.0);
+    pub const DEFAULT_SPATIAL_EXPRESSIVE: Spring = Spring::new(0.8, 380.0);
+    pub const DEFAULT_EFFECTS_EXPRESSIVE: Spring = Spring::new(1.0, 1600.0);
+    pub const SLOW_SPATIAL_EXPRESSIVE: Spring = Spring::new(0.8, 200.0);
+    pub const SLOW_EFFECTS_EXPRESSIVE: Spring = Spring::new(1.0, 800.0);
 
     pub const POSITION_EPSILON: f32 = 0.001;
     pub const VELOCITY_EPSILON: f32 = 0.001;
 }
 
-use std::time::Duration;
+use std::time::Instant;
 
 #[cfg(feature = "pub-internal-const")]
 pub use constants::*;
+
+pub fn fast_spatial(expressive: bool) -> Spring {
+    match expressive {
+        true => constants::FAST_SPATIAL_EXPRESSIVE,
+        false => constants::FAST_SPATIAL_STANDARD,
+    }
+}
+
+pub fn fast_effects(expressive: bool) -> Spring {
+    match expressive {
+        true => constants::FAST_EFFECTS_EXPRESSIVE,
+        false => constants::FAST_EFFECTS_STANDARD,
+    }
+}
+
+pub fn default_spatial(expressive: bool) -> Spring {
+    match expressive {
+        true => constants::DEFAULT_SPATIAL_EXPRESSIVE,
+        false => constants::DEFAULT_SPATIAL_STANDARD,
+    }
+}
+
+pub fn default_effects(expressive: bool) -> Spring {
+    match expressive {
+        true => constants::DEFAULT_EFFECTS_EXPRESSIVE,
+        false => constants::DEFAULT_EFFECTS_STANDARD,
+    }
+}
+
+pub fn slow_spatial(expressive: bool) -> Spring {
+    match expressive {
+        true => constants::SLOW_SPATIAL_EXPRESSIVE,
+        false => constants::SLOW_SPATIAL_STANDARD,
+    }
+}
+
+pub fn slow_effects(expressive: bool) -> Spring {
+    match expressive {
+        true => constants::SLOW_EFFECTS_EXPRESSIVE,
+        false => constants::SLOW_EFFECTS_STANDARD,
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Spring {
@@ -35,24 +84,26 @@ pub struct SpringMotion {
     pub position: f32,
     pub velocity: f32,
     pub target: f32,
+    pub time: Instant,
 }
 
 impl SpringMotion {
-    pub const fn new(spring: Spring, target: f32) -> Self {
+    pub const fn new(spring: Spring, target: f32, start: Instant) -> Self {
         Self {
             spring,
             position: 0.0,
             velocity: 0.0,
             target,
+            time: start,
         }
     }
 
-    /// Advances the spring by `delta_time`.
-    pub fn step(&mut self, delta_time: Duration) {
+    pub fn step(&mut self, time: Instant) {
+        let delta_time = time.duration_since(self.time);
+        self.time = time;
         if self.is_at_rest() {
             return;
         }
-
         let zeta = self.spring.damping.max(0.0);
         let omega = self.spring.stiffness.max(0.0).sqrt();
 
@@ -110,7 +161,7 @@ impl SpringMotion {
     }
 
     pub fn is_at_rest(&self) -> bool {
-        (self.position - self.target).abs() <= POSITION_EPSILON
-            && self.velocity.abs() <= VELOCITY_EPSILON
+        (self.position - self.target).abs() <= constants::POSITION_EPSILON
+            && self.velocity.abs() <= constants::VELOCITY_EPSILON
     }
 }

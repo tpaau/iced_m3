@@ -1,10 +1,16 @@
+use std::time::Instant;
+
 use iced::{
     Border, Color, Element, Length, Point, Rectangle, Size,
     advanced::{Overlay, Widget, layout::Node, mouse, overlay, renderer::Quad},
 };
 use iced_widget::core::{Svg, svg::Handle};
 
-use crate::{theme::ColorScheme, widget::common_icons};
+use crate::{
+    animation::motion::{SpringMotion, fast_effects, fast_spatial},
+    theme::ColorScheme,
+    widget::common_icons,
+};
 
 const TRACK_SIZE: Size<f32> = Size {
     width: 52.0,
@@ -29,15 +35,23 @@ struct State {
     is_pressed: bool,
     check_icon: Handle,
     close_icon: Handle,
+    color_spring: SpringMotion,
+    handle_position_spring: SpringMotion,
+    handle_size_spring: SpringMotion,
 }
 
 impl Default for State {
     fn default() -> Self {
+        let instant = Instant::now();
         Self {
             is_hovered: false,
             is_pressed: false,
             check_icon: Handle::from_memory(common_icons::CHECK),
             close_icon: Handle::from_memory(common_icons::CLOSE),
+            // TODO: Optional expressive
+            color_spring: SpringMotion::new(fast_effects(true), 0.0, instant),
+            handle_position_spring: SpringMotion::new(fast_spatial(true), 0.0, instant),
+            handle_size_spring: SpringMotion::new(fast_spatial(true), 0.0, instant),
         }
     }
 }
@@ -127,12 +141,8 @@ where
         _renderer: &Renderer,
         _limits: &iced::advanced::layout::Limits,
     ) -> Node {
-        // const HANDLE_SIZE_NO_ICON: f32 = 16.0;
-        // const HANDLE_SIZE_WITH_ICON: f32 = 24.0;
-        // const HANDLE_SIZE_PRESSED: f32 = 28.0;
-
-        let state = tree.state.downcast_ref::<State>();
-        let handle_size = if state.is_pressed && self.on_toggle.is_some() {
+        let state = tree.state.downcast_mut::<State>();
+        let handle_size = if state.is_pressed {
             HANDLE_SIZE_PRESSED
         } else if self.icon_mode == IconMode::Always || self.enabled {
             HANDLE_SIZE_WITH_ICON
@@ -140,13 +150,17 @@ where
             HANDLE_SIZE_NO_ICON
         };
 
-        let padding = (TRACK_SIZE.height - handle_size) / 2.0;
-        let handle_x = if self.enabled {
-            TRACK_SIZE.width - handle_size - padding
+        state.handle_size_spring.target = handle_size;
+        let handle_size = state.handle_size_spring.position;
+
+        state.handle_position_spring.target = if self.enabled {
+            TRACK_SIZE.width - TRACK_SIZE.height / 2.0
         } else {
-            padding
+            TRACK_SIZE.height / 2.0
         };
 
+        let handle_center = state.handle_position_spring.position;
+        let handle_x = handle_center - handle_size / 2.0;
         let handle_y = (TRACK_SIZE.height - handle_size) / 2.0;
 
         let icon_x = handle_x + (handle_size - ICON_SIZE) / 2.0;
@@ -304,6 +318,17 @@ where
         _viewport: &iced::Rectangle,
     ) {
         let state = tree.state.downcast_mut::<State>();
+        let instant = Instant::now();
+        if !state.handle_position_spring.is_at_rest()
+            || !state.handle_size_spring.is_at_rest()
+            || !state.color_spring.is_at_rest()
+        {
+            shell.invalidate_layout();
+            shell.request_redraw();
+        }
+        state.color_spring.step(instant);
+        state.handle_size_spring.step(instant);
+        state.handle_position_spring.step(instant);
         let is_over = cursor.is_over(layout.bounds());
 
         match event {
