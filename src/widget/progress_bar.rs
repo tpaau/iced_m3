@@ -5,10 +5,7 @@ use iced::{
     advanced::{Layout, Renderer, Widget, layout, widget::tree},
 };
 
-use crate::{
-    animation::{EMPHASIZED_ACCELERATE, cubic_bezier_tuple},
-    theme::ColorScheme,
-};
+use crate::{animation::emphasized_accelerate, theme::ColorScheme};
 
 const STOP_INDICATOR_SIZE: f32 = 4.0;
 const MIN_HEIGHT: f32 = 8.0;
@@ -201,17 +198,14 @@ impl<'a, Message> Widget<Message, iced::Theme, iced::Renderer> for ProgressBar {
             }
             None => {
                 let state = tree.state.downcast_ref::<State>();
-                // Update always runs before draw so it's guaranteed to be Some?
                 let elapsed = state.start.unwrap().elapsed().as_secs_f32();
 
                 const CYCLE: f32 = 1.75;
                 let time = elapsed % CYCLE;
 
-                let ease = |t: f32| cubic_bezier_tuple(t, EMPHASIZED_ACCELERATE);
-
                 let animation_value = |delay: f32, duration: f32| -> f32 {
                     let t = ((time - delay) / duration).clamp(0.0, 1.0);
-                    ease(t)
+                    emphasized_accelerate(t)
                 };
 
                 let first_head = animation_value(0.0, 1.0);
