@@ -1,4 +1,4 @@
-use iced::{Element, Font, Length, advanced::text, padding};
+use iced::{Element, Font, Length, advanced::text, border::Radius, padding};
 use iced_widget::text::IntoFragment;
 
 pub const EDGE_SPACING: f32 = 16.0;
@@ -63,31 +63,34 @@ impl Size {
         }
     }
 
+    fn rounding(&self) -> Radius {
+        match self {
+            Size::Regular => 16.0,
+            Size::Medium => 20.0,
+            Size::Large => 28.0,
+        }
+        .into()
+    }
+
     fn to_button_size(&self, extended: bool) -> button::Size {
         let (padding, container_width) = match extended {
             true => (self.padding(), Length::Shrink),
             false => (0.0, Length::Fixed(self.container_height())),
         };
-        button::Size::Custom {
+        button::Size {
             width: container_width,
             height: Length::Fixed(self.container_height()),
             spacing: self.content_spacing(),
             padding: padding::horizontal(padding),
             icon_size: self.icon_size(),
             label_size: self.label_size(),
-        }
-    }
-
-    fn to_corner_style(&self) -> button::CornerStyle {
-        let radius = match self {
-            Size::Regular => 16.0,
-            Size::Medium => 20.0,
-            Size::Large => 28.0,
-        }
-        .into();
-        button::CornerStyle::Custom {
-            resting: radius,
-            pressed: radius,
+            corner_radius: button::CornerRadius {
+                style: CornerStyle::default(),
+                shape_morph: false,
+                rounded: f32::MAX.into(),
+                square: self.rounding(),
+                pressed: 0.0.into(),
+            },
         }
     }
 }
@@ -136,7 +139,6 @@ where
     size: Size,
     style: Style,
     label_font: Option<Font>,
-    corner_style: Option<CornerStyle>,
     on_press: Option<OnPress<'a, Message>>,
 }
 
@@ -152,7 +154,6 @@ where
             size: Size::default(),
             style,
             label_font: None,
-            corner_style: None,
             on_press: None,
         }
     }
@@ -164,7 +165,6 @@ where
             size: Size::default(),
             style,
             label_font: None,
-            corner_style: None,
             on_press: Some(on_press),
         }
     }
@@ -194,18 +194,6 @@ where
         self.label_font = maybe_label_font;
         self
     }
-
-    #[must_use]
-    pub fn corner_style(mut self, corner_style: CornerStyle) -> Self {
-        self.corner_style = Some(corner_style);
-        self
-    }
-
-    #[must_use]
-    pub fn corner_style_maybe(mut self, corner_style: Option<CornerStyle>) -> Self {
-        self.corner_style = corner_style;
-        self
-    }
 }
 
 impl<'a, Message> From<Fab<'a, Message>> for Element<'a, Message>
@@ -215,7 +203,6 @@ where
     fn from(value: Fab<'a, Message>) -> Self {
         let is_extended_fab = matches!(value.content, Content::Extended { icon: _, label: _ });
         let button = crate::widget::button(value.style, value.content.into())
-            .corner_style(value.corner_style.unwrap_or(value.size.to_corner_style()))
             .label_font_maybe(value.label_font)
             .size(value.size.to_button_size(is_extended_fab))
             .elevation(Elevation::Level3);

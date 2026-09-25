@@ -64,10 +64,6 @@ where
                 icon: Icon::Svg(svg::Handle::from_memory(common_icons::CLOSE)),
             },
         )
-        .corner_style(button::CornerStyle::Custom {
-            resting: f32::MAX.into(),
-            pressed: f32::MAX.into(),
-        })
         .label_font_maybe(label_font)
         .size(size)
         .into();
@@ -93,10 +89,6 @@ where
                     },
                     i.on_press,
                 )
-                .corner_style(button::CornerStyle::Custom {
-                    resting: f32::MAX.into(),
-                    pressed: f32::MAX.into(),
-                })
                 .label_font_maybe(label_font)
                 .size(BUTTON_SIZE)
                 .into()

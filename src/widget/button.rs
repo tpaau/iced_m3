@@ -333,256 +333,176 @@ impl Style {
     }
 }
 
-#[derive(Default, Clone, Copy)]
-pub enum Size {
-    ExtraSmall,
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum CornerStyle {
     #[default]
-    Small,
-    Medium,
-    Large,
-    ExtraLarge,
-    Custom {
-        width: Length,
-        height: Length,
-        spacing: f32,
-        padding: Padding,
-        icon_size: f32,
-        label_size: f32,
-    },
+    Rounded,
+    Square,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct CornerRadius {
+    pub style: CornerStyle,
+    pub shape_morph: bool,
+    pub rounded: Radius,
+    pub square: Radius,
+    pub pressed: Radius,
+}
+
+impl Default for CornerRadius {
+    fn default() -> Self {
+        Self::small()
+    }
+}
+
+impl CornerRadius {
+    pub fn extra_small() -> Self {
+        Self {
+            style: CornerStyle::default(),
+            shape_morph: true,
+            rounded: f32::MAX.into(),
+            square: 12.0.into(),
+            pressed: 8.0.into(),
+        }
+    }
+
+    pub fn small() -> Self {
+        Self {
+            style: CornerStyle::default(),
+            shape_morph: true,
+            rounded: f32::MAX.into(),
+            square: 12.0.into(),
+            pressed: 8.0.into(),
+        }
+    }
+
+    pub fn medium() -> Self {
+        Self {
+            style: CornerStyle::default(),
+            shape_morph: true,
+            rounded: f32::MAX.into(),
+            square: 16.0.into(),
+            pressed: 12.0.into(),
+        }
+    }
+
+    pub fn large() -> Self {
+        Self {
+            style: CornerStyle::default(),
+            shape_morph: true,
+            rounded: f32::MAX.into(),
+            square: 28.0.into(),
+            pressed: 16.0.into(),
+        }
+    }
+
+    pub fn extra_large() -> Self {
+        Self {
+            style: CornerStyle::default(),
+            shape_morph: true,
+            rounded: f32::MAX.into(),
+            square: 28.0.into(),
+            pressed: 16.0.into(),
+        }
+    }
+
+    pub fn style(mut self, style: CornerStyle) -> Self {
+        self.style = style;
+        self
+    }
+
+    pub fn shape_morph(mut self, shape_morph: bool) -> Self {
+        self.shape_morph = shape_morph;
+        self
+    }
+
+    pub fn radius(&self, pressed: bool, selected: Option<bool>) -> &Radius {
+        if pressed && self.shape_morph {
+            return &self.pressed;
+        }
+        let selected = selected.unwrap_or_default();
+        match (selected, self.style) {
+            (true, CornerStyle::Rounded) | (false, CornerStyle::Square) => &self.square,
+            (true, CornerStyle::Square) | (false, CornerStyle::Rounded) => &self.rounded,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Size {
+    pub width: Length,
+    pub height: Length,
+    pub spacing: f32,
+    pub padding: Padding,
+    pub icon_size: f32,
+    pub label_size: f32,
+    pub corner_radius: CornerRadius,
+}
+
+impl Default for Size {
+    fn default() -> Self {
+        Self::small()
+    }
 }
 
 impl Size {
-    pub fn width(&self) -> Length {
-        match self {
-            Self::Custom {
-                width,
-                height: _,
-                spacing: _,
-                padding: _,
-                icon_size: _,
-                label_size: _,
-            } => *width,
-            _ => Length::Shrink,
+    pub fn extra_small() -> Self {
+        Self {
+            width: Length::Shrink,
+            height: Length::Fixed(32.0),
+            spacing: 4.0,
+            padding: padding::horizontal(12.0),
+            icon_size: 20.0,
+            label_size: 14.0,
+            corner_radius: CornerRadius::extra_small(),
         }
     }
 
-    pub fn with_width(self, width: Length) -> Self {
-        Self::Custom {
-            width,
-            height: self.height(),
-            spacing: self.spacing(),
-            padding: self.padding(),
-            icon_size: self.icon_size(),
-            label_size: self.label_size(),
+    pub fn small() -> Self {
+        Self {
+            width: Length::Shrink,
+            height: Length::Fixed(40.0),
+            spacing: 8.0,
+            padding: padding::horizontal(16.0),
+            icon_size: 20.0,
+            label_size: 14.0,
+            corner_radius: CornerRadius::small(),
         }
     }
 
-    pub fn height(&self) -> Length {
-        match self {
-            Self::ExtraSmall => Length::Fixed(32.0),
-            Self::Small => Length::Fixed(40.0),
-            Self::Medium => Length::Fixed(56.0),
-            Self::Large => Length::Fixed(96.0),
-            Self::ExtraLarge => Length::Fixed(136.0),
-            Self::Custom {
-                width: _,
-                height,
-                spacing: _,
-                padding: _,
-                icon_size: _,
-                label_size: _,
-            } => *height,
+    pub fn medium() -> Self {
+        Self {
+            width: Length::Shrink,
+            height: Length::Fixed(56.0),
+            spacing: 8.0,
+            padding: padding::horizontal(24.0),
+            icon_size: 24.0,
+            label_size: 16.0,
+            corner_radius: CornerRadius::medium(),
         }
     }
 
-    pub fn with_height(self, height: Length) -> Self {
-        Self::Custom {
-            width: self.width(),
-            height,
-            spacing: self.spacing(),
-            padding: self.padding(),
-            icon_size: self.icon_size(),
-            label_size: self.label_size(),
+    pub fn large() -> Self {
+        Self {
+            width: Length::Shrink,
+            height: Length::Fixed(96.0),
+            spacing: 12.0,
+            padding: padding::horizontal(48.0),
+            icon_size: 32.0,
+            label_size: 24.0,
+            corner_radius: CornerRadius::large(),
         }
     }
 
-    pub fn spacing(&self) -> f32 {
-        match self {
-            Size::ExtraSmall => 4.0,
-            Size::Small | Size::Medium => 8.0,
-            Size::Large => 12.0,
-            Size::ExtraLarge => 16.0,
-            Size::Custom {
-                width: _,
-                height: _,
-                spacing,
-                padding: _,
-                icon_size: _,
-                label_size: _,
-            } => *spacing,
-        }
-    }
-
-    pub fn with_spacing(self, spacing: f32) -> Self {
-        Self::Custom {
-            width: self.width(),
-            height: self.height(),
-            spacing,
-            padding: self.padding(),
-            icon_size: self.icon_size(),
-            label_size: self.label_size(),
-        }
-    }
-
-    pub fn padding(&self) -> Padding {
-        match self {
-            Self::ExtraSmall => padding::horizontal(12.0),
-            Self::Small => padding::horizontal(16.0),
-            Self::Medium => padding::horizontal(24.0),
-            Self::Large => padding::horizontal(48.0),
-            Self::ExtraLarge => padding::horizontal(64.0),
-            Self::Custom {
-                width: _,
-                height: _,
-                spacing: _,
-                padding,
-                icon_size: _,
-                label_size: _,
-            } => *padding,
-        }
-    }
-
-    pub fn with_padding(self, padding: impl Into<Padding>) -> Self {
-        Self::Custom {
-            width: self.width(),
-            height: self.height(),
-            spacing: self.spacing(),
-            padding: padding.into(),
-            icon_size: self.icon_size(),
-            label_size: self.label_size(),
-        }
-    }
-
-    pub fn icon_size(&self) -> f32 {
-        match self {
-            Size::ExtraSmall => 20.0,
-            Size::Small => 20.0,
-            Size::Medium => 24.0,
-            Size::Large => 32.0,
-            Size::ExtraLarge => 40.0,
-            Size::Custom {
-                width: _,
-                height: _,
-                spacing: _,
-                padding: _,
-                icon_size,
-                label_size: _,
-            } => *icon_size,
-        }
-    }
-
-    pub fn with_icon_size(self, icon_size: f32) -> Self {
-        Self::Custom {
-            width: self.width(),
-            height: self.height(),
-            spacing: self.spacing(),
-            padding: self.padding(),
-            icon_size,
-            label_size: self.label_size(),
-        }
-    }
-
-    pub fn label_size(&self) -> f32 {
-        match self {
-            Size::ExtraSmall | Size::Small => 14.0,
-            Size::Medium => 16.0,
-            Size::Large => 24.0,
-            Size::ExtraLarge => 32.0,
-            Size::Custom {
-                width: _,
-                height: _,
-                spacing: _,
-                padding: _,
-                icon_size: _,
-                label_size,
-            } => *label_size,
-        }
-    }
-
-    pub fn with_label_size(self, label_size: f32) -> Self {
-        Self::Custom {
-            width: self.width(),
-            height: self.height(),
-            spacing: self.spacing(),
-            padding: self.padding(),
-            icon_size: self.icon_size(),
-            label_size,
-        }
-    }
-}
-
-#[derive(Default, Clone, Copy)]
-pub enum CornerStyle {
-    #[default]
-    Round,
-    Square,
-    Custom {
-        resting: Radius,
-        pressed: Radius,
-    },
-}
-
-impl CornerStyle {
-    fn resting(&self, size: &Size, selected: bool) -> Radius {
-        if selected {
-            self.pressed(size, false)
-        } else {
-            match self {
-                CornerStyle::Round => Radius::new(f32::MAX),
-                CornerStyle::Square => match size {
-                    Size::ExtraSmall | Size::Small => Radius::new(12.0),
-                    Size::Medium
-                    | Size::Custom {
-                        height: _,
-                        padding: _,
-                        width: _,
-                        spacing: _,
-                        icon_size: _,
-                        label_size: _,
-                    } => Radius::new(16.0),
-                    Size::Large | Size::ExtraLarge => Radius::new(28.0),
-                },
-                CornerStyle::Custom {
-                    resting,
-                    pressed: _,
-                } => *resting,
-            }
-        }
-    }
-
-    fn pressed(&self, size: &Size, selected: bool) -> Radius {
-        if selected {
-            self.resting(size, false)
-        } else {
-            match self {
-                CornerStyle::Round | CornerStyle::Square => match size {
-                    Size::ExtraSmall | Size::Small => Radius::new(8.0),
-                    Size::Medium
-                    | Size::Custom {
-                        height: _,
-                        padding: _,
-                        width: _,
-                        spacing: _,
-                        icon_size: _,
-                        label_size: _,
-                    } => Radius::new(12.0),
-                    Size::Large | Size::ExtraLarge => Radius::new(16.0),
-                },
-                CornerStyle::Custom {
-                    resting: _,
-                    pressed,
-                } => *pressed,
-            }
+    pub fn extra_large() -> Self {
+        Self {
+            width: Length::Shrink,
+            height: Length::Fixed(136.0),
+            spacing: 16.0,
+            padding: padding::horizontal(64.0),
+            icon_size: 40.0,
+            label_size: 32.0,
+            corner_radius: CornerRadius::extra_large(),
         }
     }
 }
@@ -670,7 +590,6 @@ where
     content: Content<'a>,
     label_font: Option<iced::Font>,
     size: Size,
-    corner_style: CornerStyle,
     elevation: Elevation,
     selected: Option<bool>,
     status: Option<Status>,
@@ -693,7 +612,6 @@ where
             content,
             label_font: None,
             size: Size::default(),
-            corner_style: CornerStyle::default(),
             elevation: Elevation::default(),
             selected: None,
             status: Some(Status::default()),
@@ -717,12 +635,6 @@ where
     #[must_use]
     pub fn size(mut self, size: Size) -> Self {
         self.size = size;
-        self
-    }
-
-    #[must_use]
-    pub fn corner_style(mut self, corner_style: CornerStyle) -> Self {
-        self.corner_style = corner_style;
         self
     }
 
@@ -808,8 +720,8 @@ where
 
     fn size(&self) -> iced::Size<Length> {
         iced::Size {
-            width: self.size.width(),
-            height: self.size.height(),
+            width: self.size.width,
+            height: self.size.height,
         }
     }
 
@@ -819,7 +731,7 @@ where
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
-        let padding = self.size.padding();
+        let padding = self.size.padding;
         let limits_shrink =
             iced::Size::new(padding.left + padding.right, padding.top + padding.bottom);
         let shrinked_limits = limits.shrink(limits_shrink);
@@ -830,8 +742,8 @@ where
                     iced::advanced::text::Text {
                         content: &text,
                         bounds: shrinked_limits.max(),
-                        size: Pixels(self.size.icon_size()),
-                        line_height: text::LineHeight::Absolute(Pixels(self.size.icon_size())),
+                        size: Pixels(self.size.icon_size),
+                        line_height: text::LineHeight::Absolute(Pixels(self.size.icon_size)),
                         font: font
                             .map(Renderer::Font::from)
                             .unwrap_or_else(|| renderer.default_font()),
@@ -846,7 +758,7 @@ where
 
         let contains_icon = matches!(&self.content, Content::Icon(_) | Content::Full { .. });
         let icon_node = contains_icon.then(|| {
-            let icon_size = self.size.icon_size();
+            let icon_size = self.size.icon_size;
             Node::new(iced::Size::new(icon_size, icon_size))
         });
 
@@ -855,7 +767,7 @@ where
                 iced::advanced::text::Text {
                     content: &label,
                     bounds: shrinked_limits.max(),
-                    size: Pixels(self.size.label_size()),
+                    size: Pixels(self.size.label_size),
                     line_height: text::LineHeight::Relative(1.0),
                     font: self
                         .label_font
@@ -875,7 +787,7 @@ where
         self.label_paragraph = paragraph;
 
         let spacing = if icon_node.is_some() && label_node.is_some() {
-            self.size.spacing()
+            self.size.spacing
         } else {
             0.0
         };
@@ -883,7 +795,7 @@ where
         let content_width = icon_node.as_ref().map_or(0.0, |node| node.size().width)
             + label_node.as_ref().map_or(0.0, |node| node.size().width)
             + spacing;
-        let width = match self.size.width() {
+        let width = match self.size.width {
             Length::Fixed(width) => width,
             _ => content_width + padding.left + padding.right,
         };
@@ -892,7 +804,7 @@ where
             .as_ref()
             .map_or(0.0, |node| node.size().height)
             .max(label_node.as_ref().map_or(0.0, |node| node.size().height));
-        let height = match self.size.height() {
+        let height = match self.size.height {
             Length::Fixed(height) => height,
             _ => content_height + padding.top + padding.bottom,
         };
@@ -917,7 +829,6 @@ where
 
         if let Some(label) = label_node {
             let y = group_y + (content_height - label.size().height) / 2.0;
-
             children.push(label.move_to(iced::Point::new(group_x + offset, y)));
         }
 
@@ -1017,13 +928,11 @@ where
         let style = self
             .style
             .state_style(status == Status::Disabled, self.selected);
-        let corner_radius = if status == Status::Pressed {
-            self.corner_style
-                .pressed(&self.size, self.selected.unwrap_or_default())
-        } else {
-            self.corner_style
-                .resting(&self.size, self.selected.unwrap_or_default())
-        };
+
+        let corner_radius = self
+            .size
+            .corner_radius
+            .radius(status == Status::Pressed, self.selected);
 
         renderer.fill_quad(
             renderer::Quad {
@@ -1031,7 +940,7 @@ where
                 border: iced::Border {
                     color: style.outline.color,
                     width: style.outline.width,
-                    radius: corner_radius,
+                    radius: *corner_radius,
                 },
                 shadow: shadow(self.style.elevation.shadow_color, elevation),
                 ..Default::default()
@@ -1077,7 +986,7 @@ where
             renderer.fill_quad(
                 renderer::Quad {
                     bounds,
-                    border: iced::Border::default().rounded(corner_radius),
+                    border: iced::Border::default().rounded(*corner_radius),
                     ..Default::default()
                 },
                 color,

@@ -1,13 +1,13 @@
 use std::sync::LazyLock;
 
 use iced::{
-    Alignment, Element, Font, Length, Renderer, Task,
+    Alignment, Element, Font, Length, Task,
     widget::{Container, center, column, container, row, text::IntoFragment},
 };
 use iced_m3::{
     theme::{Accent, ColorScheme, Mode, Theme},
     widget::{
-        button::{Button, Content, CornerStyle, Style},
+        button::{self, Content, CornerRadius, CornerStyle, Style},
         hybrid_icon::Icon,
         switch,
     },
@@ -45,19 +45,6 @@ static EDIT: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe3c9).unwrap());
 const CONTAINER_HEIGHT: f32 = 50.0;
 const CONTAINER_WIDTH: f32 = 250.0;
 
-fn button<'a>(
-    state: &'a State,
-    style: Style,
-    content: Content<'a>,
-) -> Button<'a, Message, Renderer> {
-    iced_m3::widget::button(style, content)
-        .corner_style(match state.square {
-            true => CornerStyle::Square,
-            false => CornerStyle::Round,
-        })
-        .on_press(Message::Noop)
-}
-
 fn wrapper<'a>(content: impl Into<Element<'a, Message>>) -> Container<'a, Message> {
     center(content)
         .height(CONTAINER_HEIGHT)
@@ -66,6 +53,14 @@ fn wrapper<'a>(content: impl Into<Element<'a, Message>>) -> Container<'a, Messag
 
 impl State {
     fn view(&self) -> Element<'_, Message> {
+        let corner_style = match self.square {
+            true => CornerStyle::Square,
+            false => CornerStyle::Rounded,
+        };
+        let size = button::Size {
+            corner_radius: CornerRadius::default().style(corner_style),
+            ..button::Size::default()
+        };
         let icon = Icon::Text {
             text: self.icon.into_fragment(),
             font: Some(match self.icons_filled {
@@ -76,291 +71,302 @@ impl State {
         let buttons = container(
             row![
                 column![
-                    wrapper(button(
-                        self,
-                        Style::elevated(&self.theme, self.accent),
-                        Content::Full {
-                            icon: icon.clone(),
-                            label: "Elevated button".into(),
-                        },
-                    )),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
+                            Style::elevated(&self.theme, self.accent),
+                            Content::Full {
+                                icon: icon.clone(),
+                                label: "Elevated button".into(),
+                            },
+                        )
+                        .size(size)
+                        .on_press(Message::Noop)
+                    ),
+                    wrapper(
+                        iced_m3::widget::button(
                             Style::elevated(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Elevated unselected".into(),
                             },
                         )
+                        .size(size)
+                        .on_press(Message::Noop)
                         .selected(false),
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::elevated(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Elevated selected".into(),
                             },
                         )
+                        .size(size)
+                        .on_press(Message::Noop)
                         .selected(true),
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::elevated(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Elevated disabled".into(),
                             },
                         )
-                        .on_press_maybe(None),
+                        .size(size),
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::elevated(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Elevated disabled unselected".into(),
                             },
                         )
-                        .selected(false)
-                        .on_press_maybe(None),
+                        .size(size)
+                        .selected(false),
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::elevated(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Elevated disabled selected".into(),
                             },
                         )
-                        .selected(true)
-                        .on_press_maybe(None),
+                        .size(size)
+                        .selected(true),
                     ),
                 ],
                 column![
-                    wrapper(button(
-                        self,
-                        Style::filled(&self.theme, self.accent),
-                        Content::Full {
-                            icon: icon.clone(),
-                            label: "Filled button".into(),
-                        },
-                    )),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
+                            Style::filled(&self.theme, self.accent),
+                            Content::Full {
+                                icon: icon.clone(),
+                                label: "Filled button".into(),
+                            },
+                        )
+                        .size(size)
+                        .on_press(Message::Noop)
+                    ),
+                    wrapper(
+                        iced_m3::widget::button(
                             Style::filled(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Filled unselected".into(),
                             },
                         )
+                        .size(size)
+                        .on_press(Message::Noop)
                         .selected(false),
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::filled(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Filled selected".into(),
                             },
                         )
+                        .size(size)
+                        .on_press(Message::Noop)
                         .selected(true),
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::filled(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Filled disabled".into(),
                             },
                         )
-                        .on_press_maybe(None),
+                        .size(size)
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::filled(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Filled disabled unselected".into(),
                             },
                         )
+                        .size(size)
                         .selected(false)
-                        .on_press_maybe(None),
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::filled(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Filled disabled selected".into(),
                             },
                         )
+                        .size(size)
                         .selected(true)
-                        .on_press_maybe(None),
                     ),
                 ],
                 column![
-                    wrapper(button(
-                        self,
-                        Style::tonal(&self.theme, self.accent),
-                        Content::Full {
-                            icon: icon.clone(),
-                            label: "Tonal button".into(),
-                        },
-                    )),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
+                            Style::tonal(&self.theme, self.accent),
+                            Content::Full {
+                                icon: icon.clone(),
+                                label: "Tonal button".into(),
+                            },
+                        )
+                        .size(size)
+                        .on_press(Message::Noop)
+                    ),
+                    wrapper(
+                        iced_m3::widget::button(
                             Style::tonal(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Tonal unselected".into(),
                             },
                         )
+                        .size(size)
+                        .on_press(Message::Noop)
                         .selected(false),
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::tonal(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Tonal selected".into(),
                             },
                         )
+                        .size(size)
+                        .on_press(Message::Noop)
                         .selected(true),
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::tonal(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Tonal disabled".into(),
                             },
                         )
-                        .on_press_maybe(None),
+                        .size(size)
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::tonal(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Tonal disabled unselected".into(),
                             },
                         )
+                        .size(size)
                         .selected(false)
-                        .on_press_maybe(None),
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::tonal(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Tonal disabled selected".into(),
                             },
                         )
+                        .size(size)
                         .selected(true)
-                        .on_press_maybe(None),
                     ),
                 ],
                 column![
-                    wrapper(button(
-                        self,
-                        Style::outlined(&self.theme),
-                        Content::Full {
-                            icon: icon.clone(),
-                            label: "Outlined button".into(),
-                        },
-                    )),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
+                            Style::outlined(&self.theme),
+                            Content::Full {
+                                icon: icon.clone(),
+                                label: "Outlined button".into(),
+                            },
+                        )
+                        .size(size)
+                        .on_press(Message::Noop)
+                    ),
+                    wrapper(
+                        iced_m3::widget::button(
                             Style::outlined(&self.theme),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Outlined unselected".into(),
                             },
                         )
+                        .size(size)
+                        .on_press(Message::Noop)
                         .selected(false),
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::outlined(&self.theme),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Outlined selected".into(),
                             },
                         )
+                        .size(size)
+                        .on_press(Message::Noop)
                         .selected(true),
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::outlined(&self.theme),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Outlined disabled".into(),
                             },
                         )
-                        .on_press_maybe(None),
+                        .size(size)
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::outlined(&self.theme),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Outlined disabled unselected".into(),
                             },
                         )
+                        .size(size)
                         .selected(false)
-                        .on_press_maybe(None),
                     ),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
                             Style::outlined(&self.theme),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Outlined disabled selected".into(),
                             },
                         )
+                        .size(size)
                         .selected(true)
-                        .on_press_maybe(None),
                     ),
                 ],
                 column![
-                    wrapper(button(
-                        self,
-                        Style::text(&self.theme, self.accent),
-                        Content::Full {
-                            icon: icon.clone(),
-                            label: "Text button".into(),
-                        },
-                    )),
                     wrapper(
-                        button(
-                            self,
+                        iced_m3::widget::button(
+                            Style::text(&self.theme, self.accent),
+                            Content::Full {
+                                icon: icon.clone(),
+                                label: "Text button".into(),
+                            },
+                        )
+                        .size(size)
+                        .on_press(Message::Noop)
+                    ),
+                    wrapper(
+                        iced_m3::widget::button(
                             Style::text(&self.theme, self.accent),
                             Content::Full {
                                 icon: icon.clone(),
                                 label: "Text disabled".into(),
                             },
                         )
+                        .size(size)
                         .on_press_maybe(None),
                     ),
                 ]
@@ -369,51 +375,66 @@ impl State {
         );
 
         let sized_buttons = row![
-            button(
-                self,
+            iced_m3::widget::button(
                 Style::elevated(&self.theme, self.accent),
                 Content::Full {
                     icon: icon.clone(),
                     label: "Common button".into()
                 }
             )
-            .size(iced_m3::widget::button::Size::ExtraLarge),
-            button(
-                self,
+            .size(button::Size {
+                corner_radius: CornerRadius::extra_large().style(corner_style),
+                ..button::Size::extra_large()
+            })
+            .on_press(Message::Noop),
+            iced_m3::widget::button(
                 Style::elevated(&self.theme, self.accent),
                 Content::Full {
                     icon: icon.clone(),
                     label: "Common button".into()
                 }
             )
-            .size(iced_m3::widget::button::Size::Large),
-            button(
-                self,
+            .size(button::Size {
+                corner_radius: CornerRadius::large().style(corner_style),
+                ..button::Size::large()
+            })
+            .on_press(Message::Noop),
+            iced_m3::widget::button(
                 Style::elevated(&self.theme, self.accent),
                 Content::Full {
                     icon: icon.clone(),
                     label: "Common button".into()
                 }
             )
-            .size(iced_m3::widget::button::Size::Medium),
-            button(
-                self,
+            .size(button::Size {
+                corner_radius: CornerRadius::medium().style(corner_style),
+                ..button::Size::medium()
+            })
+            .on_press(Message::Noop),
+            iced_m3::widget::button(
                 Style::elevated(&self.theme, self.accent),
                 Content::Full {
                     icon: icon.clone(),
                     label: "Common button".into()
                 }
             )
-            .size(iced_m3::widget::button::Size::Small),
-            button(
-                self,
+            .size(button::Size {
+                corner_radius: CornerRadius::small().style(corner_style),
+                ..button::Size::small()
+            })
+            .on_press(Message::Noop),
+            iced_m3::widget::button(
                 Style::elevated(&self.theme, self.accent),
                 Content::Full {
                     icon: icon.clone(),
                     label: "Common button".into()
                 }
             )
-            .size(iced_m3::widget::button::Size::ExtraSmall),
+            .size(button::Size {
+                corner_radius: CornerRadius::extra_small().style(corner_style),
+                ..button::Size::extra_small()
+            })
+            .on_press(Message::Noop),
         ]
         .spacing(12.0);
 
