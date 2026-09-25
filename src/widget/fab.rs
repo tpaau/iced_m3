@@ -72,7 +72,7 @@ impl Size {
         .into()
     }
 
-    fn to_button_size(&self, extended: bool) -> button::Size {
+    fn to_button_size(&self, extended: bool, corner_style: CornerStyle) -> button::Size {
         let (padding, container_width) = match extended {
             true => (self.padding(), Length::Shrink),
             false => (0.0, Length::Fixed(self.container_height())),
@@ -85,7 +85,7 @@ impl Size {
             icon_size: self.icon_size(),
             label_size: self.label_size(),
             corner_radius: button::CornerRadius {
-                style: CornerStyle::default(),
+                style: corner_style,
                 shape_morph: false,
                 rounded: f32::MAX.into(),
                 square: self.rounding(),
@@ -137,6 +137,7 @@ where
 {
     content: Content<'a>,
     size: Size,
+    corner_style: CornerStyle,
     style: Style,
     label_font: Option<Font>,
     on_press: Option<OnPress<'a, Message>>,
@@ -152,6 +153,7 @@ where
         Self {
             content,
             size: Size::default(),
+            corner_style: CornerStyle::Square,
             style,
             label_font: None,
             on_press: None,
@@ -163,6 +165,7 @@ where
         Self {
             content,
             size: Size::default(),
+            corner_style: CornerStyle::Square,
             style,
             label_font: None,
             on_press: Some(on_press),
@@ -194,6 +197,12 @@ where
         self.label_font = maybe_label_font;
         self
     }
+
+    #[must_use]
+    pub fn corner_style(mut self, corner_style: CornerStyle) -> Self {
+        self.corner_style = corner_style;
+        self
+    }
 }
 
 impl<'a, Message> From<Fab<'a, Message>> for Element<'a, Message>
@@ -204,7 +213,11 @@ where
         let is_extended_fab = matches!(value.content, Content::Extended { icon: _, label: _ });
         let button = crate::widget::button(value.style, value.content.into())
             .label_font_maybe(value.label_font)
-            .size(value.size.to_button_size(is_extended_fab))
+            .size(
+                value
+                    .size
+                    .to_button_size(is_extended_fab, value.corner_style),
+            )
             .elevation(Elevation::Level3);
 
         match value.on_press {

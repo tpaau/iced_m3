@@ -12,7 +12,7 @@ use crate::{
     theme::{Accent, ColorScheme},
     widget::{
         self, OnPress,
-        button::{self},
+        button::{self, CornerStyle},
         common_icons,
         fab::{self, Fab},
         hybrid_icon::Icon,
@@ -65,6 +65,7 @@ where
             },
         )
         .label_font_maybe(label_font)
+        .corner_style(CornerStyle::Rounded)
         .size(size)
         .into();
 
@@ -89,6 +90,7 @@ where
                     },
                     i.on_press,
                 )
+                .corner_style(CornerStyle::Rounded)
                 .label_font_maybe(label_font)
                 .size(BUTTON_SIZE)
                 .into()
