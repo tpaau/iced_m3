@@ -505,6 +505,41 @@ impl Size {
             corner_radius: CornerRadius::extra_large(),
         }
     }
+
+    pub fn width(mut self, width: Length) -> Self {
+        self.width = width;
+        self
+    }
+
+    pub fn height(mut self, height: Length) -> Self {
+        self.height = height;
+        self
+    }
+
+    pub fn spacing(mut self, spacing: f32) -> Self {
+        self.spacing = spacing;
+        self
+    }
+
+    pub fn padding(mut self, padding: Padding) -> Self {
+        self.padding = padding;
+        self
+    }
+
+    pub fn icon_size(mut self, icon_size: f32) -> Self {
+        self.icon_size = icon_size;
+        self
+    }
+
+    pub fn label_size(mut self, label_size: f32) -> Self {
+        self.label_size = label_size;
+        self
+    }
+
+    pub fn corner_radius(mut self, corner_radius: CornerRadius) -> Self {
+        self.corner_radius = corner_radius;
+        self
+    }
 }
 
 #[derive(Clone)]
