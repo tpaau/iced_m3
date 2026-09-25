@@ -1,7 +1,5 @@
 pub mod motion;
 
-pub use lilt::*;
-
 mod constants {
     use std::time::Duration;
 
@@ -141,7 +139,7 @@ pub fn standard_decelerate(t: f32) -> f32 {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Easing {
-    Lilt(lilt::Easing),
+    Iced(iced::animation::Easing),
     Emphasized,
     EmphasizedAccelerate,
     EmphasizedDecelerate,
@@ -153,7 +151,7 @@ pub enum Easing {
 impl Easing {
     pub fn value(self, t: f32) -> f32 {
         match self {
-            Self::Lilt(easing) => easing.value(t),
+            Self::Iced(easing) => easing.value(t),
             Self::Emphasized => emphasized(t),
             Self::EmphasizedAccelerate => emphasized_accelerate(t),
             Self::EmphasizedDecelerate => emphasized_decelerate(t),
@@ -164,16 +162,16 @@ impl Easing {
     }
 }
 
-impl From<Easing> for lilt::Easing {
+impl From<Easing> for iced::animation::Easing {
     fn from(easing: Easing) -> Self {
         match easing {
-            Easing::Lilt(easing) => easing,
-            Easing::Emphasized => lilt::Easing::Custom(emphasized),
-            Easing::EmphasizedAccelerate => lilt::Easing::Custom(emphasized_accelerate),
-            Easing::EmphasizedDecelerate => lilt::Easing::Custom(emphasized_decelerate),
-            Easing::Standard => lilt::Easing::Custom(standard),
-            Easing::StandardAccelerate => lilt::Easing::Custom(standard_accelerate),
-            Easing::StandardDecelerate => lilt::Easing::Custom(standard_decelerate),
+            Easing::Iced(easing) => easing,
+            Easing::Emphasized => iced::animation::Easing::Custom(emphasized),
+            Easing::EmphasizedAccelerate => iced::animation::Easing::Custom(emphasized_accelerate),
+            Easing::EmphasizedDecelerate => iced::animation::Easing::Custom(emphasized_decelerate),
+            Easing::Standard => iced::animation::Easing::Custom(standard),
+            Easing::StandardAccelerate => iced::animation::Easing::Custom(standard_accelerate),
+            Easing::StandardDecelerate => iced::animation::Easing::Custom(standard_decelerate),
         }
     }
 }

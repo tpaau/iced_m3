@@ -23,6 +23,7 @@ use std::time::Instant;
 
 #[cfg(feature = "pub-internal-const")]
 pub use constants::*;
+use iced::animation::Interpolable;
 
 pub fn fast_spatial(expressive: bool) -> Spring {
     match expressive {
@@ -88,19 +89,19 @@ pub struct SpringMotion {
 }
 
 impl SpringMotion {
-    pub const fn new(spring: Spring, target: f32, start: Instant) -> Self {
+    pub const fn new(spring: Spring, target: f32, now: Instant) -> Self {
         Self {
             spring,
             position: 0.0,
             velocity: 0.0,
             target,
-            time: start,
+            time: now,
         }
     }
 
-    pub fn step(&mut self, time: Instant) {
-        let delta_time = time.duration_since(self.time);
-        self.time = time;
+    pub fn step(&mut self, now: Instant) {
+        let delta_time = now.duration_since(self.time);
+        self.time = now;
         if self.is_at_rest() {
             return;
         }
@@ -163,5 +164,46 @@ impl SpringMotion {
     pub fn is_at_rest(&self) -> bool {
         (self.position - self.target).abs() <= constants::POSITION_EPSILON
             && self.velocity.abs() <= constants::VELOCITY_EPSILON
+    }
+}
+
+pub struct ValueMotion<T>
+where
+    T: Interpolable + Clone,
+{
+    pub from: T,
+    pub to: T,
+    pub spring: SpringMotion,
+}
+
+impl<T> ValueMotion<T>
+where
+    T: Interpolable + Clone,
+{
+    pub const fn new(from: T, to: T, spring: Spring, now: Instant) -> Self {
+        Self {
+            from,
+            to,
+            spring: SpringMotion::new(spring, 0.0, now),
+        }
+    }
+
+    pub fn value(&self) -> T {
+        self.from
+            .interpolated(self.to.clone(), self.spring.position)
+    }
+
+    pub fn set_target(&mut self, target: T, now: Instant) {
+        self.from = self.value();
+        self.to = target;
+
+        self.spring.position = 0.0;
+        self.spring.target = 1.0;
+        self.spring.time = now;
+    }
+
+    pub fn step(&mut self, now: Instant) -> T {
+        self.spring.step(now);
+        self.value()
     }
 }

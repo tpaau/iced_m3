@@ -7,7 +7,8 @@ use iced::{
 use iced_widget::core::{Svg, svg::Handle};
 
 use crate::{
-    animation::motion::{SpringMotion, fast_effects, fast_spatial},
+    animation::motion::{SpringMotion, fast_spatial},
+    style::StateLayer,
     theme::ColorScheme,
     widget::common_icons,
 };
@@ -28,33 +29,6 @@ const HANDLE_DISABLED_UNSELECTED_OPACITY: f32 = 0.38;
 const ICON_DISABLED_OPACITY: f32 = 0.38;
 const TRACK_DISABLED_OPACITY: f32 = 0.12;
 const OUTLINE_DISABLED_OPACITY: f32 = 0.38;
-const STATE_LAYER_OPACITY: f32 = 0.08;
-
-struct State {
-    is_hovered: bool,
-    is_pressed: bool,
-    check_icon: Handle,
-    close_icon: Handle,
-    color_spring: SpringMotion,
-    handle_position_spring: SpringMotion,
-    handle_size_spring: SpringMotion,
-}
-
-impl Default for State {
-    fn default() -> Self {
-        let instant = Instant::now();
-        Self {
-            is_hovered: false,
-            is_pressed: false,
-            check_icon: Handle::from_memory(common_icons::CHECK),
-            close_icon: Handle::from_memory(common_icons::CLOSE),
-            // TODO: Optional expressive
-            color_spring: SpringMotion::new(fast_effects(true), 0.0, instant),
-            handle_position_spring: SpringMotion::new(fast_spatial(true), 0.0, instant),
-            handle_size_spring: SpringMotion::new(fast_spatial(true), 0.0, instant),
-        }
-    }
-}
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum IconMode {
@@ -64,26 +38,97 @@ pub enum IconMode {
     Always,
 }
 
-pub struct Switch<'a, Message>
+struct StateStyle {
+    track_color: Color,
+    handle_color: Color,
+    icon_color: Color,
+    outline_color: Option<Color>,
+}
+
+struct Style {
+    state_layer_selected: StateLayer,
+    state_later_unselected: StateLayer,
+    selected: StateStyle,
+    selected_disabled: StateStyle,
+    unselected: StateStyle,
+    unselected_disabled: StateStyle,
+}
+
+impl Style {
+    fn new(theme: &(impl ColorScheme + ?Sized)) -> Self {
+        Self {
+            state_layer_selected: StateLayer::new(theme.primary()),
+            state_later_unselected: StateLayer::new(theme.on_surface()),
+            selected: StateStyle {
+                track_color: theme.primary(),
+                handle_color: theme.on_primary(),
+                icon_color: theme.on_primary_container(),
+                outline_color: None,
+            },
+            selected_disabled: StateStyle {
+                track_color: theme.on_surface().scale_alpha(TRACK_DISABLED_OPACITY),
+                handle_color: theme
+                    .surface()
+                    .scale_alpha(HANDLE_DISABLED_SELECTED_OPACITY),
+                icon_color: theme.on_surface().scale_alpha(ICON_DISABLED_OPACITY),
+                outline_color: None,
+            },
+            unselected: StateStyle {
+                track_color: theme.surface_container_highest(),
+                handle_color: theme.outline(),
+                icon_color: theme.surface_container_highest(),
+                outline_color: Some(theme.outline()),
+            },
+            unselected_disabled: StateStyle {
+                track_color: theme.on_surface().scale_alpha(TRACK_DISABLED_OPACITY),
+                handle_color: theme
+                    .on_surface()
+                    .scale_alpha(HANDLE_DISABLED_UNSELECTED_OPACITY),
+                icon_color: theme
+                    .surface_container_highest()
+                    .scale_alpha(ICON_DISABLED_OPACITY),
+                outline_color: Some(theme.on_surface().scale_alpha(OUTLINE_DISABLED_OPACITY)),
+            },
+        }
+    }
+
+    fn state_layer(&self, selected: bool) -> &StateLayer {
+        match selected {
+            true => &self.state_layer_selected,
+            false => &self.state_later_unselected,
+        }
+    }
+
+    fn state(&self, selected: bool, enabled: bool) -> &StateStyle {
+        match (selected, enabled) {
+            (true, true) => &self.selected,
+            (true, false) => &self.selected_disabled,
+            (false, true) => &self.unselected,
+            (false, false) => &self.unselected_disabled,
+        }
+    }
+}
+
+pub struct Switch<Message>
 where
     Message: Clone,
 {
-    theme: &'a dyn ColorScheme,
+    style: Style,
     icon_mode: IconMode,
-    enabled: bool,
+    selected: bool,
     on_toggle: Option<Message>,
 }
 
-impl<'a, Message> Switch<'a, Message>
+impl<Message> Switch<Message>
 where
     Message: Clone,
 {
     #[must_use]
-    pub fn new(theme: &'a dyn ColorScheme, enabled: bool) -> Self {
+    pub fn new(theme: &(impl ColorScheme + ?Sized), selected: bool) -> Self {
         Self {
-            theme,
+            style: Style::new(theme),
             icon_mode: IconMode::default(),
-            enabled,
+            selected,
             on_toggle: None,
         }
     }
@@ -115,7 +160,31 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Switch<'a, Message>
+struct State {
+    is_hovered: bool,
+    is_pressed: bool,
+    check_icon: Handle,
+    close_icon: Handle,
+    handle_position_spring: SpringMotion,
+    handle_size_spring: SpringMotion,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        let instant = Instant::now();
+        Self {
+            is_hovered: false,
+            is_pressed: false,
+            check_icon: Handle::from_memory(common_icons::CHECK),
+            close_icon: Handle::from_memory(common_icons::CLOSE),
+            // TODO: Optional expressive
+            handle_position_spring: SpringMotion::new(fast_spatial(true), 0.0, instant),
+            handle_size_spring: SpringMotion::new(fast_spatial(true), 0.0, instant),
+        }
+    }
+}
+
+impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Switch<Message>
 where
     Message: Clone,
     Renderer: iced::advanced::Renderer + iced::advanced::svg::Renderer,
@@ -142,9 +211,9 @@ where
         _limits: &iced::advanced::layout::Limits,
     ) -> Node {
         let state = tree.state.downcast_mut::<State>();
-        let handle_size = if state.is_pressed {
+        let handle_size = if state.is_pressed && self.on_toggle.is_some() {
             HANDLE_SIZE_PRESSED
-        } else if self.icon_mode == IconMode::Always || self.enabled {
+        } else if self.icon_mode == IconMode::Always || self.selected {
             HANDLE_SIZE_WITH_ICON
         } else {
             HANDLE_SIZE_NO_ICON
@@ -153,7 +222,7 @@ where
         state.handle_size_spring.target = handle_size;
         let handle_size = state.handle_size_spring.position;
 
-        state.handle_position_spring.target = if self.enabled {
+        state.handle_position_spring.target = if self.selected {
             TRACK_SIZE.width - TRACK_SIZE.height / 2.0
         } else {
             TRACK_SIZE.height / 2.0
@@ -191,68 +260,23 @@ where
         _cursor: mouse::Cursor,
         _viewport: &iced::Rectangle,
     ) {
+        let style = self.style.state(self.selected, self.on_toggle.is_some());
         let track_bounds = layout.bounds();
         let handle_bounds = layout.children().nth(0).unwrap().bounds();
         let icon_bounds = layout.children().nth(1).unwrap().bounds();
 
-        let enabled = self.on_toggle.is_some();
-        let outline_color = match enabled {
-            true => self.theme.outline(),
-            false => self
-                .theme
-                .on_surface()
-                .scale_alpha(OUTLINE_DISABLED_OPACITY),
+        let border = Border::default().rounded(f32::MAX);
+        let border = match style.outline_color {
+            Some(color) => border.color(color).width(TRACK_DISABLED_OUTLINE_WIDTH),
+            None => border,
         };
-        let (track_color, handle_color, icon_color, icon_opacity, border_width) = match self.enabled
-        {
-            true => match enabled {
-                true => (
-                    self.theme.primary(),
-                    self.theme.on_primary(),
-                    self.theme.on_primary_container(),
-                    1.0,
-                    0.0,
-                ),
-                false => (
-                    self.theme.on_surface().scale_alpha(TRACK_DISABLED_OPACITY),
-                    self.theme
-                        .surface()
-                        .scale_alpha(HANDLE_DISABLED_SELECTED_OPACITY),
-                    self.theme.on_surface(),
-                    ICON_DISABLED_OPACITY,
-                    0.0,
-                ),
-            },
-            false => match enabled {
-                true => (
-                    self.theme.surface_container_highest(),
-                    self.theme.outline(),
-                    self.theme.surface_container_highest(),
-                    1.0,
-                    TRACK_DISABLED_OUTLINE_WIDTH,
-                ),
-                false => (
-                    self.theme.on_surface().scale_alpha(TRACK_DISABLED_OPACITY),
-                    self.theme
-                        .on_surface()
-                        .scale_alpha(HANDLE_DISABLED_UNSELECTED_OPACITY),
-                    self.theme.surface_container_highest(),
-                    ICON_DISABLED_OPACITY,
-                    TRACK_DISABLED_OUTLINE_WIDTH,
-                ),
-            },
-        };
-
         renderer.fill_quad(
             Quad {
                 bounds: track_bounds,
-                border: Border::default()
-                    .rounded(f32::MAX)
-                    .width(border_width)
-                    .color(outline_color),
+                border,
                 ..Default::default()
             },
-            track_color,
+            style.track_color,
         );
 
         renderer.fill_quad(
@@ -261,28 +285,34 @@ where
                 border: Border::default().rounded(f32::MAX),
                 ..Default::default()
             },
-            handle_color,
+            style.handle_color,
         );
 
         let icon = if self.icon_mode == IconMode::Always {
             let state = tree.state.downcast_ref::<State>();
-            match self.enabled {
+            match self.selected {
                 true => Some(Svg::new(state.check_icon.clone())),
                 false => match self.on_toggle.is_some() {
                     true => Some(Svg::new(state.close_icon.clone())),
                     false => None,
                 },
             }
-        } else if self.icon_mode == IconMode::WhenEnabled && self.enabled {
+        } else if self.icon_mode == IconMode::WhenEnabled && self.selected {
             let state = tree.state.downcast_ref::<State>();
             Some(Svg::new(state.check_icon.clone()))
         } else {
             None
         };
 
+        let color = Color {
+            r: style.icon_color.r,
+            g: style.icon_color.g,
+            b: style.icon_color.b,
+            a: 1.0,
+        };
         icon.map(|icon| {
             renderer.draw_svg(
-                icon.color(icon_color).opacity(icon_opacity),
+                icon.color(color).opacity(style.icon_color.a),
                 icon_bounds,
                 icon_bounds,
             )
@@ -319,14 +349,10 @@ where
     ) {
         let state = tree.state.downcast_mut::<State>();
         let instant = Instant::now();
-        if !state.handle_position_spring.is_at_rest()
-            || !state.handle_size_spring.is_at_rest()
-            || !state.color_spring.is_at_rest()
-        {
+        if !state.handle_position_spring.is_at_rest() || !state.handle_size_spring.is_at_rest() {
             shell.invalidate_layout();
             shell.request_redraw();
         }
-        state.color_spring.step(instant);
         state.handle_size_spring.step(instant);
         state.handle_position_spring.step(instant);
         let is_over = cursor.is_over(layout.bounds());
@@ -377,11 +403,11 @@ where
         _translation: iced::Vector,
     ) -> Option<iced::advanced::overlay::Element<'b, Message, Theme, Renderer>> {
         (self.on_toggle.is_some() && tree.state.downcast_ref::<State>().is_hovered).then_some({
-            let color = match self.enabled {
-                true => self.theme.primary(),
-                false => self.theme.on_surface(),
-            }
-            .scale_alpha(STATE_LAYER_OPACITY);
+            let state = tree.state.downcast_ref::<State>();
+            let color = match state.is_pressed {
+                true => self.style.state_layer(self.selected).pressed,
+                false => self.style.state_layer(self.selected).hovered,
+            };
 
             let handle_bounds = layout.children().nth(0).unwrap().bounds();
             let bounds = Rectangle {
@@ -391,18 +417,18 @@ where
                 height: STATE_LAYER_SIZE,
             };
 
-            let overlay = StateLayer { color, bounds };
+            let overlay = StateLayerOverlay { color, bounds };
             overlay::Element::new(Box::new(overlay))
         })
     }
 }
 
-struct StateLayer {
+struct StateLayerOverlay {
     color: Color,
     bounds: Rectangle,
 }
 
-impl<Message, Theme, Renderer> Overlay<Message, Theme, Renderer> for StateLayer
+impl<Message, Theme, Renderer> Overlay<Message, Theme, Renderer> for StateLayerOverlay
 where
     Renderer: iced::advanced::Renderer,
 {
@@ -433,11 +459,11 @@ where
     }
 }
 
-impl<'a, Message> From<Switch<'a, Message>> for Element<'a, Message>
+impl<'a, Message> From<Switch<Message>> for Element<'a, Message>
 where
     Message: 'a + Clone,
 {
-    fn from(value: Switch<'a, Message>) -> Self {
+    fn from(value: Switch<Message>) -> Self {
         Element::new(value)
     }
 }

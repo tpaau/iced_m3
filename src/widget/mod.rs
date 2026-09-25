@@ -191,7 +191,7 @@ where
 }
 
 #[must_use]
-pub fn switch<'a, Message>(theme: &'a dyn ColorScheme, toggled: bool) -> Switch<'a, Message>
+pub fn switch<Message>(theme: &(impl ColorScheme + ?Sized), toggled: bool) -> Switch<Message>
 where
     Message: Clone,
 {

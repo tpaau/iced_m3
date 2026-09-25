@@ -1363,7 +1363,6 @@ version = "0.1.0"
 dependencies = [
  "iced",
  "iced_widget",
- "lilt",
  "num-traits",
  "pollster",
  "unicode-segmentation",
