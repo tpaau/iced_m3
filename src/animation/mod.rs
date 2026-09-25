@@ -1,11 +1,32 @@
+pub mod motion;
+
 pub use lilt::*;
 
 mod constants {
+    use std::time::Duration;
+
     pub const EMPHASIZED_ACCELERATE: (f32, f32, f32, f32) = (0.3, 0.0, 0.8, 0.15);
     pub const EMPHASIZED_DECELERATE: (f32, f32, f32, f32) = (0.05, 0.7, 0.1, 1.0);
     pub const STANDARD: (f32, f32, f32, f32) = (0.2, 0.0, 0.0, 1.0);
     pub const STANDARD_ACCELERATE: (f32, f32, f32, f32) = (0.3, 0.0, 1.0, 1.0);
     pub const STANDARD_DECELERATE: (f32, f32, f32, f32) = (0.0, 0.0, 0.0, 1.0);
+
+    pub const SHORT_1: Duration = Duration::from_millis(50);
+    pub const SHORT_2: Duration = Duration::from_millis(100);
+    pub const SHORT_3: Duration = Duration::from_millis(150);
+    pub const SHORT_4: Duration = Duration::from_millis(200);
+    pub const MEDIUM_1: Duration = Duration::from_millis(250);
+    pub const MEDIUM_2: Duration = Duration::from_millis(300);
+    pub const MEDIUM_3: Duration = Duration::from_millis(350);
+    pub const MEDIUM_4: Duration = Duration::from_millis(400);
+    pub const LONG_1: Duration = Duration::from_millis(450);
+    pub const LONG_2: Duration = Duration::from_millis(500);
+    pub const LONG_3: Duration = Duration::from_millis(550);
+    pub const LONG_4: Duration = Duration::from_millis(600);
+    pub const EXTRA_LONG_1: Duration = Duration::from_millis(700);
+    pub const EXTRA_LONG_2: Duration = Duration::from_millis(800);
+    pub const EXTRA_LONG_3: Duration = Duration::from_millis(900);
+    pub const EXTRA_LONG_4: Duration = Duration::from_millis(1000);
 }
 
 #[cfg(feature = "pub-internal-const")]
