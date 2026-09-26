@@ -93,7 +93,7 @@ impl SpringMotion {
     pub const fn new(spring: Spring, target: f32, now: Instant) -> Self {
         Self {
             spring,
-            position: 0.0,
+            position: target,
             velocity: 0.0,
             target,
             time: now,

@@ -2,7 +2,12 @@ use std::time::Instant;
 
 use iced::{
     Border, Color, Element, Length, Point, Radians, Rectangle, Size,
-    advanced::{Overlay, Widget, layout::Node, mouse, overlay, renderer::Quad},
+    advanced::{
+        Overlay, Widget,
+        layout::{self, Node},
+        mouse, overlay,
+        renderer::Quad,
+    },
 };
 use iced_widget::core::{Svg, svg::Handle};
 
@@ -207,6 +212,14 @@ where
             HANDLE_SIZE_NO_ICON
         }
     }
+
+    fn handle_position(&self) -> f32 {
+        if self.selected {
+            TRACK_SIZE.width - TRACK_SIZE.height / 2.0
+        } else {
+            TRACK_SIZE.height / 2.0
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -244,45 +257,6 @@ struct State {
 }
 
 impl State {
-    fn new(
-        state_style: StateStyle,
-        last_status: Status,
-        expressive: bool,
-        icon_rotation: Radians,
-        state_layer_color: Color,
-    ) -> Self {
-        let now = Instant::now();
-        Self {
-            is_hovered: false,
-            is_pressed: false,
-            check_icon: Handle::from_memory(common_icons::CHECK),
-            close_icon: Handle::from_memory(common_icons::CLOSE),
-            last_expressive: expressive,
-            last_status,
-            state_layer_color: ValueMotion::new(
-                state_layer_color,
-                state_layer_color,
-                fast_effects(expressive),
-                now,
-            ),
-            icon_rotation_spring: ValueMotion::new(
-                icon_rotation,
-                icon_rotation,
-                fast_spatial(expressive),
-                now,
-            ),
-            icon_fade_spring: SpringMotion::new(fast_effects(expressive), 0.0, now),
-            style_spring: ValueMotion::new(
-                state_style.clone(),
-                state_style,
-                fast_effects(expressive),
-                now,
-            ),
-            handle_position_spring: SpringMotion::new(fast_spatial(expressive), 0.0, now),
-            handle_size_spring: SpringMotion::new(fast_spatial(expressive), 0.0, now),
-        }
-    }
-
     fn set_expressive(&mut self, expressive: bool) {
         self.last_expressive = expressive;
 
@@ -305,18 +279,56 @@ where
     }
 
     fn state(&self) -> iced::advanced::widget::tree::State {
-        iced::advanced::widget::tree::State::new(State::new(
-            self.style
-                .state(self.selected, self.on_toggle.is_some())
-                .clone(),
-            Status::new(self.selected, self.on_toggle.is_some()),
-            self.expressive_animation,
-            self.icon_rotation(),
-            self.style
-                .state_layer(self.selected)
-                .hovered
-                .scale_alpha(0.0),
-        ))
+        let icon_rotation = self.icon_rotation();
+        let state_layer_color = self
+            .style
+            .state_layer(self.selected)
+            .hovered
+            .scale_alpha(0.0);
+        let style = self
+            .style
+            .state(self.selected, self.on_toggle.is_some())
+            .clone();
+        let now = Instant::now();
+        let state = State {
+            is_hovered: false,
+            is_pressed: false,
+            check_icon: Handle::from_memory(common_icons::CHECK),
+            close_icon: Handle::from_memory(common_icons::CLOSE),
+            last_expressive: self.expressive_animation,
+            last_status: Status::new(self.selected, self.on_toggle.is_some()),
+            state_layer_color: ValueMotion::new(
+                state_layer_color,
+                state_layer_color,
+                fast_effects(self.expressive_animation),
+                now,
+            ),
+            icon_rotation_spring: ValueMotion::new(
+                icon_rotation,
+                icon_rotation,
+                fast_spatial(self.expressive_animation),
+                now,
+            ),
+            icon_fade_spring: SpringMotion::new(fast_effects(self.expressive_animation), 1.0, now),
+            style_spring: ValueMotion::new(
+                style.clone(),
+                style,
+                fast_effects(self.expressive_animation),
+                now,
+            ),
+            handle_position_spring: SpringMotion::new(
+                fast_spatial(self.expressive_animation),
+                self.handle_position(),
+                now,
+            ),
+            handle_size_spring: SpringMotion::new(
+                fast_spatial(self.expressive_animation),
+                self.handle_size(false),
+                now,
+            ),
+        };
+
+        iced::advanced::widget::tree::State::new(state)
     }
 
     fn size(&self) -> Size<Length> {
@@ -330,9 +342,9 @@ where
         &mut self,
         _tree: &mut iced::advanced::widget::Tree,
         _renderer: &Renderer,
-        _limits: &iced::advanced::layout::Limits,
+        limits: &iced::advanced::layout::Limits,
     ) -> Node {
-        Node::new(TRACK_SIZE)
+        layout::atomic(limits, TRACK_SIZE.width, TRACK_SIZE.height)
     }
 
     fn draw(
@@ -462,11 +474,7 @@ where
         }
 
         state.handle_size_spring.target = self.handle_size(state.is_pressed);
-        state.handle_position_spring.target = if self.selected {
-            TRACK_SIZE.width - TRACK_SIZE.height / 2.0
-        } else {
-            TRACK_SIZE.height / 2.0
-        };
+        state.handle_position_spring.target = self.handle_position();
 
         let radians = self.icon_rotation();
         if state.icon_rotation_spring.to != radians {

@@ -56,7 +56,7 @@ impl State {
                 .spacing(8)
                 .align_y(Alignment::Center),
                 row![
-                    text("Without expressive animation"),
+                    text("With standard animation"),
                     widget::switch(&self.theme, self.toggled2)
                         .expressive_animation(false)
                         .icon_mode(self.icon_mode)
