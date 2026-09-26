@@ -3,6 +3,7 @@ use iced::{
     widget::{column, container, row, text},
 };
 use iced_m3::{
+    animation::motion,
     theme::{Accent, ColorScheme, Mode, Theme},
     widget::{
         self,
@@ -49,7 +50,7 @@ impl State {
                 row![
                     text("With expressive animation"),
                     widget::switch(&self.theme, self.toggled1)
-                        .expressive_animation(true)
+                        .motion_scheme(motion::Scheme::Expressive)
                         .icon_mode(self.icon_mode)
                         .on_toggle(Message::Toggle1)
                 ]
@@ -58,7 +59,7 @@ impl State {
                 row![
                     text("With standard animation"),
                     widget::switch(&self.theme, self.toggled2)
-                        .expressive_animation(false)
+                        .motion_scheme(motion::Scheme::Standard)
                         .icon_mode(self.icon_mode)
                         .on_toggle(Message::Toggle2)
                 ]

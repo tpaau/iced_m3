@@ -12,10 +12,9 @@ use iced::{
 use iced_widget::core::{Svg, svg::Handle};
 
 use crate::{
-    EXPRESSIVE,
     animation::{
         Interpolable, midpoint_distance,
-        motion::{SpringMotion, ValueMotion, fast_effects, fast_spatial},
+        motion::{self, Spring, SpringMotion, ValueMotion, fast_effects, fast_spatial},
     },
     style::StateLayer,
     theme::ColorScheme,
@@ -144,7 +143,8 @@ where
     icon_mode: IconMode,
     selected: bool,
     on_toggle: Option<Message>,
-    expressive_animation: bool,
+    effects_spring: Option<Spring>,
+    spatial_spring: Option<Spring>,
 }
 
 impl<Message> Switch<Message>
@@ -158,7 +158,8 @@ where
             icon_mode: IconMode::default(),
             selected,
             on_toggle: None,
-            expressive_animation: EXPRESSIVE,
+            effects_spring: None,
+            spatial_spring: None,
         }
     }
 
@@ -189,8 +190,33 @@ where
     }
 
     #[must_use]
-    pub fn expressive_animation(mut self, expressive: bool) -> Self {
-        self.expressive_animation = expressive;
+    pub fn motion_scheme(mut self, scheme: motion::Scheme) -> Self {
+        self.effects_spring = Some(fast_effects(scheme));
+        self.spatial_spring = Some(fast_spatial(scheme));
+        self
+    }
+
+    #[must_use]
+    pub fn effects_spring(mut self, spring: Spring) -> Self {
+        self.effects_spring = Some(spring);
+        self
+    }
+
+    #[must_use]
+    pub fn effects_spring_maybe(mut self, spring: Option<Spring>) -> Self {
+        self.effects_spring = spring;
+        self
+    }
+
+    #[must_use]
+    pub fn spatial_spring(mut self, spring: Spring) -> Self {
+        self.spatial_spring = Some(spring);
+        self
+    }
+
+    #[must_use]
+    pub fn spatial_spring_maybe(mut self, spring: Option<Spring>) -> Self {
+        self.spatial_spring = spring;
         self
     }
 
@@ -246,8 +272,9 @@ struct State {
     is_pressed: bool,
     check_icon: Handle,
     close_icon: Handle,
-    last_expressive: bool,
     last_status: Status,
+    last_effects_spring: Spring,
+    last_spatial_spring: Spring,
     state_layer_color: ValueMotion<Color>,
     icon_rotation_spring: ValueMotion<Radians>,
     icon_fade_spring: SpringMotion,
@@ -257,15 +284,16 @@ struct State {
 }
 
 impl State {
-    fn set_expressive(&mut self, expressive: bool) {
-        self.last_expressive = expressive;
+    fn set_spatial_spring(&mut self, spatial: Spring) {
+        self.icon_rotation_spring.spring.spring = spatial;
+        self.handle_position_spring.spring = spatial;
+        self.handle_size_spring.spring = spatial;
+    }
 
-        self.state_layer_color.spring.spring = fast_effects(expressive);
-        self.icon_rotation_spring.spring.spring = fast_spatial(expressive);
-        self.icon_fade_spring.spring = fast_effects(expressive);
-        self.style_spring.spring.spring = fast_effects(expressive);
-        self.handle_position_spring.spring = fast_spatial(expressive);
-        self.handle_size_spring.spring = fast_spatial(expressive);
+    fn set_effects_spring(&mut self, effects: Spring) {
+        self.state_layer_color.spring.spring = effects;
+        self.icon_fade_spring.spring = effects;
+        self.style_spring.spring.spring = effects;
     }
 }
 
@@ -290,42 +318,36 @@ where
             .state(self.selected, self.on_toggle.is_some())
             .clone();
         let now = Instant::now();
+        let effects_spring = self
+            .effects_spring
+            .unwrap_or(fast_effects(motion::Scheme::default()));
+        let spatial_spring = self
+            .effects_spring
+            .unwrap_or(fast_spatial(motion::Scheme::default()));
         let state = State {
             is_hovered: false,
             is_pressed: false,
             check_icon: Handle::from_memory(common_icons::CHECK),
             close_icon: Handle::from_memory(common_icons::CLOSE),
-            last_expressive: self.expressive_animation,
             last_status: Status::new(self.selected, self.on_toggle.is_some()),
+            last_effects_spring: effects_spring,
+            last_spatial_spring: spatial_spring,
             state_layer_color: ValueMotion::new(
                 state_layer_color,
                 state_layer_color,
-                fast_effects(self.expressive_animation),
+                effects_spring,
                 now,
             ),
             icon_rotation_spring: ValueMotion::new(
                 icon_rotation,
                 icon_rotation,
-                fast_spatial(self.expressive_animation),
+                effects_spring,
                 now,
             ),
-            icon_fade_spring: SpringMotion::new(fast_effects(self.expressive_animation), 1.0, now),
-            style_spring: ValueMotion::new(
-                style.clone(),
-                style,
-                fast_effects(self.expressive_animation),
-                now,
-            ),
-            handle_position_spring: SpringMotion::new(
-                fast_spatial(self.expressive_animation),
-                self.handle_position(),
-                now,
-            ),
-            handle_size_spring: SpringMotion::new(
-                fast_spatial(self.expressive_animation),
-                self.handle_size(false),
-                now,
-            ),
+            icon_fade_spring: SpringMotion::new(effects_spring, 1.0, now),
+            style_spring: ValueMotion::new(style.clone(), style, effects_spring, now),
+            handle_position_spring: SpringMotion::new(spatial_spring, self.handle_position(), now),
+            handle_size_spring: SpringMotion::new(spatial_spring, self.handle_size(false), now),
         };
 
         iced::advanced::widget::tree::State::new(state)
@@ -457,8 +479,15 @@ where
 
         let now = Instant::now();
 
-        if self.expressive_animation != state.last_expressive {
-            state.set_expressive(self.expressive_animation);
+        if let Some(effects_spring) = self.effects_spring
+            && effects_spring != state.last_effects_spring
+        {
+            state.set_effects_spring(effects_spring);
+        }
+        if let Some(spatial_spring) = self.spatial_spring
+            && spatial_spring != state.last_spatial_spring
+        {
+            state.set_spatial_spring(spatial_spring);
         }
 
         let style = self.style.state(self.selected, self.on_toggle.is_some());

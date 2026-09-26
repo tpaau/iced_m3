@@ -710,6 +710,8 @@ where
     }
 
     /// Make the button appear enabled even when there is no message is being emitted on press.
+    ///
+    /// This is currently only used for the FAB Menu widget as its opened state is managed internally.
     #[must_use]
     pub(crate) fn force_enabled(mut self, force_enabled: bool) -> Self {
         self.force_enabled = force_enabled;

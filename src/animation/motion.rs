@@ -1,3 +1,5 @@
+//! Holds utilities related to material's [motion physics](https://m3.material.io/styles/motion/overview) system.
+
 mod constants {
     use crate::animation::motion::Spring;
 
@@ -26,45 +28,60 @@ pub use constants::*;
 
 use crate::animation::Interpolable;
 
-pub fn fast_spatial(expressive: bool) -> Spring {
-    match expressive {
-        true => constants::FAST_SPATIAL_EXPRESSIVE,
-        false => constants::FAST_SPATIAL_STANDARD,
+/// Defines the motion scheme used for motion physics.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Scheme {
+    /// The expressive scheme overshoots the final values to add bounce.
+    ///
+    /// This is the default with the `expressive-defaults` feature enabled.
+    #[cfg_attr(feature = "expressive-defaults", default)]
+    Expressive,
+    /// The standard scheme eases into the final values and feels more utilitarian.
+    ///
+    /// This is the default with the `expressive-defaults` feature disabled.
+    #[cfg_attr(not(feature = "expressive-defaults"), default)]
+    Standard,
+}
+
+pub fn fast_spatial(scheme: Scheme) -> Spring {
+    match scheme {
+        Scheme::Expressive => constants::FAST_SPATIAL_EXPRESSIVE,
+        Scheme::Standard => constants::FAST_SPATIAL_STANDARD,
     }
 }
 
-pub fn fast_effects(expressive: bool) -> Spring {
-    match expressive {
-        true => constants::FAST_EFFECTS_EXPRESSIVE,
-        false => constants::FAST_EFFECTS_STANDARD,
+pub fn fast_effects(scheme: Scheme) -> Spring {
+    match scheme {
+        Scheme::Expressive => constants::FAST_EFFECTS_EXPRESSIVE,
+        Scheme::Standard => constants::FAST_EFFECTS_STANDARD,
     }
 }
 
-pub fn default_spatial(expressive: bool) -> Spring {
-    match expressive {
-        true => constants::DEFAULT_SPATIAL_EXPRESSIVE,
-        false => constants::DEFAULT_SPATIAL_STANDARD,
+pub fn default_spatial(scheme: Scheme) -> Spring {
+    match scheme {
+        Scheme::Expressive => constants::DEFAULT_SPATIAL_EXPRESSIVE,
+        Scheme::Standard => constants::DEFAULT_SPATIAL_STANDARD,
     }
 }
 
-pub fn default_effects(expressive: bool) -> Spring {
-    match expressive {
-        true => constants::DEFAULT_EFFECTS_EXPRESSIVE,
-        false => constants::DEFAULT_EFFECTS_STANDARD,
+pub fn default_effects(scheme: Scheme) -> Spring {
+    match scheme {
+        Scheme::Expressive => constants::DEFAULT_EFFECTS_EXPRESSIVE,
+        Scheme::Standard => constants::DEFAULT_EFFECTS_STANDARD,
     }
 }
 
-pub fn slow_spatial(expressive: bool) -> Spring {
-    match expressive {
-        true => constants::SLOW_SPATIAL_EXPRESSIVE,
-        false => constants::SLOW_SPATIAL_STANDARD,
+pub fn slow_spatial(scheme: Scheme) -> Spring {
+    match scheme {
+        Scheme::Expressive => constants::SLOW_SPATIAL_EXPRESSIVE,
+        Scheme::Standard => constants::SLOW_SPATIAL_STANDARD,
     }
 }
 
-pub fn slow_effects(expressive: bool) -> Spring {
-    match expressive {
-        true => constants::SLOW_EFFECTS_EXPRESSIVE,
-        false => constants::SLOW_EFFECTS_STANDARD,
+pub fn slow_effects(scheme: Scheme) -> Spring {
+    match scheme {
+        Scheme::Expressive => constants::SLOW_EFFECTS_EXPRESSIVE,
+        Scheme::Standard => constants::SLOW_EFFECTS_STANDARD,
     }
 }
 
