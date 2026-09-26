@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use iced::{Alignment, Border, Element, Font, Length, color};
+use iced::{Alignment, Border, Color, Element, Font, Length, advanced::text, color};
 use iced_widget::{column, container, opaque, row, space, text::IntoFragment};
 
 use crate::{
@@ -32,14 +32,36 @@ pub struct Button<Message> {
     pub style: crate::widget::button::Style,
 }
 
+pub struct Style {
+    pub icon_color: Color,
+    pub title_color: Color,
+    pub container_color: Color,
+    pub container_border: Border,
+    pub elevation: Elevation,
+    pub shadow_color: Color,
+}
+
+impl Style {
+    pub fn new(theme: &(impl ColorScheme + ?Sized)) -> Self {
+        Self {
+            icon_color: theme.secondary(),
+            title_color: theme.on_surface(),
+            container_color: theme.surface_container_high(),
+            container_border: Border::default().rounded(DIALOG_RADIUS),
+            elevation: Elevation::Level3,
+            shadow_color: theme.shadow(),
+        }
+    }
+}
+
 // TODO: Message on clicked outside
 pub struct Dialog<'a, Message> {
+    style: Style,
     icon: Option<char>,
     icon_font: Option<Font>,
-    title: Cow<'a, str>,
+    title: text::Fragment<'a>,
     title_font: Option<Font>,
     body: Element<'a, Message>,
-    theme: &'a dyn ColorScheme,
     buttons: Vec<Button<Message>>,
     button_label_font: Option<Font>,
     width: Option<f32>,
@@ -49,17 +71,17 @@ pub struct Dialog<'a, Message> {
 impl<'a, Message> Dialog<'a, Message> {
     #[must_use]
     pub fn new(
-        theme: &'a impl ColorScheme,
+        style: Style,
         body: impl Into<Element<'a, Message>>,
         buttons: Vec<Button<Message>>,
     ) -> Self {
         Self {
+            style,
             icon: None,
             icon_font: None,
             title: Cow::Borrowed("Title"),
             title_font: None,
             body: body.into(),
-            theme,
             buttons,
             button_label_font: None,
             width: None,
@@ -154,7 +176,7 @@ where
         let icon = value.icon.map(|i| {
             column![
                 icon(i, ICON_SIZE)
-                    .color(value.theme.secondary())
+                    .color(value.style.icon_color)
                     .font_maybe(value.icon_font),
                 space().height(ICON_TITLE_SPACING)
             ]
@@ -163,7 +185,7 @@ where
         let title = column![
             iced_widget::text(value.title)
                 .size(TITLE_SIZE)
-                .color(value.theme.on_surface())
+                .color(value.style.title_color)
                 .font_maybe(value.title_font),
             space().height(TITLE_BODY_SPACING)
         ];
@@ -201,13 +223,13 @@ where
 
         let dialog = container(column)
             .padding(PADDING)
-            .style(|_| {
+            .style(move |_| {
                 iced_widget::container::Style::default()
-                    .background(value.theme.surface_container_high())
-                    .border(Border::default().rounded(DIALOG_RADIUS))
+                    .background(value.style.container_color)
+                    .border(value.style.container_border)
                     .shadow(crate::style::shadow(
-                        value.theme.shadow(),
-                        Elevation::Level3,
+                        value.style.shadow_color,
+                        value.style.elevation,
                     ))
             })
             .max_width(constants::MAX_WIDTH);

@@ -144,11 +144,11 @@ where
 
 #[must_use]
 pub fn dialog<'a, Message>(
-    theme: &'a impl ColorScheme,
+    style: dialog::Style,
     body: impl Into<Element<'a, Message>>,
     buttons: Vec<dialog::Button<Message>>,
 ) -> Dialog<'a, Message> {
-    Dialog::new(theme, body, buttons)
+    Dialog::new(style, body, buttons)
 }
 
 #[must_use]
