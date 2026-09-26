@@ -1,14 +1,14 @@
 use std::time::Instant;
 
 use iced::{
-    Border, Color, Element, Length, Point, Rectangle, Size,
+    Border, Color, Element, Length, Point, Radians, Rectangle, Size,
     advanced::{Overlay, Widget, layout::Node, mouse, overlay, renderer::Quad},
 };
 use iced_widget::core::{Svg, svg::Handle};
 
 use crate::{
     animation::{
-        Interpolable,
+        Interpolable, midpoint_distance,
         motion::{SpringMotion, ValueMotion, fast_effects, fast_spatial},
     },
     style::StateLayer,
@@ -37,17 +37,17 @@ const OUTLINE_DISABLED_OPACITY: f32 = 0.38;
 pub enum IconMode {
     Never,
     #[default]
-    WhenEnabled,
+    WhenSelected,
     Always,
 }
 
 #[derive(Clone, PartialEq)]
-struct StateStyle {
-    track_color: Color,
-    handle_color: Color,
-    icon_color: Color,
-    outline_width: f32,
-    outline_color: Color,
+pub struct StateStyle {
+    pub track_color: Color,
+    pub handle_color: Color,
+    pub icon_color: Color,
+    pub outline_width: f32,
+    pub outline_color: Color,
 }
 
 impl Interpolable for StateStyle {
@@ -62,13 +62,13 @@ impl Interpolable for StateStyle {
     }
 }
 
-struct Style {
-    state_layer_selected: StateLayer,
-    state_later_unselected: StateLayer,
-    selected: StateStyle,
-    selected_disabled: StateStyle,
-    unselected: StateStyle,
-    unselected_disabled: StateStyle,
+pub struct Style {
+    pub state_layer_selected: StateLayer,
+    pub state_later_unselected: StateLayer,
+    pub selected: StateStyle,
+    pub selected_disabled: StateStyle,
+    pub unselected: StateStyle,
+    pub unselected_disabled: StateStyle,
 }
 
 impl Style {
@@ -187,6 +187,15 @@ where
         self.expressive_animation = expressive;
         self
     }
+
+    fn icon_rotation(&self) -> Radians {
+        if self.selected {
+            Radians(0.0)
+        } else {
+            // The close icon is symmetrical so it doesn't matter it's not a 360 rotation
+            -1.0 * Radians::PI
+        }
+    }
 }
 
 #[derive(PartialEq)]
@@ -215,13 +224,20 @@ struct State {
     close_icon: Handle,
     last_expressive: bool,
     last_status: Status,
+    icon_rotation_spring: ValueMotion<Radians>,
+    icon_fade_spring: SpringMotion,
     style_spring: ValueMotion<StateStyle>,
     handle_position_spring: SpringMotion,
     handle_size_spring: SpringMotion,
 }
 
 impl State {
-    fn new(state_style: StateStyle, last_status: Status, expressive: bool) -> Self {
+    fn new(
+        state_style: StateStyle,
+        last_status: Status,
+        expressive: bool,
+        icon_rotation: Radians,
+    ) -> Self {
         let now = Instant::now();
         Self {
             is_hovered: false,
@@ -230,6 +246,13 @@ impl State {
             close_icon: Handle::from_memory(common_icons::CLOSE),
             last_expressive: expressive,
             last_status,
+            icon_rotation_spring: ValueMotion::new(
+                icon_rotation,
+                icon_rotation,
+                fast_spatial(expressive),
+                now,
+            ),
+            icon_fade_spring: SpringMotion::new(fast_effects(expressive), 0.0, now),
             style_spring: ValueMotion::new(
                 state_style.clone(),
                 state_style,
@@ -244,6 +267,8 @@ impl State {
     fn set_expressive(&mut self, expressive: bool) {
         self.last_expressive = expressive;
 
+        self.icon_rotation_spring.spring.spring = fast_spatial(expressive);
+        self.icon_fade_spring.spring = fast_effects(expressive);
         self.style_spring.spring.spring = fast_effects(expressive);
         self.handle_position_spring.spring = fast_spatial(expressive);
         self.handle_size_spring.spring = fast_spatial(expressive);
@@ -266,6 +291,7 @@ where
                 .clone(),
             Status::new(self.selected, self.on_toggle.is_some()),
             self.expressive_animation,
+            self.icon_rotation(),
         ))
     }
 
@@ -359,21 +385,13 @@ where
             style.handle_color,
         );
 
-        let icon = if self.icon_mode == IconMode::Always {
-            let state = tree.state.downcast_ref::<State>();
-            match self.selected {
-                true => Some(Svg::new(state.check_icon.clone())),
-                false => match self.on_toggle.is_some() {
-                    true => Some(Svg::new(state.close_icon.clone())),
-                    false => None,
-                },
-            }
-        } else if self.icon_mode == IconMode::WhenEnabled && self.selected {
-            let state = tree.state.downcast_ref::<State>();
-            Some(Svg::new(state.check_icon.clone()))
+        let state = tree.state.downcast_ref::<State>();
+        let icon = Svg::new(if state.icon_fade_spring.position < 0.5 {
+            state.close_icon.clone()
         } else {
-            None
-        };
+            state.check_icon.clone()
+        })
+        .rotation(state.icon_rotation_spring.value());
 
         let color = Color {
             r: style.icon_color.r,
@@ -381,12 +399,15 @@ where
             b: style.icon_color.b,
             a: 1.0,
         };
-        icon.map(|icon| {
-            renderer.draw_svg(
-                icon.color(color).opacity(style.icon_color.a),
-                icon_bounds,
-                icon_bounds,
-            )
+        let opacity = if self.icon_mode == IconMode::Always {
+            midpoint_distance(state.icon_fade_spring.position)
+        } else if self.icon_mode == IconMode::WhenSelected {
+            state.icon_fade_spring.position
+        } else {
+            0.0
+        } * style.icon_color.a;
+        (opacity > 0.0).then(|| {
+            renderer.draw_svg(icon.color(color).opacity(opacity), icon_bounds, icon_bounds)
         });
     }
 
@@ -433,16 +454,25 @@ where
             );
             state.last_status = status;
         }
+        let radians = self.icon_rotation();
+        if state.icon_rotation_spring.to != radians {
+            state.icon_rotation_spring.set_target(radians, now);
+        }
+        state.icon_fade_spring.target = if self.selected { 1.0 } else { 0.0 };
         if !state.handle_position_spring.is_at_rest()
             || !state.handle_size_spring.is_at_rest()
             || !state.style_spring.is_at_rest()
+            || !state.icon_fade_spring.is_at_rest()
+            || !state.icon_rotation_spring.is_at_rest()
         {
+            state.icon_rotation_spring.step(now);
+            state.icon_fade_spring.step(now);
+            state.handle_size_spring.step(now);
+            state.handle_position_spring.step(now);
+            state.style_spring.step(now);
             shell.invalidate_layout();
             shell.request_redraw();
         }
-        state.handle_size_spring.step(now);
-        state.handle_position_spring.step(now);
-        state.style_spring.step(now);
 
         let is_over = cursor.is_over(layout.bounds());
 

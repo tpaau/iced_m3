@@ -29,7 +29,7 @@ mod constants {
 
 #[cfg(feature = "pub-internal-const")]
 pub use constants::*;
-use iced::Color;
+use iced::{Color, Radians};
 
 use crate::style::mix_colors;
 
@@ -120,6 +120,10 @@ pub fn emphasized(t: f32) -> f32 {
     }
 }
 
+pub(crate) fn midpoint_distance(x: f32) -> f32 {
+    (2.0 * (x - 0.5).abs()).clamp(0.0, 1.0)
+}
+
 pub fn emphasized_accelerate(t: f32) -> f32 {
     cubic_bezier_tuple(t, constants::EMPHASIZED_ACCELERATE)
 }
@@ -200,5 +204,12 @@ impl Interpolable for f64 {
     fn interpolate(self, other: Self, t: f32) -> Self {
         let t = t.clamp(0.0, 1.0) as f64;
         self * (1.0 - t) + other * t
+    }
+}
+
+impl Interpolable for Radians {
+    fn interpolate(self, other: Self, t: f32) -> Self {
+        let t = t.clamp(0.0, 1.0);
+        Radians(self.0 * (1.0 - t) + other.0 * t)
     }
 }

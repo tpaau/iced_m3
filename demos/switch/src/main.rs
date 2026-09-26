@@ -3,30 +3,37 @@ use iced::{
     widget::{column, container, row, text},
 };
 use iced_m3::{
-    theme::{ColorScheme, Mode, Theme},
-    widget::switch,
+    theme::{Accent, ColorScheme, Mode, Theme},
+    widget::{
+        self,
+        button::{self, Content},
+        switch::IconMode,
+    },
 };
 
 const APP_NAME: &str = "Switch Demo";
 
 #[derive(Clone)]
 enum Message {
-    Toggle,
-    ToggleExpressive,
+    Toggle1,
+    Toggle2,
+    SetIconMode(IconMode),
 }
 
 struct State {
     theme: Theme,
-    toggled: bool,
-    expressive_animation: bool,
+    toggled1: bool,
+    toggled2: bool,
+    icon_mode: IconMode,
 }
 
 impl Default for State {
     fn default() -> Self {
         Self {
             theme: Theme::default(Mode::Dark),
-            toggled: false,
-            expressive_animation: false,
+            toggled1: false,
+            toggled2: false,
+            icon_mode: IconMode::default(),
         }
     }
 }
@@ -39,19 +46,58 @@ impl State {
                     .font(fonts::text_bold())
                     .size(24.0)
                     .color(self.theme.on_surface()),
-                switch(&self.theme, self.toggled)
-                    .expressive_animation(self.expressive_animation)
-                    .on_toggle(Message::Toggle),
-                switch(&self.theme, false),
-                switch(&self.theme, true),
                 row![
-                    text("Expressive animation"),
-                    switch(&self.theme, self.expressive_animation)
-                        .expressive_animation(self.expressive_animation)
-                        .on_toggle(Message::ToggleExpressive)
+                    text("With expressive animation"),
+                    widget::switch(&self.theme, self.toggled1)
+                        .expressive_animation(true)
+                        .icon_mode(self.icon_mode)
+                        .on_toggle(Message::Toggle1)
                 ]
-                .align_y(Alignment::Center)
-                .spacing(8.0),
+                .spacing(8)
+                .align_y(Alignment::Center),
+                row![
+                    text("Without expressive animation"),
+                    widget::switch(&self.theme, self.toggled2)
+                        .expressive_animation(false)
+                        .icon_mode(self.icon_mode)
+                        .on_toggle(Message::Toggle2)
+                ]
+                .spacing(8)
+                .align_y(Alignment::Center),
+                row![
+                    text("Disabled selected"),
+                    widget::switch(&self.theme, true).icon_mode(self.icon_mode),
+                ]
+                .spacing(8)
+                .align_y(Alignment::Center),
+                row![
+                    text("Disabled unselected"),
+                    widget::switch(&self.theme, false).icon_mode(self.icon_mode),
+                ]
+                .spacing(8)
+                .align_y(Alignment::Center),
+                column![
+                    text("Icon mode"),
+                    row![
+                        widget::button(
+                            button::Style::filled(&self.theme, Accent::default()),
+                            Content::Label("Never".into()),
+                        )
+                        .on_press(Message::SetIconMode(IconMode::Never)),
+                        widget::button(
+                            button::Style::filled(&self.theme, Accent::default()),
+                            Content::Label("When Selected".into()),
+                        )
+                        .on_press(Message::SetIconMode(IconMode::WhenSelected)),
+                        widget::button(
+                            button::Style::filled(&self.theme, Accent::default()),
+                            Content::Label("Always".into()),
+                        )
+                        .on_press(Message::SetIconMode(IconMode::Always))
+                    ]
+                    .spacing(8)
+                ]
+                .spacing(8)
             ]
             .spacing(20.0),
         )
@@ -64,8 +110,9 @@ impl State {
 
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::Toggle => self.toggled = !self.toggled,
-            Message::ToggleExpressive => self.expressive_animation = !self.expressive_animation,
+            Message::Toggle1 => self.toggled1 = !self.toggled1,
+            Message::Toggle2 => self.toggled2 = !self.toggled2,
+            Message::SetIconMode(icon_mode) => self.icon_mode = icon_mode,
         }
         Task::none()
     }
