@@ -170,13 +170,13 @@ where
 
 #[must_use]
 pub fn badge<'a, Message, Theme, Renderer>(
-    theme: &'a dyn ColorScheme,
+    style: badge::Style,
     base: impl Into<Element<'a, Message, Theme, Renderer>>,
 ) -> badge::Badge<'a, Message, Theme, Renderer>
 where
     Renderer: 'a + iced_widget::core::text::Renderer,
 {
-    badge::Badge::new(theme, base)
+    badge::Badge::new(style, base)
 }
 
 #[must_use]

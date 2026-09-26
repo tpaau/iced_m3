@@ -9,7 +9,7 @@ use crate::{
     style::{HOVER_STATE_LAYER_OPACITY, PRESSED_STATE_LAYER_OPACITY, mix_colors},
     theme::ColorScheme,
     widget::{
-        self, Badge, OnPress,
+        self, Badge, OnPress, badge,
         common_icons::{MENU, MENU_OPEN},
         hybrid_icon::Icon,
     },
@@ -244,7 +244,7 @@ where
     };
     let icon = widget::hybrid_icon(icon_data, ITEM_ICON_SIZE, content_color);
     let icon: Element<'_, Message> = match item.badge {
-        Some(badge) => crate::widget::badge(theme, icon)
+        Some(badge) => crate::widget::badge(badge::Style::new(theme), icon)
             .label_maybe(badge.label)
             .into(),
         None => icon.into(),

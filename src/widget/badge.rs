@@ -43,16 +43,31 @@ pub enum BoundsMode {
     Symmetrical,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Style {
+    pub container_color: Color,
+    pub label_color: Color,
+    pub container_border: Border,
+}
+
+impl Style {
+    pub fn new(theme: &(impl ColorScheme + ?Sized)) -> Self {
+        Self {
+            container_color: theme.error(),
+            label_color: theme.on_error(),
+            container_border: Border::default().rounded(f32::MAX),
+        }
+    }
+}
+
 pub struct Badge<'a, Message, Theme, Renderer>
 where
     Renderer: 'a + iced_widget::core::text::Renderer,
 {
-    theme: &'a dyn ColorScheme,
+    style: Style,
     base: Element<'a, Message, Theme, Renderer>,
     label: Option<text::Fragment<'a>>,
     label_font: Option<Renderer::Font>,
-    container_color: Option<Color>,
-    label_color: Option<Color>,
     bounds_mode: BoundsMode,
 }
 
@@ -61,17 +76,12 @@ where
     Renderer: 'a + iced_widget::core::text::Renderer,
 {
     #[must_use]
-    pub fn new(
-        theme: &'a dyn ColorScheme,
-        base: impl Into<Element<'a, Message, Theme, Renderer>>,
-    ) -> Self {
+    pub fn new(style: Style, base: impl Into<Element<'a, Message, Theme, Renderer>>) -> Self {
         Self {
-            theme,
+            style,
             base: base.into(),
             label: None,
             label_font: None,
-            container_color: None,
-            label_color: None,
             bounds_mode: BoundsMode::default(),
         }
     }
@@ -97,30 +107,6 @@ where
     #[must_use]
     pub fn label_font_maybe(mut self, font: Option<Renderer::Font>) -> Self {
         self.label_font = font;
-        self
-    }
-
-    #[must_use]
-    pub fn container_color(mut self, color: Color) -> Self {
-        self.container_color = Some(color);
-        self
-    }
-
-    #[must_use]
-    pub fn container_color_maybe(mut self, color: Option<Color>) -> Self {
-        self.container_color = color;
-        self
-    }
-
-    #[must_use]
-    pub fn label_color(mut self, color: Color) -> Self {
-        self.label_color = Some(color);
-        self
-    }
-
-    #[must_use]
-    pub fn label_color_maybe(mut self, color: Option<Color>) -> Self {
-        self.label_color = color;
         self
     }
 
@@ -279,10 +265,10 @@ where
                             width: badge_bounds.width,
                             height: badge_bounds.height,
                         },
-                        border: Border::default().rounded(f32::MAX),
+                        border: self.style.container_border,
                         ..Default::default()
                     },
-                    self.container_color.unwrap_or(self.theme.error()),
+                    self.style.container_color,
                 );
 
                 renderer.fill_paragraph(
@@ -292,7 +278,7 @@ where
                             x: badge_bounds.x + BADGE_CONTENT_PADDING,
                             y: badge_bounds.y + (badge_bounds.height - LABEL_FONT_SIZE) / 2.0,
                         },
-                    self.label_color.unwrap_or(self.theme.on_error()),
+                    self.style.label_color,
                     bounds,
                 );
             });
@@ -306,10 +292,10 @@ where
                         width: size,
                         height: size,
                     },
-                    border: Border::default().rounded(f32::MAX),
+                    border: self.style.container_border,
                     ..Default::default()
                 },
-                self.container_color.unwrap_or(self.theme.error()),
+                self.style.container_color,
             );
         }
     }

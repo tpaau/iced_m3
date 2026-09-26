@@ -32,6 +32,7 @@ pub struct Button<Message> {
     pub style: crate::widget::button::Style,
 }
 
+// TODO: Message on clicked outside
 pub struct Dialog<'a, Message> {
     icon: Option<char>,
     icon_font: Option<Font>,

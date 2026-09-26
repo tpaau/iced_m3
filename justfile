@@ -5,7 +5,7 @@ doc:
 	RUSTDOCFLAGS="--cfg docsrs" cargo +nightly doc --no-deps -p iced_m3 --all-features
 
 open-doc:
-	cargo doc --no-deps -p iced_m3 --all-features --open
+	RUSTDOCFLAGS="--cfg docsrs" cargo +nightly doc --no-deps -p iced_m3 --all-features --open
 
 test:
 	cargo test --workspace

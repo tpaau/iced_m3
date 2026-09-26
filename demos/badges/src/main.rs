@@ -52,20 +52,21 @@ impl State {
                 .into()
         };
 
+        let style = badge::Style::new(&self.theme);
         let badges = vec![
             badge_column(vec![
                 // So that the icon is as big as the ones with padding
-                column![badge(&self.theme, icon()), space().height(4.0)].into(),
-                nav_bar_container(badge(&self.theme, icon()).into()),
+                column![badge(style, icon()), space().height(4.0)].into(),
+                nav_bar_container(badge(style, icon()).into()),
             ]),
             badge_column(vec![
-                badge(&self.theme, icon())
+                badge(style, icon())
                     .label_font(text_bold())
                     .label("1")
                     .bounds_mode(badge::BoundsMode::Symmetrical)
                     .into(),
                 nav_bar_container(
-                    badge(&self.theme, icon())
+                    badge(style, icon())
                         .label_font(text_bold())
                         .label("1")
                         .bounds_mode(badge::BoundsMode::Symmetrical)
@@ -73,13 +74,13 @@ impl State {
                 ),
             ]),
             badge_column(vec![
-                badge(&self.theme, icon())
+                badge(style, icon())
                     .label_font(text_bold())
                     .label("999+")
                     .bounds_mode(badge::BoundsMode::Symmetrical)
                     .into(),
                 nav_bar_container(
-                    badge(&self.theme, icon())
+                    badge(style, icon())
                         .label_font(text_bold())
                         .label("999+")
                         .bounds_mode(badge::BoundsMode::Symmetrical)
@@ -108,18 +109,18 @@ impl State {
         let badge_tests = vec![
             badge_container(
                 "small badge",
-                badge(&self.theme, base()).label_font(text_bold()).into(),
+                badge(style, base()).label_font(text_bold()).into(),
             ),
             badge_container(
                 "large badge",
-                badge(&self.theme, base())
+                badge(style, base())
                     .label_font(text_bold())
                     .label("1")
                     .into(),
             ),
             badge_container(
                 "large badge with symmetrical padding",
-                badge(&self.theme, base())
+                badge(style, base())
                     .label_font(text_bold())
                     .label("1")
                     .bounds_mode(badge::BoundsMode::Symmetrical)
@@ -127,14 +128,14 @@ impl State {
             ),
             badge_container(
                 "large badge with max size",
-                badge(&self.theme, base())
+                badge(style, base())
                     .label_font(text_bold())
                     .label("999+")
                     .into(),
             ),
             badge_container(
                 "large badge with max size and symmetrical padding",
-                badge(&self.theme, base())
+                badge(style, base())
                     .label_font(text_bold())
                     .label("999+")
                     .bounds_mode(badge::BoundsMode::Symmetrical)
