@@ -465,14 +465,16 @@ where
             || !state.icon_fade_spring.is_at_rest()
             || !state.icon_rotation_spring.is_at_rest()
         {
-            state.icon_rotation_spring.step(now);
-            state.icon_fade_spring.step(now);
-            state.handle_size_spring.step(now);
-            state.handle_position_spring.step(now);
-            state.style_spring.step(now);
             shell.invalidate_layout();
             shell.request_redraw();
         }
+
+        // Those DO need to be updated every frame, otherwise wacky things happen
+        state.icon_rotation_spring.step(now);
+        state.icon_fade_spring.step(now);
+        state.handle_size_spring.step(now);
+        state.handle_position_spring.step(now);
+        state.style_spring.step(now);
 
         let is_over = cursor.is_over(layout.bounds());
 
