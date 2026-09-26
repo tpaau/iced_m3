@@ -197,6 +197,16 @@ where
             -1.0 * Radians::PI
         }
     }
+
+    fn handle_size(&self, is_pressed: bool) -> f32 {
+        if is_pressed && self.on_toggle.is_some() {
+            HANDLE_SIZE_PRESSED
+        } else if self.icon_mode == IconMode::Always || self.selected {
+            HANDLE_SIZE_WITH_ICON
+        } else {
+            HANDLE_SIZE_NO_ICON
+        }
+    }
 }
 
 #[derive(PartialEq)]
@@ -318,48 +328,11 @@ where
 
     fn layout(
         &mut self,
-        tree: &mut iced::advanced::widget::Tree,
+        _tree: &mut iced::advanced::widget::Tree,
         _renderer: &Renderer,
         _limits: &iced::advanced::layout::Limits,
     ) -> Node {
-        let state = tree.state.downcast_mut::<State>();
-        let handle_size = if state.is_pressed && self.on_toggle.is_some() {
-            HANDLE_SIZE_PRESSED
-        } else if self.icon_mode == IconMode::Always || self.selected {
-            HANDLE_SIZE_WITH_ICON
-        } else {
-            HANDLE_SIZE_NO_ICON
-        };
-
-        state.handle_size_spring.target = handle_size;
-        let handle_size = state.handle_size_spring.position;
-
-        state.handle_position_spring.target = if self.selected {
-            TRACK_SIZE.width - TRACK_SIZE.height / 2.0
-        } else {
-            TRACK_SIZE.height / 2.0
-        };
-
-        let handle_center = state.handle_position_spring.position;
-        let handle_x = handle_center - handle_size / 2.0;
-        let handle_y = (TRACK_SIZE.height - handle_size) / 2.0;
-
-        let icon_x = handle_x + (handle_size - ICON_SIZE) / 2.0;
-        let icon_y = handle_y + (handle_size - ICON_SIZE) / 2.0;
-
-        let icon_node = Node::new(Size {
-            width: ICON_SIZE,
-            height: ICON_SIZE,
-        })
-        .move_to(Point::new(icon_x, icon_y));
-
-        let handle_node = Node::new(Size {
-            width: handle_size,
-            height: handle_size,
-        })
-        .move_to(Point::new(handle_x, handle_y));
-
-        Node::with_children(TRACK_SIZE, vec![handle_node, icon_node])
+        Node::new(TRACK_SIZE)
     }
 
     fn draw(
@@ -374,13 +347,27 @@ where
     ) {
         let state = tree.state.downcast_ref::<State>();
         let style = state.style_spring.value();
-        let track_bounds = layout.bounds();
-        let handle_bounds = layout.children().nth(0).unwrap().bounds();
-        let icon_bounds = layout.children().nth(1).unwrap().bounds();
+        let bounds = layout.bounds();
+
+        let handle_size = state.handle_size_spring.position;
+        let handle_center = state.handle_position_spring.position;
+        let handle_bounds = Rectangle {
+            x: bounds.x + handle_center - handle_size / 2.0,
+            y: bounds.y + (TRACK_SIZE.height - handle_size) / 2.0,
+            width: handle_size,
+            height: handle_size,
+        };
+
+        let icon_bounds = Rectangle {
+            x: handle_bounds.x + (handle_size - ICON_SIZE) / 2.0,
+            y: handle_bounds.y + (handle_size - ICON_SIZE) / 2.0,
+            width: ICON_SIZE,
+            height: ICON_SIZE,
+        };
 
         renderer.fill_quad(
             Quad {
-                bounds: track_bounds,
+                bounds,
                 border: Border::default()
                     .rounded(f32::MAX)
                     .color(style.outline_color)
@@ -473,9 +460,15 @@ where
                 if *style != state.style_spring.to {
                     state.style_spring.to = style.clone();
                     state.style_spring.spring.position = state.style_spring.spring.target;
-                    shell.invalidate_layout();
                     shell.request_redraw();
                 }
+
+                state.handle_size_spring.target = self.handle_size(state.is_pressed);
+                state.handle_position_spring.target = if self.selected {
+                    TRACK_SIZE.width - TRACK_SIZE.height / 2.0
+                } else {
+                    TRACK_SIZE.height / 2.0
+                };
 
                 let radians = self.icon_rotation();
                 if state.icon_rotation_spring.to != radians {
@@ -505,12 +498,6 @@ where
                     shell.request_redraw();
                 }
 
-                if !state.handle_position_spring.is_at_rest()
-                    || !state.handle_size_spring.is_at_rest()
-                {
-                    shell.invalidate_layout();
-                }
-
                 // Those DO need to be updated every frame, otherwise wacky things happen
                 state.state_layer_color.step(now);
                 state.icon_rotation_spring.step(now);
@@ -522,8 +509,6 @@ where
             iced::Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) if is_over => {
                 shell.capture_event();
                 state.is_pressed = true;
-                shell.invalidate_layout();
-                shell.request_redraw();
             }
 
             iced::Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
@@ -536,8 +521,6 @@ where
                     }
                 }
                 state.is_pressed = false;
-                shell.invalidate_layout();
-                shell.request_redraw();
             }
 
             _ => {}
@@ -549,9 +532,6 @@ where
             if !is_over {
                 state.is_pressed = false;
             }
-
-            shell.invalidate_layout();
-            shell.request_redraw();
         }
     }
 
@@ -566,7 +546,16 @@ where
         let state = tree.state.downcast_ref::<State>();
         let color = state.state_layer_color.value();
         (self.on_toggle.is_some() && color.a > 0.0).then_some({
-            let handle_bounds = layout.children().nth(0).unwrap().bounds();
+            let bounds = layout.bounds();
+            let handle_size = state.handle_size_spring.position;
+            let handle_center = state.handle_position_spring.position;
+            let handle_bounds = Rectangle {
+                x: bounds.x + handle_center - handle_size / 2.0,
+                y: bounds.y + (TRACK_SIZE.height - handle_size) / 2.0,
+                width: handle_size,
+                height: handle_size,
+            };
+
             let bounds = Rectangle {
                 x: handle_bounds.x + (handle_bounds.width - STATE_LAYER_SIZE) / 2.0,
                 y: handle_bounds.y + (handle_bounds.height - STATE_LAYER_SIZE) / 2.0,
