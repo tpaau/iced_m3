@@ -224,6 +224,7 @@ struct State {
     close_icon: Handle,
     last_expressive: bool,
     last_status: Status,
+    state_layer_color: ValueMotion<Color>,
     icon_rotation_spring: ValueMotion<Radians>,
     icon_fade_spring: SpringMotion,
     style_spring: ValueMotion<StateStyle>,
@@ -237,6 +238,7 @@ impl State {
         last_status: Status,
         expressive: bool,
         icon_rotation: Radians,
+        state_layer_color: Color,
     ) -> Self {
         let now = Instant::now();
         Self {
@@ -246,6 +248,12 @@ impl State {
             close_icon: Handle::from_memory(common_icons::CLOSE),
             last_expressive: expressive,
             last_status,
+            state_layer_color: ValueMotion::new(
+                state_layer_color,
+                state_layer_color,
+                fast_effects(expressive),
+                now,
+            ),
             icon_rotation_spring: ValueMotion::new(
                 icon_rotation,
                 icon_rotation,
@@ -267,6 +275,7 @@ impl State {
     fn set_expressive(&mut self, expressive: bool) {
         self.last_expressive = expressive;
 
+        self.state_layer_color.spring.spring = fast_effects(expressive);
         self.icon_rotation_spring.spring.spring = fast_spatial(expressive);
         self.icon_fade_spring.spring = fast_effects(expressive);
         self.style_spring.spring.spring = fast_effects(expressive);
@@ -292,6 +301,10 @@ where
             Status::new(self.selected, self.on_toggle.is_some()),
             self.expressive_animation,
             self.icon_rotation(),
+            self.style
+                .state_layer(self.selected)
+                .hovered
+                .scale_alpha(0.0),
         ))
     }
 
@@ -459,17 +472,32 @@ where
             state.icon_rotation_spring.set_target(radians, now);
         }
         state.icon_fade_spring.target = if self.selected { 1.0 } else { 0.0 };
+
+        let state_layer_color = match state.is_hovered {
+            true => match state.is_pressed {
+                true => self.style.state_layer(self.selected).pressed,
+                false => self.style.state_layer(self.selected).hovered,
+            },
+            false => self
+                .style
+                .state_layer(self.selected)
+                .hovered
+                .scale_alpha(0.0),
+        };
+        state.state_layer_color.set_target(state_layer_color, now);
         if !state.handle_position_spring.is_at_rest()
             || !state.handle_size_spring.is_at_rest()
             || !state.style_spring.is_at_rest()
             || !state.icon_fade_spring.is_at_rest()
             || !state.icon_rotation_spring.is_at_rest()
+            || !state.state_layer_color.is_at_rest()
         {
             shell.invalidate_layout();
             shell.request_redraw();
         }
 
         // Those DO need to be updated every frame, otherwise wacky things happen
+        state.state_layer_color.step(now);
         state.icon_rotation_spring.step(now);
         state.icon_fade_spring.step(now);
         state.handle_size_spring.step(now);
@@ -523,13 +551,9 @@ where
         _viewport: &iced::Rectangle,
         _translation: iced::Vector,
     ) -> Option<iced::advanced::overlay::Element<'b, Message, Theme, Renderer>> {
-        (self.on_toggle.is_some() && tree.state.downcast_ref::<State>().is_hovered).then_some({
-            let state = tree.state.downcast_ref::<State>();
-            let color = match state.is_pressed {
-                true => self.style.state_layer(self.selected).pressed,
-                false => self.style.state_layer(self.selected).hovered,
-            };
-
+        let state = tree.state.downcast_ref::<State>();
+        let color = state.state_layer_color.value();
+        (self.on_toggle.is_some() && color.a > 0.0).then_some({
             let handle_bounds = layout.children().nth(0).unwrap().bounds();
             let bounds = Rectangle {
                 x: handle_bounds.x + (handle_bounds.width - STATE_LAYER_SIZE) / 2.0,
