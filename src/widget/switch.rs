@@ -42,7 +42,7 @@ pub enum IconMode {
     Always,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct StateStyle {
     pub track_color: Color,
     pub handle_color: Color,
@@ -209,7 +209,7 @@ where
     }
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 enum Status {
     Selected,
     SelectedDisabled,
@@ -443,69 +443,68 @@ where
         let state = tree.state.downcast_mut::<State>();
         let is_over = cursor.is_over(layout.bounds());
 
+        let now = Instant::now();
+
+        if self.expressive_animation != state.last_expressive {
+            state.set_expressive(self.expressive_animation);
+        }
+
+        let style = self.style.state(self.selected, self.on_toggle.is_some());
+        let status = Status::new(self.selected, self.on_toggle.is_some());
+        if status != state.last_status {
+            state.style_spring.set_target(style.clone(), now);
+            state.last_status = status;
+        }
+        if style != &state.style_spring.to {
+            state.style_spring.from = style.clone();
+            state.style_spring.to = style.clone();
+            shell.request_redraw();
+        }
+
+        state.handle_size_spring.target = self.handle_size(state.is_pressed);
+        state.handle_position_spring.target = if self.selected {
+            TRACK_SIZE.width - TRACK_SIZE.height / 2.0
+        } else {
+            TRACK_SIZE.height / 2.0
+        };
+
+        let radians = self.icon_rotation();
+        if state.icon_rotation_spring.to != radians {
+            state.icon_rotation_spring.set_target(radians, now);
+        }
+        state.icon_fade_spring.target = if self.selected { 1.0 } else { 0.0 };
+
+        let state_layer_color = match state.is_hovered {
+            true => match state.is_pressed {
+                true => self.style.state_layer(self.selected).pressed,
+                false => self.style.state_layer(self.selected).hovered,
+            },
+            false => self
+                .style
+                .state_layer(self.selected)
+                .hovered
+                .scale_alpha(0.0),
+        };
+        state.state_layer_color.set_target(state_layer_color, now);
+        if !state.handle_position_spring.is_at_rest()
+            || !state.handle_size_spring.is_at_rest()
+            || !state.style_spring.is_at_rest()
+            || !state.icon_fade_spring.is_at_rest()
+            || !state.icon_rotation_spring.is_at_rest()
+            || !state.state_layer_color.is_at_rest()
+        {
+            shell.request_redraw();
+        }
+
+        // Those DO need to be updated every frame, otherwise wacky things happen
+        state.state_layer_color.step(now);
+        state.icon_rotation_spring.step(now);
+        state.icon_fade_spring.step(now);
+        state.handle_size_spring.step(now);
+        state.handle_position_spring.step(now);
+        state.style_spring.step(now);
+
         match event {
-            iced::Event::Window(iced::window::Event::RedrawRequested(now)) => {
-                let now = *now;
-
-                if self.expressive_animation != state.last_expressive {
-                    state.set_expressive(self.expressive_animation);
-                }
-
-                let status = Status::new(self.selected, self.on_toggle.is_some());
-                let style = self.style.state(self.selected, self.on_toggle.is_some());
-                if status != state.last_status {
-                    state.style_spring.set_target(style.clone(), now);
-                    state.last_status = status;
-                }
-                if *style != state.style_spring.to {
-                    state.style_spring.to = style.clone();
-                    state.style_spring.spring.position = state.style_spring.spring.target;
-                    shell.request_redraw();
-                }
-
-                state.handle_size_spring.target = self.handle_size(state.is_pressed);
-                state.handle_position_spring.target = if self.selected {
-                    TRACK_SIZE.width - TRACK_SIZE.height / 2.0
-                } else {
-                    TRACK_SIZE.height / 2.0
-                };
-
-                let radians = self.icon_rotation();
-                if state.icon_rotation_spring.to != radians {
-                    state.icon_rotation_spring.set_target(radians, now);
-                }
-                state.icon_fade_spring.target = if self.selected { 1.0 } else { 0.0 };
-
-                let state_layer_color = match state.is_hovered {
-                    true => match state.is_pressed {
-                        true => self.style.state_layer(self.selected).pressed,
-                        false => self.style.state_layer(self.selected).hovered,
-                    },
-                    false => self
-                        .style
-                        .state_layer(self.selected)
-                        .hovered
-                        .scale_alpha(0.0),
-                };
-                state.state_layer_color.set_target(state_layer_color, now);
-                if !state.handle_position_spring.is_at_rest()
-                    || !state.handle_size_spring.is_at_rest()
-                    || !state.style_spring.is_at_rest()
-                    || !state.icon_fade_spring.is_at_rest()
-                    || !state.icon_rotation_spring.is_at_rest()
-                    || !state.state_layer_color.is_at_rest()
-                {
-                    shell.request_redraw();
-                }
-
-                // Those DO need to be updated every frame, otherwise wacky things happen
-                state.state_layer_color.step(now);
-                state.icon_rotation_spring.step(now);
-                state.icon_fade_spring.step(now);
-                state.handle_size_spring.step(now);
-                state.handle_position_spring.step(now);
-                state.style_spring.step(now);
-            }
             iced::Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) if is_over => {
                 shell.capture_event();
                 state.is_pressed = true;
