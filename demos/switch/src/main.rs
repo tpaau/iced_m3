@@ -1,6 +1,6 @@
 use iced::{
-    Element, Font, Length, Task,
-    widget::{column, container, text},
+    Alignment, Element, Font, Length, Task,
+    widget::{column, container, row, text},
 };
 use iced_m3::{
     theme::{ColorScheme, Mode, Theme},
@@ -12,11 +12,13 @@ const APP_NAME: &str = "Switch Demo";
 #[derive(Clone)]
 enum Message {
     Toggle,
+    ToggleExpressive,
 }
 
 struct State {
     theme: Theme,
     toggled: bool,
+    expressive_animation: bool,
 }
 
 impl Default for State {
@@ -24,6 +26,7 @@ impl Default for State {
         Self {
             theme: Theme::default(Mode::Dark),
             toggled: false,
+            expressive_animation: false,
         }
     }
 }
@@ -36,9 +39,19 @@ impl State {
                     .font(fonts::text_bold())
                     .size(24.0)
                     .color(self.theme.on_surface()),
-                switch(&self.theme, self.toggled).on_toggle(Message::Toggle),
+                switch(&self.theme, self.toggled)
+                    .expressive_animation(self.expressive_animation)
+                    .on_toggle(Message::Toggle),
                 switch(&self.theme, false),
                 switch(&self.theme, true),
+                row![
+                    text("Expressive animation"),
+                    switch(&self.theme, self.expressive_animation)
+                        .expressive_animation(self.expressive_animation)
+                        .on_toggle(Message::ToggleExpressive)
+                ]
+                .align_y(Alignment::Center)
+                .spacing(8.0),
             ]
             .spacing(20.0),
         )
@@ -52,6 +65,7 @@ impl State {
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Toggle => self.toggled = !self.toggled,
+            Message::ToggleExpressive => self.expressive_animation = !self.expressive_animation,
         }
         Task::none()
     }

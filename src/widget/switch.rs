@@ -7,7 +7,10 @@ use iced::{
 use iced_widget::core::{Svg, svg::Handle};
 
 use crate::{
-    animation::motion::{SpringMotion, fast_spatial},
+    animation::{
+        Interpolable,
+        motion::{SpringMotion, ValueMotion, fast_effects, fast_spatial},
+    },
     style::StateLayer,
     theme::ColorScheme,
     widget::common_icons,
@@ -38,11 +41,25 @@ pub enum IconMode {
     Always,
 }
 
+#[derive(Clone, PartialEq)]
 struct StateStyle {
     track_color: Color,
     handle_color: Color,
     icon_color: Color,
-    outline_color: Option<Color>,
+    outline_width: f32,
+    outline_color: Color,
+}
+
+impl Interpolable for StateStyle {
+    fn interpolate(self, other: Self, t: f32) -> Self {
+        Self {
+            track_color: self.track_color.interpolate(other.track_color, t),
+            handle_color: self.handle_color.interpolate(other.handle_color, t),
+            icon_color: self.icon_color.interpolate(other.icon_color, t),
+            outline_width: self.outline_width.interpolate(other.outline_width, t),
+            outline_color: self.outline_color.interpolate(other.outline_color, t),
+        }
+    }
 }
 
 struct Style {
@@ -63,7 +80,8 @@ impl Style {
                 track_color: theme.primary(),
                 handle_color: theme.on_primary(),
                 icon_color: theme.on_primary_container(),
-                outline_color: None,
+                outline_width: 0.0,
+                outline_color: theme.outline(),
             },
             selected_disabled: StateStyle {
                 track_color: theme.on_surface().scale_alpha(TRACK_DISABLED_OPACITY),
@@ -71,13 +89,15 @@ impl Style {
                     .surface()
                     .scale_alpha(HANDLE_DISABLED_SELECTED_OPACITY),
                 icon_color: theme.on_surface().scale_alpha(ICON_DISABLED_OPACITY),
-                outline_color: None,
+                outline_width: 0.0,
+                outline_color: theme.on_surface().scale_alpha(OUTLINE_DISABLED_OPACITY),
             },
             unselected: StateStyle {
                 track_color: theme.surface_container_highest(),
                 handle_color: theme.outline(),
                 icon_color: theme.surface_container_highest(),
-                outline_color: Some(theme.outline()),
+                outline_width: TRACK_DISABLED_OUTLINE_WIDTH,
+                outline_color: theme.outline(),
             },
             unselected_disabled: StateStyle {
                 track_color: theme.on_surface().scale_alpha(TRACK_DISABLED_OPACITY),
@@ -87,7 +107,8 @@ impl Style {
                 icon_color: theme
                     .surface_container_highest()
                     .scale_alpha(ICON_DISABLED_OPACITY),
-                outline_color: Some(theme.on_surface().scale_alpha(OUTLINE_DISABLED_OPACITY)),
+                outline_width: TRACK_DISABLED_OUTLINE_WIDTH,
+                outline_color: theme.on_surface().scale_alpha(OUTLINE_DISABLED_OPACITY),
             },
         }
     }
@@ -117,6 +138,7 @@ where
     icon_mode: IconMode,
     selected: bool,
     on_toggle: Option<Message>,
+    expressive_animation: bool,
 }
 
 impl<Message> Switch<Message>
@@ -130,6 +152,7 @@ where
             icon_mode: IconMode::default(),
             selected,
             on_toggle: None,
+            expressive_animation: false,
         }
     }
 
@@ -158,6 +181,31 @@ where
             None => self,
         }
     }
+
+    #[must_use]
+    pub fn expressive_animation(mut self, expressive: bool) -> Self {
+        self.expressive_animation = expressive;
+        self
+    }
+}
+
+#[derive(PartialEq)]
+enum Status {
+    Selected,
+    SelectedDisabled,
+    Unselected,
+    UnselectedDisabled,
+}
+
+impl Status {
+    fn new(selected: bool, enabled: bool) -> Self {
+        match (selected, enabled) {
+            (true, true) => Self::Selected,
+            (true, false) => Self::SelectedDisabled,
+            (false, true) => Self::Unselected,
+            (false, false) => Self::UnselectedDisabled,
+        }
+    }
 }
 
 struct State {
@@ -165,22 +213,40 @@ struct State {
     is_pressed: bool,
     check_icon: Handle,
     close_icon: Handle,
+    last_expressive: bool,
+    last_status: Status,
+    style_spring: ValueMotion<StateStyle>,
     handle_position_spring: SpringMotion,
     handle_size_spring: SpringMotion,
 }
 
-impl Default for State {
-    fn default() -> Self {
-        let instant = Instant::now();
+impl State {
+    fn new(state_style: StateStyle, last_status: Status, expressive: bool) -> Self {
+        let now = Instant::now();
         Self {
             is_hovered: false,
             is_pressed: false,
             check_icon: Handle::from_memory(common_icons::CHECK),
             close_icon: Handle::from_memory(common_icons::CLOSE),
-            // TODO: Optional expressive
-            handle_position_spring: SpringMotion::new(fast_spatial(true), 0.0, instant),
-            handle_size_spring: SpringMotion::new(fast_spatial(true), 0.0, instant),
+            last_expressive: expressive,
+            last_status,
+            style_spring: ValueMotion::new(
+                state_style.clone(),
+                state_style,
+                fast_effects(expressive),
+                now,
+            ),
+            handle_position_spring: SpringMotion::new(fast_spatial(expressive), 0.0, now),
+            handle_size_spring: SpringMotion::new(fast_spatial(expressive), 0.0, now),
         }
+    }
+
+    fn set_expressive(&mut self, expressive: bool) {
+        self.last_expressive = expressive;
+
+        self.style_spring.spring.spring = fast_effects(expressive);
+        self.handle_position_spring.spring = fast_spatial(expressive);
+        self.handle_size_spring.spring = fast_spatial(expressive);
     }
 }
 
@@ -194,7 +260,13 @@ where
     }
 
     fn state(&self) -> iced::advanced::widget::tree::State {
-        iced::advanced::widget::tree::State::new(State::default())
+        iced::advanced::widget::tree::State::new(State::new(
+            self.style
+                .state(self.selected, self.on_toggle.is_some())
+                .clone(),
+            Status::new(self.selected, self.on_toggle.is_some()),
+            self.expressive_animation,
+        ))
     }
 
     fn size(&self) -> Size<Length> {
@@ -260,20 +332,19 @@ where
         _cursor: mouse::Cursor,
         _viewport: &iced::Rectangle,
     ) {
-        let style = self.style.state(self.selected, self.on_toggle.is_some());
+        let state = tree.state.downcast_ref::<State>();
+        let style = state.style_spring.value();
         let track_bounds = layout.bounds();
         let handle_bounds = layout.children().nth(0).unwrap().bounds();
         let icon_bounds = layout.children().nth(1).unwrap().bounds();
 
-        let border = Border::default().rounded(f32::MAX);
-        let border = match style.outline_color {
-            Some(color) => border.color(color).width(TRACK_DISABLED_OUTLINE_WIDTH),
-            None => border,
-        };
         renderer.fill_quad(
             Quad {
                 bounds: track_bounds,
-                border,
+                border: Border::default()
+                    .rounded(f32::MAX)
+                    .color(style.outline_color)
+                    .width(style.outline_width),
                 ..Default::default()
             },
             style.track_color,
@@ -348,13 +419,31 @@ where
         _viewport: &iced::Rectangle,
     ) {
         let state = tree.state.downcast_mut::<State>();
-        let instant = Instant::now();
-        if !state.handle_position_spring.is_at_rest() || !state.handle_size_spring.is_at_rest() {
+        if self.expressive_animation != state.last_expressive {
+            state.set_expressive(self.expressive_animation);
+        }
+        let status = Status::new(self.selected, self.on_toggle.is_some());
+        let now = Instant::now();
+        if status != state.last_status {
+            state.style_spring.set_target(
+                self.style
+                    .state(self.selected, self.on_toggle.is_some())
+                    .clone(),
+                now,
+            );
+            state.last_status = status;
+        }
+        if !state.handle_position_spring.is_at_rest()
+            || !state.handle_size_spring.is_at_rest()
+            || !state.style_spring.is_at_rest()
+        {
             shell.invalidate_layout();
             shell.request_redraw();
         }
-        state.handle_size_spring.step(instant);
-        state.handle_position_spring.step(instant);
+        state.handle_size_spring.step(now);
+        state.handle_position_spring.step(now);
+        state.style_spring.step(now);
+
         let is_over = cursor.is_over(layout.bounds());
 
         match event {

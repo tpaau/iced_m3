@@ -29,6 +29,9 @@ mod constants {
 
 #[cfg(feature = "pub-internal-const")]
 pub use constants::*;
+use iced::Color;
+
+use crate::style::mix_colors;
 
 fn cubic(t: f32, p1: f32, p2: f32) -> f32 {
     3.0 * (1.0 - t).powi(2) * t * p1 + 3.0 * (1.0 - t) * t.powi(2) * p2 + t.powi(3)
@@ -173,5 +176,29 @@ impl From<Easing> for iced::animation::Easing {
             Easing::StandardAccelerate => iced::animation::Easing::Custom(standard_accelerate),
             Easing::StandardDecelerate => iced::animation::Easing::Custom(standard_decelerate),
         }
+    }
+}
+
+pub trait Interpolable {
+    fn interpolate(self, other: Self, t: f32) -> Self;
+}
+
+impl Interpolable for Color {
+    fn interpolate(self, other: Self, t: f32) -> Self {
+        mix_colors(self, other, t)
+    }
+}
+
+impl Interpolable for f32 {
+    fn interpolate(self, other: Self, t: f32) -> Self {
+        let t = t.clamp(0.0, 1.0);
+        self * (1.0 - t) + other * t
+    }
+}
+
+impl Interpolable for f64 {
+    fn interpolate(self, other: Self, t: f32) -> Self {
+        let t = t.clamp(0.0, 1.0) as f64;
+        self * (1.0 - t) + other * t
     }
 }

@@ -23,7 +23,8 @@ use std::time::Instant;
 
 #[cfg(feature = "pub-internal-const")]
 pub use constants::*;
-use iced::animation::Interpolable;
+
+use crate::animation::Interpolable;
 
 pub fn fast_spatial(expressive: bool) -> Spring {
     match expressive {
@@ -169,7 +170,7 @@ impl SpringMotion {
 
 pub struct ValueMotion<T>
 where
-    T: Interpolable + Clone,
+    T: Interpolable + Clone + PartialEq,
 {
     pub from: T,
     pub to: T,
@@ -178,7 +179,7 @@ where
 
 impl<T> ValueMotion<T>
 where
-    T: Interpolable + Clone,
+    T: Interpolable + Clone + PartialEq,
 {
     pub const fn new(from: T, to: T, spring: Spring, now: Instant) -> Self {
         Self {
@@ -190,10 +191,15 @@ where
 
     pub fn value(&self) -> T {
         self.from
-            .interpolated(self.to.clone(), self.spring.position)
+            .clone()
+            .interpolate(self.to.clone(), self.spring.position)
     }
 
     pub fn set_target(&mut self, target: T, now: Instant) {
+        if self.to == target {
+            return;
+        }
+
         self.from = self.value();
         self.to = target;
 
@@ -202,8 +208,11 @@ where
         self.spring.time = now;
     }
 
-    pub fn step(&mut self, now: Instant) -> T {
+    pub fn step(&mut self, now: Instant) {
         self.spring.step(now);
-        self.value()
+    }
+
+    pub fn is_at_rest(&self) -> bool {
+        self.spring.is_at_rest()
     }
 }
