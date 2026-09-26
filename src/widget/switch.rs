@@ -7,6 +7,7 @@ use iced::{
 use iced_widget::core::{Svg, svg::Handle};
 
 use crate::{
+    EXPRESSIVE,
     animation::{
         Interpolable, midpoint_distance,
         motion::{SpringMotion, ValueMotion, fast_effects, fast_spatial},
@@ -152,7 +153,7 @@ where
             icon_mode: IconMode::default(),
             selected,
             on_toggle: None,
-            expressive_animation: false,
+            expressive_animation: EXPRESSIVE,
         }
     }
 
@@ -453,60 +454,71 @@ where
         _viewport: &iced::Rectangle,
     ) {
         let state = tree.state.downcast_mut::<State>();
-        if self.expressive_animation != state.last_expressive {
-            state.set_expressive(self.expressive_animation);
-        }
-        let status = Status::new(self.selected, self.on_toggle.is_some());
-        let now = Instant::now();
-        if status != state.last_status {
-            state.style_spring.set_target(
-                self.style
-                    .state(self.selected, self.on_toggle.is_some())
-                    .clone(),
-                now,
-            );
-            state.last_status = status;
-        }
-        let radians = self.icon_rotation();
-        if state.icon_rotation_spring.to != radians {
-            state.icon_rotation_spring.set_target(radians, now);
-        }
-        state.icon_fade_spring.target = if self.selected { 1.0 } else { 0.0 };
-
-        let state_layer_color = match state.is_hovered {
-            true => match state.is_pressed {
-                true => self.style.state_layer(self.selected).pressed,
-                false => self.style.state_layer(self.selected).hovered,
-            },
-            false => self
-                .style
-                .state_layer(self.selected)
-                .hovered
-                .scale_alpha(0.0),
-        };
-        state.state_layer_color.set_target(state_layer_color, now);
-        if !state.handle_position_spring.is_at_rest()
-            || !state.handle_size_spring.is_at_rest()
-            || !state.style_spring.is_at_rest()
-            || !state.icon_fade_spring.is_at_rest()
-            || !state.icon_rotation_spring.is_at_rest()
-            || !state.state_layer_color.is_at_rest()
-        {
-            shell.invalidate_layout();
-            shell.request_redraw();
-        }
-
-        // Those DO need to be updated every frame, otherwise wacky things happen
-        state.state_layer_color.step(now);
-        state.icon_rotation_spring.step(now);
-        state.icon_fade_spring.step(now);
-        state.handle_size_spring.step(now);
-        state.handle_position_spring.step(now);
-        state.style_spring.step(now);
-
         let is_over = cursor.is_over(layout.bounds());
 
         match event {
+            iced::Event::Window(iced::window::Event::RedrawRequested(now)) => {
+                let now = *now;
+
+                if self.expressive_animation != state.last_expressive {
+                    state.set_expressive(self.expressive_animation);
+                }
+
+                let status = Status::new(self.selected, self.on_toggle.is_some());
+                let style = self.style.state(self.selected, self.on_toggle.is_some());
+                if status != state.last_status {
+                    state.style_spring.set_target(style.clone(), now);
+                    state.last_status = status;
+                }
+                if *style != state.style_spring.to {
+                    state.style_spring.to = style.clone();
+                    state.style_spring.spring.position = state.style_spring.spring.target;
+                    shell.invalidate_layout();
+                    shell.request_redraw();
+                }
+
+                let radians = self.icon_rotation();
+                if state.icon_rotation_spring.to != radians {
+                    state.icon_rotation_spring.set_target(radians, now);
+                }
+                state.icon_fade_spring.target = if self.selected { 1.0 } else { 0.0 };
+
+                let state_layer_color = match state.is_hovered {
+                    true => match state.is_pressed {
+                        true => self.style.state_layer(self.selected).pressed,
+                        false => self.style.state_layer(self.selected).hovered,
+                    },
+                    false => self
+                        .style
+                        .state_layer(self.selected)
+                        .hovered
+                        .scale_alpha(0.0),
+                };
+                state.state_layer_color.set_target(state_layer_color, now);
+                if !state.handle_position_spring.is_at_rest()
+                    || !state.handle_size_spring.is_at_rest()
+                    || !state.style_spring.is_at_rest()
+                    || !state.icon_fade_spring.is_at_rest()
+                    || !state.icon_rotation_spring.is_at_rest()
+                    || !state.state_layer_color.is_at_rest()
+                {
+                    shell.request_redraw();
+                }
+
+                if !state.handle_position_spring.is_at_rest()
+                    || !state.handle_size_spring.is_at_rest()
+                {
+                    shell.invalidate_layout();
+                }
+
+                // Those DO need to be updated every frame, otherwise wacky things happen
+                state.state_layer_color.step(now);
+                state.icon_rotation_spring.step(now);
+                state.icon_fade_spring.step(now);
+                state.handle_size_spring.step(now);
+                state.handle_position_spring.step(now);
+                state.style_spring.step(now);
+            }
             iced::Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) if is_over => {
                 shell.capture_event();
                 state.is_pressed = true;

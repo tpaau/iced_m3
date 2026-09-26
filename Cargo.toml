@@ -14,8 +14,10 @@ pollster = "1.0.1"
 unicode-segmentation = "1.13.3"
 
 [features]
+default = [ "expressive-defaults" ]
 advanced = []
 pub-internal-const = []
+expressive-defaults = []
 
 [workspace]
 members = [
