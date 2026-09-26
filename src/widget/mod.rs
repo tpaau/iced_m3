@@ -47,9 +47,10 @@ use crate::{
 #[must_use]
 pub fn menu<'a, Message>(
     sections: Vec<vertical_menu::Group<'a, Message>>,
-    theme: &'a dyn ColorScheme,
+    style: vertical_menu::Style,
+    font: Font,
 ) -> vertical_menu::Menu<'a, Message> {
-    vertical_menu::Menu::new(sections, theme)
+    vertical_menu::Menu::new(sections, style, font)
 }
 
 #[must_use]
