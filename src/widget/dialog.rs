@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use iced::{Alignment, Border, Color, Element, Font, Length, advanced::text, color};
-use iced_widget::{column, container, opaque, row, space, text::IntoFragment};
+use iced_widget::{column, container, mouse_area, opaque, row, space, text::IntoFragment};
 
 use crate::{
     style::Elevation,
@@ -66,6 +66,7 @@ pub struct Dialog<'a, Message> {
     button_label_font: Option<Font>,
     width: Option<f32>,
     height: Option<f32>,
+    on_press_outside: Option<Message>,
 }
 
 impl<'a, Message> Dialog<'a, Message> {
@@ -86,6 +87,7 @@ impl<'a, Message> Dialog<'a, Message> {
             button_label_font: None,
             width: None,
             height: None,
+            on_press_outside: None,
         }
     }
 
@@ -166,6 +168,18 @@ impl<'a, Message> Dialog<'a, Message> {
         self.height = maybe_height;
         self
     }
+
+    #[must_use]
+    pub fn on_press_outside(mut self, on_press: Message) -> Self {
+        self.on_press_outside = Some(on_press);
+        self
+    }
+
+    #[must_use]
+    pub fn on_press_outside_maybe(mut self, on_press: Option<Message>) -> Self {
+        self.on_press_outside = on_press;
+        self
+    }
 }
 
 impl<'a, Message> From<Dialog<'a, Message>> for Element<'a, Message>
@@ -244,8 +258,8 @@ where
             None => dialog,
         };
 
-        opaque(
-            container(dialog)
+        let area = mouse_area(
+            container(opaque(dialog))
                 .width(Length::Fill)
                 .height(Length::Fill)
                 .align_x(Alignment::Center)
@@ -255,6 +269,12 @@ where
                     iced_widget::container::Style::default()
                         .background(color!(0x000000).scale_alpha(0.3))
                 }),
-        )
+        );
+
+        match value.on_press_outside {
+            Some(on_press) => area.on_press(on_press),
+            None => area,
+        }
+        .into()
     }
 }
