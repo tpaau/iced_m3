@@ -156,7 +156,7 @@ impl State {
             on_press: OnPress::Direct(Message::Noop),
         };
 
-        let navrail = iced_m3::widget::navrail(&self.theme, items)
+        let navrail = iced_m3::widget::navrail(navrail::Style::new(&self.theme), items)
             .active(current_index)
             .label_font(text_regular())
             .status(status)

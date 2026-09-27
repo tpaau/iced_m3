@@ -6,7 +6,7 @@ use iced::{
 use iced_widget::{column, container, row, space, text::LineHeight};
 
 use crate::{
-    style::{HOVER_STATE_LAYER_OPACITY, PRESSED_STATE_LAYER_OPACITY, mix_colors},
+    style::{HOVER_STATE_LAYER_OPACITY, PRESSED_STATE_LAYER_OPACITY, StateLayer, mix_colors},
     theme::ColorScheme,
     widget::{
         self, Badge, OnPress, badge,
@@ -103,11 +103,38 @@ impl Status {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Style {
+    pub active_indicator_color: Color,
+    pub item_active_label_color: Color,
+    pub item_active_icon_color: Color,
+    pub item_inactive_label_color: Color,
+    pub item_inactive_icon_color: Color,
+    pub menu_icon_color: Color,
+    pub badge_style: badge::Style,
+    pub state_layer: StateLayer,
+}
+
+impl Style {
+    pub fn new(theme: &(impl ColorScheme + ?Sized)) -> Self {
+        Self {
+            active_indicator_color: theme.secondary_container(),
+            item_active_label_color: theme.secondary(),
+            item_active_icon_color: theme.secondary(),
+            item_inactive_label_color: theme.on_surface_variant(),
+            item_inactive_icon_color: theme.on_surface_variant(),
+            menu_icon_color: theme.on_surface(),
+            badge_style: badge::Style::new(theme),
+            state_layer: StateLayer::new(theme.on_secondary_container()),
+        }
+    }
+}
+
 pub struct NavRail<'a, Message>
 where
     Message: 'a + Clone,
 {
-    theme: &'a dyn ColorScheme,
+    style: Style,
     status: Status,
     on_menu_pressed: Option<Box<dyn Fn(bool) -> Message + 'a>>,
     fab: Option<Fab<'a, Message>>,
@@ -123,9 +150,9 @@ where
     Message: 'a + Clone,
 {
     #[must_use]
-    pub fn new(theme: &'a dyn ColorScheme, items: Vec<Item<'a, Message>>) -> Self {
+    pub fn new(style: Style, items: Vec<Item<'a, Message>>) -> Self {
         Self {
-            theme,
+            style,
             status: Status::default(),
             on_menu_pressed: None,
             fab: None,
@@ -225,7 +252,7 @@ where
 }
 
 fn item_widget<'a, Message>(
-    theme: &'a dyn ColorScheme,
+    style: Style,
     active: bool,
     expanded: bool,
     label_font: Option<iced::Font>,
@@ -234,17 +261,21 @@ fn item_widget<'a, Message>(
 where
     Message: 'a + Clone,
 {
-    let icon_data = match active {
-        true => item.icon_active,
-        false => item.icon_inactive,
+    let (icon_data, icon_color, label_color) = match active {
+        true => (
+            item.icon_active,
+            style.item_active_icon_color,
+            style.item_active_label_color,
+        ),
+        false => (
+            item.icon_inactive,
+            style.item_inactive_icon_color,
+            style.item_inactive_label_color,
+        ),
     };
-    let content_color = match active {
-        true => theme.on_secondary_container(),
-        false => theme.on_surface(),
-    };
-    let icon = widget::hybrid_icon(icon_data, ITEM_ICON_SIZE, content_color);
+    let icon = widget::hybrid_icon(icon_data, ITEM_ICON_SIZE, icon_color);
     let icon: Element<'_, Message> = match item.badge {
-        Some(badge) => crate::widget::badge(badge::Style::new(theme), icon)
+        Some(badge) => crate::widget::badge(style.badge_style, icon)
             .label_maybe(badge.label)
             .into(),
         None => icon.into(),
@@ -273,23 +304,26 @@ where
         .padding(padding::horizontal(INDICATOR_CONTENT_PADDING))
         // FIX: Should use a custom widget, not a styled button!
         .style(move |_, status| {
-            let container_color = active.then_some(theme.secondary_container());
-            let state_layer_opacity = match status {
-                iced_widget::button::Status::Active => 0.0,
-                iced_widget::button::Status::Hovered => HOVER_STATE_LAYER_OPACITY,
-                iced_widget::button::Status::Pressed => PRESSED_STATE_LAYER_OPACITY,
-                iced_widget::button::Status::Disabled => 0.0,
+            let state_layer_color = match status {
+                iced_widget::button::Status::Active => style.state_layer.idle,
+                iced_widget::button::Status::Hovered => style.state_layer.hovered,
+                iced_widget::button::Status::Pressed => style.state_layer.pressed,
+                iced_widget::button::Status::Disabled => Color::TRANSPARENT,
             };
-            let background = container_color
-                .map(|c| mix_colors(c, theme.on_secondary_container(), state_layer_opacity))
-                .unwrap_or(
-                    theme
-                        .on_secondary_container()
-                        .scale_alpha(state_layer_opacity),
-                );
+            let container_color = active
+                .then_some({
+                    let opaque = Color {
+                        r: state_layer_color.r,
+                        g: state_layer_color.g,
+                        b: state_layer_color.b,
+                        a: 1.0,
+                    };
+                    mix_colors(style.active_indicator_color, opaque, state_layer_color.a)
+                })
+                .unwrap_or(state_layer_color);
             iced_widget::button::Style {
-                background: Some(iced::Background::Color(background)),
-                text_color: content_color,
+                background: Some(iced::Background::Color(container_color)),
+                text_color: label_color,
                 border: Border::default().rounded(f32::MAX),
                 ..Default::default()
             }
@@ -328,7 +362,7 @@ where
         let expanded = value.status.expanded();
         let container_width = value.status.width();
 
-        let menu = value.on_menu_pressed.map(|on_press| {
+        let menu = value.on_menu_pressed.map(move |on_press| {
             let handle = match expanded {
                 true => svg::Handle::from_memory(MENU_OPEN),
                 false => svg::Handle::from_memory(MENU),
@@ -336,27 +370,27 @@ where
             let icon = iced_widget::svg(handle)
                 .height(MENU_ICON_SIZE)
                 .width(MENU_ICON_SIZE)
-                .style(|_, _| iced_widget::svg::Style {
-                    color: Some(value.theme.on_surface()),
+                .style(move |_, _| iced_widget::svg::Style {
+                    color: Some(value.style.menu_icon_color),
                 });
 
             iced_widget::button(icon)
                 .padding(Padding::from(MENU_BUTTON_PADDING))
                 .style(move |_, status| {
-                    let content_color = value.theme.on_surface();
                     let state_layer_color = match status {
                         iced_widget::button::Status::Active
                         | iced_widget::button::Status::Disabled => Color::TRANSPARENT,
-                        iced_widget::button::Status::Hovered => {
-                            content_color.scale_alpha(HOVER_STATE_LAYER_OPACITY)
-                        }
-                        iced_widget::button::Status::Pressed => {
-                            content_color.scale_alpha(PRESSED_STATE_LAYER_OPACITY)
-                        }
+                        iced_widget::button::Status::Hovered => value
+                            .style
+                            .menu_icon_color
+                            .scale_alpha(HOVER_STATE_LAYER_OPACITY),
+                        iced_widget::button::Status::Pressed => value
+                            .style
+                            .menu_icon_color
+                            .scale_alpha(PRESSED_STATE_LAYER_OPACITY),
                     };
                     iced_widget::button::Style {
                         background: Some(iced::Background::Color(state_layer_color)),
-                        text_color: content_color,
                         border: Border::default().rounded(f32::MAX),
                         ..Default::default()
                     }
@@ -390,9 +424,9 @@ where
         });
 
         let active_index = value.active_index.min(value.items.len());
-        let items = value.items.into_iter().enumerate().map(|(i, item)| {
+        let items = value.items.into_iter().enumerate().map(move |(i, item)| {
             let active = i == active_index;
-            item_widget(value.theme, active, expanded, value.label_font, item)
+            item_widget(value.style, active, expanded, value.label_font, item)
         });
         let spacing = match expanded {
             true => 0.0,

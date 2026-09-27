@@ -83,22 +83,6 @@ where
     Button::new(style, content)
 }
 
-// impl<'a, Message> FABMenu<'a, Message>
-// where
-//     Message: 'a + Clone,
-// {
-//     #[must_use]
-//     pub fn new<I>(
-//         items: I,
-//         size: fab::Size,
-//         label_font: Option<Font>,
-//         theme: &(impl ColorScheme + ?Sized),
-//         accent: Accent,
-//     ) -> Self
-//     where
-//         I: IntoIterator<Item = Item<'a, Message>>,
-//     {
-
 #[must_use]
 pub fn fab_menu<'a, Message, I>(
     items: I,
@@ -113,19 +97,6 @@ where
 {
     FABMenu::new(items, size, label_font, theme, accent)
 }
-
-// #[must_use]
-// pub fn fab_menu<'a, Message, I>(
-//     entries: I,
-//     icon: &'a dyn Fn(bool) -> Icon<'a>,
-//     theme: &impl ColorScheme,
-//     accent: Accent,
-// ) -> modname::FABMenu<'a, Message>
-// where
-//     I: IntoIterator<Item = fab_menu::Entry<'a, Message>>,
-// {
-//     modname::FABMenu::new(entries, icon, accent, theme)
-// }
 
 #[must_use]
 pub fn slider<'a, F, T, Message>(
@@ -182,13 +153,13 @@ where
 
 #[must_use]
 pub fn navrail<'a, Message>(
-    theme: &'a dyn ColorScheme,
+    style: navrail::Style,
     items: Vec<navrail::Item<'a, Message>>,
 ) -> NavRail<'a, Message>
 where
     Message: 'a + Clone,
 {
-    NavRail::new(theme, items)
+    NavRail::new(style, items)
 }
 
 #[must_use]
