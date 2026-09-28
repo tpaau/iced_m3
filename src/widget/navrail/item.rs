@@ -14,18 +14,23 @@ pub const INDICATOR_LARGE_LABEL_LINE_HEIGHT: f32 = 20.0;
 
 pub const INDICATOR_ICON_SIZE: f32 = 24.0;
 
+use std::time::Instant;
+
 use iced::{
-    Border, Color, Element, Font, Length, Pixels, Point, Size,
+    Border, Color, Element, Event, Font, Length, Pixels, Point, Rectangle, Size,
     advanced::{
         Widget,
         layout::Node,
+        mouse,
         renderer::Quad,
         text::{self, Paragraph},
     },
+    touch,
 };
 use iced_widget::core::Svg;
 
 use crate::{
+    animation::motion::{self, SpringMotion, ValueMotion, default_effects, fast_effects},
     style::StateLayer,
     theme::ColorScheme,
     widget::{Badge, OnPress, hybrid_icon::Icon},
@@ -33,41 +38,39 @@ use crate::{
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StateStyle {
-    pub container_color: Color,
     pub icon_color: Color,
     pub label_color: Color,
-    pub state_layer: StateLayer,
 }
 
 impl StateStyle {
     pub fn active(theme: &(impl ColorScheme + ?Sized)) -> Self {
         Self {
-            container_color: theme.secondary_container(),
             icon_color: theme.secondary(),
             label_color: theme.secondary(),
-            state_layer: StateLayer::new(theme.on_secondary_container()),
         }
     }
 
     pub fn inactive(theme: &(impl ColorScheme + ?Sized)) -> Self {
         Self {
-            container_color: theme.surface(),
             icon_color: theme.on_surface_variant(),
             label_color: theme.on_surface_variant(),
-            state_layer: StateLayer::new(theme.on_secondary_container()),
         }
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Style {
-    active: StateStyle,
-    inactive: StateStyle,
+    pub container_color: Color,
+    pub state_layer: StateLayer,
+    pub active: StateStyle,
+    pub inactive: StateStyle,
 }
 
 impl Style {
     pub fn new(theme: &(impl ColorScheme + ?Sized)) -> Self {
         Self {
+            container_color: theme.secondary_container(),
+            state_layer: StateLayer::new(theme.on_secondary_container()),
             active: StateStyle::active(theme),
             inactive: StateStyle::inactive(theme),
         }
@@ -131,6 +134,8 @@ where
 struct State {
     is_pressed: bool,
     is_hovered: bool,
+    active_transition_spring: SpringMotion,
+    state_layer_color_spring: ValueMotion<Color>,
 }
 
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Item<'a, Message, Renderer>
@@ -144,9 +149,21 @@ where
     }
 
     fn state(&self) -> iced::advanced::widget::tree::State {
+        let now = Instant::now();
         let state = State {
             is_pressed: false,
             is_hovered: false,
+            active_transition_spring: SpringMotion::new(
+                default_effects(motion::Scheme::default()),
+                self.active as usize as f32,
+                now,
+            ),
+            state_layer_color_spring: ValueMotion::new(
+                self.style.state_layer.idle,
+                self.style.state_layer.idle,
+                fast_effects(motion::Scheme::default()),
+                now,
+            ),
         };
 
         iced::advanced::widget::tree::State::new(state)
@@ -311,14 +328,24 @@ where
             false => self.style.inactive,
         };
 
-        if self.active {
+        let state = tree.state.downcast_ref::<State>();
+        let width = state.active_transition_spring.position * indicator_bounds.width;
+        if width > 0.0 {
+            let bounds = Rectangle {
+                x: indicator_bounds.x + (indicator_bounds.width - width) / 2.0,
+                y: indicator_bounds.y,
+                width,
+                height: indicator_bounds.height,
+            };
             renderer.fill_quad(
                 Quad {
-                    bounds: indicator_bounds,
+                    bounds,
                     border: Border::default().rounded(f32::MAX),
                     ..Default::default()
                 },
-                style.container_color,
+                self.style
+                    .container_color
+                    .scale_alpha(state.active_transition_spring.position),
             );
         }
 
@@ -347,21 +374,13 @@ where
             );
         }
 
-        let state = tree.state.downcast_ref::<State>();
-        let state_layer_color = match state.is_hovered {
-            true => match state.is_pressed {
-                true => style.state_layer.pressed,
-                false => style.state_layer.hovered,
-            },
-            false => style.state_layer.idle,
-        };
         renderer.fill_quad(
             Quad {
                 bounds: indicator_bounds,
                 border: Border::default().rounded(f32::MAX),
                 ..Default::default()
             },
-            state_layer_color,
+            state.state_layer_color_spring.value(),
         );
     }
 
@@ -376,31 +395,33 @@ where
         shell: &mut iced::advanced::Shell<'_, Message>,
         _viewport: &iced::Rectangle,
     ) {
+        let state = tree.state.downcast_mut::<State>();
         let indicator_bounds = match self.expanded {
             true => layout.bounds(),
             false => layout.child(0).bounds(),
         };
-
         let is_hovered = cursor.is_over(indicator_bounds);
-        let state = tree.state.downcast_mut::<State>();
 
         match event {
-            iced::Event::Mouse(event) => match event {
-                iced::mouse::Event::ButtonPressed(iced::mouse::Button::Left) => {
-                    if is_hovered {
-                        state.is_pressed = true;
-                        shell.request_redraw();
-                    }
-                }
-                iced::mouse::Event::ButtonReleased(iced::mouse::Button::Left) => {
-                    state.is_pressed = false;
-                    if is_hovered {
-                        shell.publish(self.content.on_press.resolve());
-                    }
+            Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
+            | Event::Touch(touch::Event::FingerPressed { .. }) => {
+                if is_hovered {
+                    state.is_pressed = true;
                     shell.request_redraw();
                 }
-                _ => {}
-            },
+            }
+            Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
+            | Event::Touch(touch::Event::FingerLifted { .. }) => {
+                state.is_pressed = false;
+                if is_hovered {
+                    shell.publish(self.content.on_press.resolve());
+                }
+                shell.request_redraw();
+            }
+            Event::Touch(touch::Event::FingerLost { .. }) => {
+                state.is_pressed = false;
+                shell.request_redraw();
+            }
             _ => {}
         }
 
@@ -408,6 +429,31 @@ where
             state.is_hovered = is_hovered;
             shell.request_redraw();
         }
+
+        let now = Instant::now();
+        let state_layer_color = match is_hovered {
+            true => match state.is_pressed {
+                true => self.style.state_layer.pressed,
+                false => self.style.state_layer.hovered,
+            },
+            false => self.style.state_layer.idle,
+        };
+        if state.state_layer_color_spring.to != state_layer_color {
+            state
+                .state_layer_color_spring
+                .set_target(state_layer_color, now);
+        }
+        let target = self.active as usize as f32;
+        if state.active_transition_spring.target != target {
+            state.active_transition_spring.target = target;
+        }
+        if !state.active_transition_spring.is_at_rest()
+            || !state.state_layer_color_spring.is_at_rest()
+        {
+            shell.request_redraw();
+        }
+        state.active_transition_spring.step(now);
+        state.state_layer_color_spring.step(now);
     }
 
     fn mouse_interaction(
