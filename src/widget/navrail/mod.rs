@@ -6,6 +6,7 @@ use iced::{
 };
 
 use crate::{
+    animation::motion::{self, Spring},
     style::StateLayer,
     theme::ColorScheme,
     widget::{
@@ -135,6 +136,9 @@ where
     active_index: usize,
     item_alignment: ItemAlignment,
     container_vertical_padding: Option<f32>,
+    motion_scheme: Option<motion::Scheme>,
+    item_active_transition_spring: Option<Spring>,
+    item_color_spring: Option<Spring>,
 
     menu_button: Option<Element<'a, Message, Theme, Renderer>>,
     fab_element: Option<Element<'a, Message, Theme, Renderer>>,
@@ -159,6 +163,9 @@ where
             active_index: 0,
             item_alignment: ItemAlignment::default(),
             container_vertical_padding: None,
+            motion_scheme: None,
+            item_active_transition_spring: None,
+            item_color_spring: None,
             menu_button: None,
             fab_element: None,
             item_elements: Vec::new(),
@@ -248,6 +255,42 @@ where
     #[must_use]
     pub fn container_vertical_padding_maybe(mut self, maybe_padding: Option<f32>) -> Self {
         self.container_vertical_padding = maybe_padding;
+        self
+    }
+
+    #[must_use]
+    pub fn motion_scheme(mut self, scheme: motion::Scheme) -> Self {
+        self.motion_scheme = Some(scheme);
+        self
+    }
+
+    #[must_use]
+    pub fn motion_scheme_maybe(mut self, scheme: Option<motion::Scheme>) -> Self {
+        self.motion_scheme = scheme;
+        self
+    }
+
+    #[must_use]
+    pub fn item_active_transition_spring(mut self, spring: Spring) -> Self {
+        self.item_active_transition_spring = Some(spring);
+        self
+    }
+
+    #[must_use]
+    pub fn item_active_transition_spring_maybe(mut self, spring: Option<Spring>) -> Self {
+        self.item_active_transition_spring = spring;
+        self
+    }
+
+    #[must_use]
+    pub fn item_color_spring(mut self, spring: Spring) -> Self {
+        self.item_color_spring = Some(spring);
+        self
+    }
+
+    #[must_use]
+    pub fn item_color_spring_maybe(mut self, spring: Option<Spring>) -> Self {
+        self.item_color_spring = spring;
         self
     }
 }
@@ -648,6 +691,9 @@ where
                     value.label_font,
                     active,
                 )
+                .motion_scheme_maybe(value.motion_scheme)
+                .active_transition_spring_maybe(value.item_active_transition_spring)
+                .color_spring_maybe(value.item_color_spring)
                 .into()
             })
             .collect();

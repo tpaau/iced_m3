@@ -30,49 +30,30 @@ use iced::{
 use iced_widget::core::Svg;
 
 use crate::{
-    animation::motion::{self, SpringMotion, ValueMotion, default_effects, fast_effects},
-    style::StateLayer,
+    animation::{
+        Interpolable,
+        motion::{self, Spring, SpringMotion, ValueMotion, default_effects, fast_effects},
+    },
+    style::{StateLayer, mix_colors},
     theme::ColorScheme,
     widget::{Badge, OnPress, hybrid_icon::Icon},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct StateStyle {
-    pub icon_color: Color,
-    pub label_color: Color,
-}
-
-impl StateStyle {
-    pub fn active(theme: &(impl ColorScheme + ?Sized)) -> Self {
-        Self {
-            icon_color: theme.secondary(),
-            label_color: theme.secondary(),
-        }
-    }
-
-    pub fn inactive(theme: &(impl ColorScheme + ?Sized)) -> Self {
-        Self {
-            icon_color: theme.on_surface_variant(),
-            label_color: theme.on_surface_variant(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Style {
+    pub content_active: Color,
+    pub content_inactive: Color,
     pub container_color: Color,
     pub state_layer: StateLayer,
-    pub active: StateStyle,
-    pub inactive: StateStyle,
 }
 
 impl Style {
     pub fn new(theme: &(impl ColorScheme + ?Sized)) -> Self {
         Self {
             container_color: theme.secondary_container(),
+            content_active: theme.secondary(),
+            content_inactive: theme.on_surface_variant(),
             state_layer: StateLayer::new(theme.on_secondary_container()),
-            active: StateStyle::active(theme),
-            inactive: StateStyle::inactive(theme),
         }
     }
 }
@@ -99,6 +80,8 @@ where
     content: Content<'a, Message>,
     label_font: Option<Font>,
     active: bool,
+    active_transition_spring: Option<Spring>,
+    color_spring: Option<Spring>,
 
     // Cache
     label_paragraph: Option<Renderer::Paragraph>,
@@ -127,6 +110,43 @@ where
             active,
             label_paragraph: None,
             icon_paragraph: None,
+            active_transition_spring: None,
+            color_spring: None,
+        }
+    }
+
+    pub fn motion_scheme_maybe(mut self, scheme: Option<motion::Scheme>) -> Self {
+        if let Some(scheme) = scheme {
+            self.color_spring = Some(fast_effects(scheme));
+            self.active_transition_spring = Some(default_effects(scheme));
+        }
+        self
+    }
+
+    #[must_use]
+    pub fn active_transition_spring_maybe(mut self, spring: Option<Spring>) -> Self {
+        self.active_transition_spring = spring;
+        self
+    }
+
+    #[must_use]
+    pub fn color_spring_maybe(mut self, spring: Option<Spring>) -> Self {
+        self.color_spring = spring;
+        self
+    }
+}
+
+#[derive(Clone, Copy, PartialEq)]
+struct Colors {
+    state_layer: Color,
+    content: Color,
+}
+
+impl Interpolable for Colors {
+    fn interpolate(self, other: Self, t: f32) -> Self {
+        Self {
+            state_layer: mix_colors(self.state_layer, other.state_layer, t),
+            content: mix_colors(self.content, other.content, t),
         }
     }
 }
@@ -135,7 +155,7 @@ struct State {
     is_pressed: bool,
     is_hovered: bool,
     active_transition_spring: SpringMotion,
-    state_layer_color_spring: ValueMotion<Color>,
+    color_spring: ValueMotion<Colors>,
 }
 
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Item<'a, Message, Renderer>
@@ -150,18 +170,29 @@ where
 
     fn state(&self) -> iced::advanced::widget::tree::State {
         let now = Instant::now();
+
+        let content_color = match self.active {
+            true => self.style.content_active,
+            false => self.style.content_inactive,
+        };
+        let colors = Colors {
+            state_layer: self.style.state_layer.idle,
+            content: content_color,
+        };
         let state = State {
             is_pressed: false,
             is_hovered: false,
             active_transition_spring: SpringMotion::new(
-                default_effects(motion::Scheme::default()),
+                self.active_transition_spring
+                    .unwrap_or(default_effects(motion::Scheme::default())),
                 self.active as usize as f32,
                 now,
             ),
-            state_layer_color_spring: ValueMotion::new(
-                self.style.state_layer.idle,
-                self.style.state_layer.idle,
-                fast_effects(motion::Scheme::default()),
+            color_spring: ValueMotion::new(
+                colors,
+                colors,
+                self.color_spring
+                    .unwrap_or(fast_effects(motion::Scheme::default())),
                 now,
             ),
         };
@@ -323,10 +354,6 @@ where
                 layout.child(2).bounds(),
             ),
         };
-        let style = match self.active {
-            true => self.style.active,
-            false => self.style.inactive,
-        };
 
         let state = tree.state.downcast_ref::<State>();
         let width = state.active_transition_spring.position * indicator_bounds.width;
@@ -349,8 +376,9 @@ where
             );
         }
 
+        let content_color = state.color_spring.value().content;
         if let Some(icon) = &self.icon_paragraph {
-            renderer.fill_paragraph(icon, icon_bounds.position(), style.icon_color, icon_bounds);
+            renderer.fill_paragraph(icon, icon_bounds.position(), content_color, icon_bounds);
         } else {
             let icon = match self.active {
                 true => &self.content.icon_active,
@@ -358,7 +386,7 @@ where
             };
             if let Icon::Svg(handle) = icon.clone() {
                 renderer.draw_svg(
-                    Svg::new(handle).color(style.icon_color),
+                    Svg::new(handle).color(content_color),
                     icon_bounds,
                     icon_bounds,
                 );
@@ -366,12 +394,7 @@ where
         }
 
         if let Some(label) = &self.label_paragraph {
-            renderer.fill_paragraph(
-                label,
-                label_bounds.position(),
-                style.label_color,
-                label_bounds,
-            );
+            renderer.fill_paragraph(label, label_bounds.position(), content_color, label_bounds);
         }
 
         renderer.fill_quad(
@@ -380,7 +403,7 @@ where
                 border: Border::default().rounded(f32::MAX),
                 ..Default::default()
             },
-            state.state_layer_color_spring.value(),
+            state.color_spring.value().state_layer,
         );
     }
 
@@ -430,6 +453,17 @@ where
             shell.request_redraw();
         }
 
+        if let Some(spring) = self.active_transition_spring
+            && state.active_transition_spring.spring != spring
+        {
+            state.active_transition_spring.spring = spring;
+        }
+        if let Some(spring) = self.color_spring
+            && state.color_spring.spring.spring != spring
+        {
+            state.color_spring.spring.spring = spring;
+        }
+
         let now = Instant::now();
         let state_layer_color = match is_hovered {
             true => match state.is_pressed {
@@ -438,22 +472,27 @@ where
             },
             false => self.style.state_layer.idle,
         };
-        if state.state_layer_color_spring.to != state_layer_color {
-            state
-                .state_layer_color_spring
-                .set_target(state_layer_color, now);
+        let content_color = match self.active {
+            true => self.style.content_active,
+            false => self.style.content_inactive,
+        };
+        let colors = Colors {
+            state_layer: state_layer_color,
+            content: content_color,
+        };
+        if state.color_spring.to != colors {
+            state.color_spring.set_target(colors, now);
         }
         let target = self.active as usize as f32;
         if state.active_transition_spring.target != target {
             state.active_transition_spring.target = target;
         }
-        if !state.active_transition_spring.is_at_rest()
-            || !state.state_layer_color_spring.is_at_rest()
-        {
+
+        if !state.active_transition_spring.is_at_rest() || !state.color_spring.is_at_rest() {
             shell.request_redraw();
         }
         state.active_transition_spring.step(now);
-        state.state_layer_color_spring.step(now);
+        state.color_spring.step(now);
     }
 
     fn mouse_interaction(
