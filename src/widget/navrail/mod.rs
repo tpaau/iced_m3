@@ -75,7 +75,7 @@ pub enum Mode {
 impl Mode {
     fn width(&self) -> Pixels {
         match self {
-            Mode::Collapsed => Pixels(CONTAINER_COLLAPSED_WIDTH),
+            Mode::Collapsed => Pixels(constants::CONTAINER_COLLAPSED_WIDTH),
             Mode::Expanded { width } => Pixels(Into::<f32>::into(*width).clamp(
                 constants::CONTAINER_EXPANDED_MIN_WIDTH,
                 constants::CONTAINER_EXPANDED_MAX_WIDTH,
@@ -386,7 +386,7 @@ where
             let layout = item
                 .as_widget_mut()
                 .layout(&mut tree.children[index], renderer, limits)
-                .translate(Vector::new(ITEM_OFFSET, offset));
+                .translate(Vector::new(constants::ITEM_OFFSET, offset));
 
             offset += layout.bounds().height + item_space;
 
