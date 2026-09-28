@@ -54,7 +54,6 @@ impl Style {
     }
 }
 
-// TODO: Message on clicked outside
 pub struct Dialog<'a, Message> {
     style: Style,
     icon: Option<char>,

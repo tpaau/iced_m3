@@ -6,11 +6,11 @@ use iced::{
     widget::{column, container, row, text::IntoFragment},
 };
 use iced_m3::{
-    theme::{Accent, ColorScheme, Mode, Theme},
+    theme::{self, Accent, ColorScheme, Theme},
     widget::{
         Badge, OnPress, button,
         hybrid_icon::Icon,
-        navrail::{self, Fab, Item, ItemAlignment, Status},
+        navrail::{self, Fab, Item, ItemAlignment, Mode},
         switch,
     },
 };
@@ -71,7 +71,7 @@ struct State {
 impl Default for State {
     fn default() -> Self {
         Self {
-            theme: Theme::default(Mode::Dark),
+            theme: Theme::default(theme::Mode::Dark),
             tab: Tab::default(),
             expanded: false,
             fab: true,
@@ -140,11 +140,11 @@ impl State {
             },
         ];
         let current_index = self.tab.index();
-        let status = match self.expanded {
-            true => Status::Expanded {
+        let mode = match self.expanded {
+            true => Mode::Expanded {
                 width: iced::Pixels(navrail::CONTAINER_EXPANDED_MIN_WIDTH),
             },
-            false => Status::Collapsed,
+            false => Mode::Collapsed,
         };
         let fab = Fab {
             icon: Icon::Text {
@@ -159,7 +159,7 @@ impl State {
         let navrail = iced_m3::widget::navrail(navrail::Style::new(&self.theme), items)
             .active(current_index)
             .label_font(text_regular())
-            .status(status)
+            .mode(mode)
             .fab_maybe(self.fab.then_some(fab))
             .item_alignment(self.alignment)
             .on_menu_pressed_maybe(self.menu.then_some(|_| Message::ToggleExpanded));

@@ -33,6 +33,7 @@ const LARGE_VERTICAL_PADDING: f32 = 12.0;
 const LARGE_BUTTON_INTERNAL_SPACING: f32 = 4.0;
 const LARGE_BUTTON_PADDING: f32 = 16.0;
 
+// FIX: Should use a custom widget, not a styled button!
 fn item_container_style<'a>(
     status: iced_widget::button::Status,
     active: bool,

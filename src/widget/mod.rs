@@ -152,12 +152,14 @@ where
 }
 
 #[must_use]
-pub fn navrail<'a, Message>(
+pub fn navrail<'a, Message, Theme, Renderer>(
     style: navrail::Style,
     items: Vec<navrail::Item<'a, Message>>,
-) -> NavRail<'a, Message>
+) -> NavRail<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
+    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer::Font: From<iced::Font>,
 {
     NavRail::new(style, items)
 }

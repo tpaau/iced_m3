@@ -205,9 +205,11 @@ where
     }
 }
 
-impl<'a, Message> From<Fab<'a, Message>> for Element<'a, Message>
+impl<'a, Message, Theme, Renderer> From<Fab<'a, Message>> for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
+    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer::Font: From<iced::Font>,
 {
     fn from(value: Fab<'a, Message>) -> Self {
         let is_extended_fab = matches!(value.content, Content::Extended { icon: _, label: _ });

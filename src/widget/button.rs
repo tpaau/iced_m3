@@ -21,7 +21,7 @@ use crate::{
 const DISABLED_CONTAINER_OPACITY: f32 = 0.1;
 const DISABLED_CONTENT_OPACITY: f32 = DISABLED_STATE_LAYER_OPACITY;
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Outline {
     pub width: f32,
     pub color: Color,
@@ -36,7 +36,7 @@ impl Default for Outline {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StateStyle {
     pub container: Color,
     pub label: Color,
@@ -44,7 +44,7 @@ pub struct StateStyle {
     pub outline: Outline,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ElevationStates {
     pub shadow_color: Color,
     pub idle: Elevation,
@@ -76,7 +76,7 @@ impl ElevationStates {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Style {
     pub regular: StateStyle,
     pub unselected: StateStyle,
@@ -749,10 +749,6 @@ where
 
     fn state(&self) -> tree::State {
         tree::State::new(State::default())
-    }
-
-    fn children(&self) -> Vec<Tree> {
-        Vec::new()
     }
 
     fn size(&self) -> iced::Size<Length> {
