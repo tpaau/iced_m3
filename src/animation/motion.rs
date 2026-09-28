@@ -185,6 +185,7 @@ impl SpringMotion {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ValueMotion<T>
 where
     T: Interpolable + Clone + PartialEq,

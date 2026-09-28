@@ -10,7 +10,7 @@ mod constants {
 
 #[cfg(feature = "pub-internal-const")]
 pub use constants::*;
-use iced::{Color, Radians};
+use iced::{Color, Radians, border::Radius};
 
 use crate::style::mix_colors;
 
@@ -176,21 +176,29 @@ impl Interpolable for Color {
 
 impl Interpolable for f32 {
     fn interpolate(self, other: Self, t: f32) -> Self {
-        let t = t.clamp(0.0, 1.0);
         self * (1.0 - t) + other * t
     }
 }
 
 impl Interpolable for f64 {
     fn interpolate(self, other: Self, t: f32) -> Self {
-        let t = t.clamp(0.0, 1.0) as f64;
-        self * (1.0 - t) + other * t
+        self * (1.0 - t as f64) + other * t as f64
     }
 }
 
 impl Interpolable for Radians {
     fn interpolate(self, other: Self, t: f32) -> Self {
-        let t = t.clamp(0.0, 1.0);
         Radians(self.0 * (1.0 - t) + other.0 * t)
+    }
+}
+
+impl Interpolable for Radius {
+    fn interpolate(self, other: Self, t: f32) -> Self {
+        Self {
+            top_left: self.top_left.interpolate(other.top_left, t),
+            top_right: self.top_right.interpolate(other.top_right, t),
+            bottom_right: self.bottom_right.interpolate(other.bottom_right, t),
+            bottom_left: self.bottom_left.interpolate(other.bottom_left, t),
+        }
     }
 }

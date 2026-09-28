@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use iced::{
     Color, Element, Event, Length, Padding, Pixels, Radians, Rectangle,
     advanced::{
@@ -8,15 +10,30 @@ use iced::{
         widget::{Tree, tree},
     },
     border::Radius,
-    padding, touch, window,
+    padding, touch,
 };
 use iced_widget::text;
 
 use crate::{
+    animation::{
+        Interpolable,
+        motion::{self, Spring, ValueMotion, fast_effects, fast_spatial},
+    },
     style::{DISABLED_STATE_LAYER_OPACITY, Elevation, StateLayer, shadow},
     theme::{Accent, ColorScheme},
     widget::{self, OnPress, hybrid_icon::Icon},
 };
+
+mod constants {
+    pub const BUTTON_HEIGHT_EXTRA_LARGE: f32 = 136.0;
+    pub const BUTTON_HEIGHT_LARGE: f32 = 96.0;
+    pub const BUTTON_HEIGHT_MEDIUM: f32 = 56.0;
+    pub const BUTTON_HEIGHT_SMALL: f32 = 40.0;
+    pub const BUTTON_HEIGHT_EXTRA_SMALL: f32 = 32.0;
+}
+
+#[cfg(feature = "pub-internal-const")]
+pub use constants::*;
 
 const DISABLED_CONTAINER_OPACITY: f32 = 0.1;
 const DISABLED_CONTENT_OPACITY: f32 = DISABLED_STATE_LAYER_OPACITY;
@@ -36,12 +53,32 @@ impl Default for Outline {
     }
 }
 
+impl Interpolable for Outline {
+    fn interpolate(self, other: Self, t: f32) -> Self {
+        Self {
+            width: self.width.interpolate(other.width, t),
+            color: self.color.interpolate(other.color, t),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StateStyle {
     pub container: Color,
     pub label: Color,
     pub icon: Color,
     pub outline: Outline,
+}
+
+impl Interpolable for StateStyle {
+    fn interpolate(self, other: Self, t: f32) -> Self {
+        Self {
+            container: self.container.interpolate(other.container, t),
+            label: self.label.interpolate(other.label, t),
+            icon: self.icon.interpolate(other.icon, t),
+            outline: self.outline.interpolate(other.outline, t),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -51,17 +88,6 @@ pub struct ElevationStates {
     pub disabled: Elevation,
     pub hover: Elevation,
     pub press: Elevation,
-}
-
-impl ElevationStates {
-    fn elevation(&self, status: Status) -> Elevation {
-        match status {
-            Status::Idle => self.idle,
-            Status::Hovered => self.hover,
-            Status::Pressed => self.press,
-            Status::Disabled => self.disabled,
-        }
-    }
 }
 
 impl ElevationStates {
@@ -360,7 +386,7 @@ impl CornerRadius {
         Self {
             style: CornerStyle::default(),
             shape_morph: true,
-            rounded: f32::MAX.into(),
+            rounded: (constants::BUTTON_HEIGHT_EXTRA_SMALL / 2.0).into(),
             square: 12.0.into(),
             pressed: 8.0.into(),
         }
@@ -370,7 +396,7 @@ impl CornerRadius {
         Self {
             style: CornerStyle::default(),
             shape_morph: true,
-            rounded: f32::MAX.into(),
+            rounded: (constants::BUTTON_HEIGHT_SMALL / 2.0).into(),
             square: 12.0.into(),
             pressed: 8.0.into(),
         }
@@ -380,7 +406,7 @@ impl CornerRadius {
         Self {
             style: CornerStyle::default(),
             shape_morph: true,
-            rounded: f32::MAX.into(),
+            rounded: (constants::BUTTON_HEIGHT_MEDIUM / 2.0).into(),
             square: 16.0.into(),
             pressed: 12.0.into(),
         }
@@ -390,7 +416,7 @@ impl CornerRadius {
         Self {
             style: CornerStyle::default(),
             shape_morph: true,
-            rounded: f32::MAX.into(),
+            rounded: (constants::BUTTON_HEIGHT_LARGE / 2.0).into(),
             square: 28.0.into(),
             pressed: 16.0.into(),
         }
@@ -400,7 +426,7 @@ impl CornerRadius {
         Self {
             style: CornerStyle::default(),
             shape_morph: true,
-            rounded: f32::MAX.into(),
+            rounded: (constants::BUTTON_HEIGHT_EXTRA_LARGE / 2.0).into(),
             square: 28.0.into(),
             pressed: 16.0.into(),
         }
@@ -449,7 +475,7 @@ impl Size {
     pub fn extra_small() -> Self {
         Self {
             width: Length::Shrink,
-            height: Length::Fixed(32.0),
+            height: Length::Fixed(constants::BUTTON_HEIGHT_EXTRA_SMALL),
             spacing: 4.0,
             padding: padding::horizontal(12.0),
             icon_size: 20.0,
@@ -461,7 +487,7 @@ impl Size {
     pub fn small() -> Self {
         Self {
             width: Length::Shrink,
-            height: Length::Fixed(40.0),
+            height: Length::Fixed(constants::BUTTON_HEIGHT_SMALL),
             spacing: 8.0,
             padding: padding::horizontal(16.0),
             icon_size: 20.0,
@@ -473,7 +499,7 @@ impl Size {
     pub fn medium() -> Self {
         Self {
             width: Length::Shrink,
-            height: Length::Fixed(56.0),
+            height: Length::Fixed(constants::BUTTON_HEIGHT_MEDIUM),
             spacing: 8.0,
             padding: padding::horizontal(24.0),
             icon_size: 24.0,
@@ -485,7 +511,7 @@ impl Size {
     pub fn large() -> Self {
         Self {
             width: Length::Shrink,
-            height: Length::Fixed(96.0),
+            height: Length::Fixed(constants::BUTTON_HEIGHT_LARGE),
             spacing: 12.0,
             padding: padding::horizontal(48.0),
             icon_size: 32.0,
@@ -497,7 +523,7 @@ impl Size {
     pub fn extra_large() -> Self {
         Self {
             width: Length::Shrink,
-            height: Length::Fixed(136.0),
+            height: Length::Fixed(constants::BUTTON_HEIGHT_EXTRA_LARGE),
             spacing: 16.0,
             padding: padding::horizontal(64.0),
             icon_size: 40.0,
@@ -627,7 +653,12 @@ where
     size: Size,
     elevation: Elevation,
     selected: Option<bool>,
-    status: Option<Status>,
+    style_spring: Option<Spring>,
+    state_layer_spring: Option<Spring>,
+    corner_radius_spring: Option<Spring>,
+
+    // Cache
+    is_hovered: bool,
     icon_paragraph: Option<Renderer::Paragraph>,
     label_paragraph: Option<Renderer::Paragraph>,
 }
@@ -649,7 +680,11 @@ where
             size: Size::default(),
             elevation: Elevation::default(),
             selected: None,
-            status: Some(Status::default()),
+            style_spring: None,
+            state_layer_spring: None,
+            corner_radius_spring: None,
+
+            is_hovered: false,
             icon_paragraph: None,
             label_paragraph: None,
         }
@@ -709,6 +744,73 @@ where
         self
     }
 
+    #[must_use]
+    pub fn motion_scheme(mut self, scheme: motion::Scheme) -> Self {
+        self.style_spring = Some(fast_effects(scheme));
+        self.state_layer_spring = Some(fast_effects(scheme));
+        self.corner_radius_spring = Some(fast_spatial(scheme));
+        self
+    }
+
+    #[must_use]
+    pub fn motion_scheme_maybe(self, scheme: Option<motion::Scheme>) -> Self {
+        match scheme {
+            Some(scheme) => self.motion_scheme(scheme),
+            None => self,
+        }
+    }
+
+    #[must_use]
+    pub fn style_spring(mut self, spring: Spring) -> Self {
+        self.style_spring = Some(spring);
+        self
+    }
+
+    #[must_use]
+    pub fn style_spring_maybe(mut self, spring: Option<Spring>) -> Self {
+        self.style_spring = spring;
+        self
+    }
+
+    #[must_use]
+    pub fn state_layer_spring(mut self, spring: Spring) -> Self {
+        self.state_layer_spring = Some(spring);
+        self
+    }
+
+    #[must_use]
+    pub fn state_layer_spring_maybe(mut self, spring: Option<Spring>) -> Self {
+        self.state_layer_spring = spring;
+        self
+    }
+
+    #[must_use]
+    pub fn corner_radius_spring(mut self, spring: Spring) -> Self {
+        self.corner_radius_spring = Some(spring);
+        self
+    }
+
+    #[must_use]
+    pub fn corner_radius_spring_maybe(mut self, spring: Option<Spring>) -> Self {
+        self.corner_radius_spring = spring;
+        self
+    }
+
+    fn get_style_spring(&self) -> Spring {
+        self.style_spring
+            .unwrap_or(fast_effects(motion::Scheme::default()))
+    }
+
+    fn get_state_layer_spring(&self) -> Spring {
+        self.state_layer_spring
+            .unwrap_or(fast_effects(motion::Scheme::default()))
+    }
+
+    fn get_corner_radius_spring(&self) -> Spring {
+        self.corner_radius_spring
+            .unwrap_or(fast_spatial(motion::Scheme::default()))
+    }
+
     /// Make the button appear enabled even when there is no message is being emitted on press.
     ///
     /// This is currently only used for the FAB Menu widget as its opened state is managed internally.
@@ -719,18 +821,12 @@ where
     }
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-enum Status {
-    #[default]
-    Idle,
-    Hovered,
-    Pressed,
-    Disabled,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 struct State {
     is_pressed: bool,
+    style_spring: ValueMotion<StateStyle>,
+    state_layer_spring: ValueMotion<Color>,
+    corner_radius_spring: ValueMotion<Radius>,
 }
 
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
@@ -748,7 +844,30 @@ where
     }
 
     fn state(&self) -> tree::State {
-        tree::State::new(State::default())
+        let style = self.style.state_style(
+            self.on_press.is_none() && !self.force_enabled,
+            self.selected,
+        );
+        let corner_radius = self.size.corner_radius.radius(false, self.selected);
+        let now = Instant::now();
+        let state = State {
+            is_pressed: false,
+            style_spring: ValueMotion::new(*style, *style, self.get_style_spring(), now),
+            state_layer_spring: ValueMotion::new(
+                self.style.state_layer.idle,
+                self.style.state_layer.idle,
+                self.get_state_layer_spring(),
+                now,
+            ),
+            corner_radius_spring: ValueMotion::new(
+                *corner_radius,
+                *corner_radius,
+                self.get_corner_radius_spring(),
+                now,
+            ),
+        };
+
+        tree::State::new(state)
     }
 
     fn size(&self) -> iced::Size<Length> {
@@ -879,15 +998,15 @@ where
         shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
     ) {
+        let state = tree.state.downcast_mut::<State>();
+        let bounds = layout.bounds();
+
+        self.is_hovered = cursor.is_over(bounds);
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerPressed { .. }) => {
                 if self.on_press.is_some() || self.force_enabled {
-                    let bounds = layout.bounds();
-
                     if cursor.is_over(bounds) {
-                        let state = tree.state.downcast_mut::<State>();
-
                         state.is_pressed = true;
 
                         shell.capture_event();
@@ -897,12 +1016,8 @@ where
             Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerLifted { .. }) => {
                 if self.on_press.is_some() || self.force_enabled {
-                    let state = tree.state.downcast_mut::<State>();
-
                     if state.is_pressed {
                         state.is_pressed = false;
-
-                        let bounds = layout.bounds();
 
                         if cursor.is_over(bounds)
                             && let Some(on_press) = &self.on_press
@@ -915,37 +1030,74 @@ where
                 }
             }
             Event::Touch(touch::Event::FingerLost { .. }) => {
-                let state = tree.state.downcast_mut::<State>();
-
                 state.is_pressed = false;
             }
             _ => {}
         }
 
-        let current_status = if self.on_press.is_none() && !self.force_enabled {
-            Status::Disabled
-        } else if cursor.is_over(layout.bounds()) {
-            let state = tree.state.downcast_ref::<State>();
+        let style_spring = self.get_style_spring();
+        if state.style_spring.spring.spring != style_spring {
+            state.style_spring.spring.spring = style_spring;
+        }
+        let state_layer_spring = self.get_state_layer_spring();
+        if state.state_layer_spring.spring.spring != state_layer_spring {
+            state.state_layer_spring.spring.spring = state_layer_spring;
+        }
+        let corner_radius_spring = self.get_corner_radius_spring();
+        if state.corner_radius_spring.spring.spring != corner_radius_spring {
+            state.corner_radius_spring.spring.spring = corner_radius_spring;
+        }
 
+        let now = Instant::now();
+
+        let state_layer = self.style.state_layer(self.selected);
+        let state_layer_color = if self.on_press.is_none() && !self.force_enabled {
+            state_layer.idle
+        } else if cursor.is_over(layout.bounds()) {
             if state.is_pressed {
-                Status::Pressed
+                state_layer.pressed
             } else {
-                Status::Hovered
+                state_layer.hovered
             }
         } else {
-            Status::Idle
+            state_layer.idle
         };
+        if state.state_layer_spring.to != state_layer_color {
+            state.state_layer_spring.set_target(state_layer_color, now);
+        }
 
-        if let Event::Window(window::Event::RedrawRequested(_now)) = event {
-            self.status = Some(current_status);
-        } else if self.status.is_some_and(|status| status != current_status) {
+        let style = self.style.state_style(
+            self.on_press.is_none() && !self.force_enabled,
+            self.selected,
+        );
+        // TODO: Apply the style immediately if the base changes
+        if state.style_spring.to != *style {
+            state.style_spring.set_target(*style, now);
+        }
+
+        let corner_radius = self
+            .size
+            .corner_radius
+            .radius(state.is_pressed, self.selected);
+        if state.corner_radius_spring.to != *corner_radius {
+            state.corner_radius_spring.set_target(*corner_radius, now);
+        }
+
+        if !state.style_spring.is_at_rest()
+            || !state.state_layer_spring.is_at_rest()
+            || !state.corner_radius_spring.is_at_rest()
+        {
             shell.request_redraw();
         }
+
+        state.state_layer_spring.step(now);
+        state.style_spring.step(now);
+        state.corner_radius_spring.step(now);
     }
 
     fn draw(
         &self,
-        _tree: &Tree,
+        tree: &Tree,
         renderer: &mut Renderer,
         _theme: &Theme,
         _style: &renderer::Style,
@@ -953,19 +1105,23 @@ where
         _cursor: mouse::Cursor,
         _viewport: &Rectangle,
     ) {
-        let status = self.status.unwrap();
+        let state = tree.state.downcast_ref::<State>();
         let bounds = layout.bounds();
         let mut children = layout.children();
 
-        let elevation = self.style.elevation.elevation(status);
-        let style = self
-            .style
-            .state_style(status == Status::Disabled, self.selected);
-
-        let corner_radius = self
-            .size
-            .corner_radius
-            .radius(status == Status::Pressed, self.selected);
+        let elevation = if self.on_press.is_none() && !self.force_enabled {
+            self.style.elevation.disabled
+        } else if self.is_hovered {
+            if state.is_pressed {
+                self.style.elevation.press
+            } else {
+                self.style.elevation.hover
+            }
+        } else {
+            self.style.elevation.idle
+        };
+        let style = state.style_spring.value();
+        let corner_radius = state.corner_radius_spring.value();
 
         renderer.fill_quad(
             renderer::Quad {
@@ -973,7 +1129,7 @@ where
                 border: iced::Border {
                     color: style.outline.color,
                     width: style.outline.width,
-                    radius: *corner_radius,
+                    radius: corner_radius,
                 },
                 shadow: shadow(self.style.elevation.shadow_color, elevation),
                 ..Default::default()
@@ -1007,24 +1163,14 @@ where
             renderer.fill_paragraph(label, layout.bounds().position(), style.label, bounds);
         }
 
-        let state_layer = self.style.state_layer(self.selected);
-        let state_layer = match status {
-            Status::Idle => Some(state_layer.idle),
-            Status::Hovered => Some(state_layer.hovered),
-            Status::Pressed => Some(state_layer.pressed),
-            Status::Disabled => None,
-        };
-
-        state_layer.map(|color| {
-            renderer.fill_quad(
-                renderer::Quad {
-                    bounds,
-                    border: iced::Border::default().rounded(*corner_radius),
-                    ..Default::default()
-                },
-                color,
-            );
-        });
+        renderer.fill_quad(
+            renderer::Quad {
+                bounds,
+                border: iced::Border::default().rounded(corner_radius),
+                ..Default::default()
+            },
+            state.state_layer_spring.value(),
+        );
     }
 
     fn mouse_interaction(

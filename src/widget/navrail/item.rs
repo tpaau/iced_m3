@@ -34,7 +34,7 @@ use crate::{
         Interpolable,
         motion::{self, Spring, SpringMotion, ValueMotion, default_effects, fast_effects},
     },
-    style::{StateLayer, mix_colors},
+    style::StateLayer,
     theme::ColorScheme,
     widget::{Badge, OnPress, hybrid_icon::Icon},
 };
@@ -145,8 +145,8 @@ struct Colors {
 impl Interpolable for Colors {
     fn interpolate(self, other: Self, t: f32) -> Self {
         Self {
-            state_layer: mix_colors(self.state_layer, other.state_layer, t),
-            content: mix_colors(self.content, other.content, t),
+            state_layer: self.state_layer.interpolate(other.state_layer, t),
+            content: self.content.interpolate(other.content, t),
         }
     }
 }
