@@ -21,14 +21,13 @@ pub use item::Content as Item;
 pub use item::Style as ItemStyle;
 
 const COLLAPSED_ITEM_SPACE: f32 = 4.0;
-const CONTAINER_VERTICAL_PADDING: f32 = 44.0;
 const MENU_ICON_SIZE: f32 = 24.0;
 const MENU_BUTTON_PADDING: f32 = 4.0;
 const SECTION_SPACE: f32 = 16.0;
 // Small FAB container size
-const FAB_OFFSET: f32 = (CONTAINER_COLLAPSED_WIDTH - 56.0) / 2.0;
+const FAB_OFFSET: f32 = (constants::CONTAINER_COLLAPSED_WIDTH - 56.0) / 2.0;
 const MENU_OFFSET: f32 =
-    (CONTAINER_COLLAPSED_WIDTH - MENU_ICON_SIZE - MENU_BUTTON_PADDING * 2.0) / 2.0;
+    (constants::CONTAINER_COLLAPSED_WIDTH - MENU_ICON_SIZE - MENU_BUTTON_PADDING * 2.0) / 2.0;
 
 mod constants {
     use crate::widget::navrail::item::INDICATOR_SMALL_WIDTH;
@@ -37,6 +36,7 @@ mod constants {
     pub const CONTAINER_EXPANDED_MIN_WIDTH: f32 = 220.0;
     pub const CONTAINER_EXPANDED_MAX_WIDTH: f32 = 360.0;
     pub const ITEM_OFFSET: f32 = (CONTAINER_COLLAPSED_WIDTH - INDICATOR_SMALL_WIDTH) / 2.0;
+    pub const CONTAINER_VERTICAL_PADDING: f32 = 44.0;
 }
 
 #[cfg(feature = "pub-internal-const")]
@@ -315,7 +315,7 @@ where
             limits.resolve(Length::Fixed(self.mode.width().0), Length::Fill, Size::ZERO);
         let container_vertical_padding = self
             .container_vertical_padding
-            .unwrap_or(CONTAINER_VERTICAL_PADDING);
+            .unwrap_or(constants::CONTAINER_VERTICAL_PADDING);
         let mut offset = container_vertical_padding;
         let section_space = SECTION_SPACE;
 
