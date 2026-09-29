@@ -98,7 +98,12 @@ impl Spring {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct SpringMotion {
+pub struct SpringValue<T>
+where
+    T: Interpolable + Clone + PartialEq,
+{
+    pub from: T,
+    pub to: T,
     pub spring: Spring,
     pub position: f32,
     pub velocity: f32,
@@ -106,15 +111,39 @@ pub struct SpringMotion {
     pub time: Instant,
 }
 
-impl SpringMotion {
-    pub const fn new(spring: Spring, target: f32, now: Instant) -> Self {
+impl<T> SpringValue<T>
+where
+    T: Interpolable + Clone + PartialEq,
+{
+    pub const fn new(from: T, to: T, spring: Spring, now: Instant) -> Self {
         Self {
+            from,
+            to,
             spring,
-            position: target,
+            position: 0.0,
             velocity: 0.0,
-            target,
+            target: 0.0,
             time: now,
         }
+    }
+
+    pub fn value(&self) -> T {
+        self.from
+            .clone()
+            .interpolate(self.to.clone(), self.position)
+    }
+
+    pub fn set_target(&mut self, target: T, now: Instant) {
+        if self.to == target {
+            return;
+        }
+
+        self.from = self.value();
+        self.to = target;
+
+        self.position = 0.0;
+        self.target = 1.0;
+        self.time = now;
     }
 
     pub fn step(&mut self, now: Instant) {
@@ -182,55 +211,5 @@ impl SpringMotion {
     pub fn is_at_rest(&self) -> bool {
         (self.position - self.target).abs() <= constants::POSITION_EPSILON
             && self.velocity.abs() <= constants::VELOCITY_EPSILON
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct ValueMotion<T>
-where
-    T: Interpolable + Clone + PartialEq,
-{
-    pub from: T,
-    pub to: T,
-    pub spring: SpringMotion,
-}
-
-impl<T> ValueMotion<T>
-where
-    T: Interpolable + Clone + PartialEq,
-{
-    pub const fn new(from: T, to: T, spring: Spring, now: Instant) -> Self {
-        Self {
-            from,
-            to,
-            spring: SpringMotion::new(spring, 0.0, now),
-        }
-    }
-
-    pub fn value(&self) -> T {
-        self.from
-            .clone()
-            .interpolate(self.to.clone(), self.spring.position)
-    }
-
-    pub fn set_target(&mut self, target: T, now: Instant) {
-        if self.to == target {
-            return;
-        }
-
-        self.from = self.value();
-        self.to = target;
-
-        self.spring.position = 0.0;
-        self.spring.target = 1.0;
-        self.spring.time = now;
-    }
-
-    pub fn step(&mut self, now: Instant) {
-        self.spring.step(now);
-    }
-
-    pub fn is_at_rest(&self) -> bool {
-        self.spring.is_at_rest()
     }
 }

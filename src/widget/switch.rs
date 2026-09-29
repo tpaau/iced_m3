@@ -14,7 +14,7 @@ use iced_widget::core::{Svg, svg::Handle};
 use crate::{
     animation::{
         Interpolable, midpoint_distance,
-        motion::{self, Spring, SpringMotion, ValueMotion, fast_effects, fast_spatial},
+        motion::{self, Spring, SpringValue, fast_effects, fast_spatial},
     },
     style::StateLayer,
     theme::ColorScheme,
@@ -275,25 +275,25 @@ struct State {
     last_status: Status,
     last_effects_spring: Spring,
     last_spatial_spring: Spring,
-    state_layer_color: ValueMotion<Color>,
-    icon_rotation_spring: ValueMotion<Radians>,
-    icon_fade_spring: SpringMotion,
-    style_spring: ValueMotion<StateStyle>,
-    handle_position_spring: SpringMotion,
-    handle_size_spring: SpringMotion,
+    state_layer_color: SpringValue<Color>,
+    icon_rotation_spring: SpringValue<Radians>,
+    icon_fade_spring: SpringValue<f32>,
+    style_spring: SpringValue<StateStyle>,
+    handle_position_spring: SpringValue<f32>,
+    handle_size_spring: SpringValue<f32>,
 }
 
 impl State {
     fn set_spatial_spring(&mut self, spatial: Spring) {
-        self.icon_rotation_spring.spring.spring = spatial;
+        self.icon_rotation_spring.spring = spatial;
         self.handle_position_spring.spring = spatial;
         self.handle_size_spring.spring = spatial;
     }
 
     fn set_effects_spring(&mut self, effects: Spring) {
-        self.state_layer_color.spring.spring = effects;
+        self.state_layer_color.spring = effects;
         self.icon_fade_spring.spring = effects;
-        self.style_spring.spring.spring = effects;
+        self.style_spring.spring = effects;
     }
 }
 
@@ -332,22 +332,32 @@ where
             last_status: Status::new(self.selected, self.on_toggle.is_some()),
             last_effects_spring: effects_spring,
             last_spatial_spring: spatial_spring,
-            state_layer_color: ValueMotion::new(
+            state_layer_color: SpringValue::new(
                 state_layer_color,
                 state_layer_color,
                 effects_spring,
                 now,
             ),
-            icon_rotation_spring: ValueMotion::new(
+            icon_rotation_spring: SpringValue::new(
                 icon_rotation,
                 icon_rotation,
                 effects_spring,
                 now,
             ),
-            icon_fade_spring: SpringMotion::new(effects_spring, 1.0, now),
-            style_spring: ValueMotion::new(style.clone(), style, effects_spring, now),
-            handle_position_spring: SpringMotion::new(spatial_spring, self.handle_position(), now),
-            handle_size_spring: SpringMotion::new(spatial_spring, self.handle_size(false), now),
+            icon_fade_spring: SpringValue::new(1.0, 1.0, effects_spring, now),
+            style_spring: SpringValue::new(style.clone(), style, effects_spring, now),
+            handle_position_spring: SpringValue::new(
+                self.handle_position(),
+                self.handle_position(),
+                spatial_spring,
+                now,
+            ),
+            handle_size_spring: SpringValue::new(
+                self.handle_size(false),
+                self.handle_size(false),
+                spatial_spring,
+                now,
+            ),
         };
 
         iced::advanced::widget::tree::State::new(state)

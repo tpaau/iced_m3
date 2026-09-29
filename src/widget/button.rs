@@ -17,7 +17,7 @@ use iced_widget::text;
 use crate::{
     animation::{
         Interpolable,
-        motion::{self, Spring, ValueMotion, fast_effects, fast_spatial},
+        motion::{self, Spring, SpringValue, fast_effects, fast_spatial},
     },
     style::{DISABLED_STATE_LAYER_OPACITY, Elevation, StateLayer, shadow},
     theme::{Accent, ColorScheme},
@@ -835,9 +835,9 @@ where
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct State {
     is_pressed: bool,
-    style_spring: ValueMotion<StateStyle>,
-    state_layer_spring: ValueMotion<Color>,
-    corner_radius_spring: ValueMotion<Radius>,
+    style_spring: SpringValue<StateStyle>,
+    state_layer_spring: SpringValue<Color>,
+    corner_radius_spring: SpringValue<Radius>,
     last_style: Style,
 }
 
@@ -867,14 +867,14 @@ where
         let now = Instant::now();
         let state = State {
             is_pressed: false,
-            style_spring: ValueMotion::new(*style, *style, self.get_style_spring(), now),
-            state_layer_spring: ValueMotion::new(
+            style_spring: SpringValue::new(*style, *style, self.get_style_spring(), now),
+            state_layer_spring: SpringValue::new(
                 self.style.state_layer.idle,
                 self.style.state_layer.idle,
                 self.get_state_layer_spring(),
                 now,
             ),
-            corner_radius_spring: ValueMotion::new(
+            corner_radius_spring: SpringValue::new(
                 corner_radius,
                 corner_radius,
                 self.get_corner_radius_spring(),
@@ -1048,16 +1048,16 @@ where
         }
 
         let style_spring = self.get_style_spring();
-        if state.style_spring.spring.spring != style_spring {
-            state.style_spring.spring.spring = style_spring;
+        if state.style_spring.spring != style_spring {
+            state.style_spring.spring = style_spring;
         }
         let state_layer_spring = self.get_state_layer_spring();
-        if state.state_layer_spring.spring.spring != state_layer_spring {
-            state.state_layer_spring.spring.spring = state_layer_spring;
+        if state.state_layer_spring.spring != state_layer_spring {
+            state.state_layer_spring.spring = state_layer_spring;
         }
         let corner_radius_spring = self.get_corner_radius_spring();
-        if state.corner_radius_spring.spring.spring != corner_radius_spring {
-            state.corner_radius_spring.spring.spring = corner_radius_spring;
+        if state.corner_radius_spring.spring != corner_radius_spring {
+            state.corner_radius_spring.spring = corner_radius_spring;
         }
 
         let now = Instant::now();
@@ -1086,8 +1086,8 @@ where
             self.style_change_checked = true;
             state.style_spring.from = *style;
             state.style_spring.to = *style;
-            state.style_spring.spring.position = 0.0;
-            state.style_spring.spring.velocity = 0.0;
+            state.style_spring.position = 0.0;
+            state.style_spring.velocity = 0.0;
             state.last_style = self.style;
         } else if state.style_spring.to != *style {
             state.style_spring.set_target(*style, now);

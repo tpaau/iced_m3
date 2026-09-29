@@ -32,7 +32,7 @@ use iced_widget::core::Svg;
 use crate::{
     animation::{
         Interpolable,
-        motion::{self, Spring, SpringMotion, ValueMotion, default_effects, fast_effects},
+        motion::{self, Spring, SpringValue, default_effects, fast_effects},
     },
     style::StateLayer,
     theme::ColorScheme,
@@ -154,8 +154,8 @@ impl Interpolable for Colors {
 struct State {
     is_pressed: bool,
     is_hovered: bool,
-    active_transition_spring: SpringMotion,
-    color_spring: ValueMotion<Colors>,
+    active_transition_spring: SpringValue<f32>,
+    color_spring: SpringValue<Colors>,
 }
 
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Item<'a, Message, Renderer>
@@ -182,13 +182,14 @@ where
         let state = State {
             is_pressed: false,
             is_hovered: false,
-            active_transition_spring: SpringMotion::new(
+            active_transition_spring: SpringValue::new(
+                self.active as usize as f32,
+                self.active as usize as f32,
                 self.active_transition_spring
                     .unwrap_or(default_effects(motion::Scheme::default())),
-                self.active as usize as f32,
                 now,
             ),
-            color_spring: ValueMotion::new(
+            color_spring: SpringValue::new(
                 colors,
                 colors,
                 self.color_spring
@@ -459,9 +460,9 @@ where
             state.active_transition_spring.spring = spring;
         }
         if let Some(spring) = self.color_spring
-            && state.color_spring.spring.spring != spring
+            && state.color_spring.spring != spring
         {
-            state.color_spring.spring.spring = spring;
+            state.color_spring.spring = spring;
         }
 
         let now = Instant::now();
