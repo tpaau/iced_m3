@@ -143,6 +143,7 @@ where
 
         self.position = 0.0;
         self.target = 1.0;
+        self.velocity = -self.velocity;
         self.time = now;
     }
 
