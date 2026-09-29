@@ -451,22 +451,23 @@ impl CornerRadius {
         self
     }
 
-    pub fn radius(&self, pressed: bool, selected: Option<bool>) -> &Radius {
+    pub fn radius(&self, pressed: bool, selected: Option<bool>, max_radius: f32) -> Radius {
         if pressed && self.shape_morph {
-            return &self.pressed;
+            return normalize_radius(self.pressed, max_radius);
         }
         let selected = selected.unwrap_or_default();
-        match (selected, self.style) {
-            (true, CornerStyle::Rounded) | (false, CornerStyle::Square) => &self.square,
-            (true, CornerStyle::Square) | (false, CornerStyle::Rounded) => &self.rounded,
-        }
+        let radius = match (selected, self.style) {
+            (true, CornerStyle::Rounded) | (false, CornerStyle::Square) => self.square,
+            (true, CornerStyle::Square) | (false, CornerStyle::Rounded) => self.rounded,
+        };
+        normalize_radius(radius, max_radius)
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Size {
     pub width: Length,
-    pub height: Pixels,
+    pub height: Length,
     pub spacing: Pixels,
     pub padding: Padding,
     pub icon_size: f32,
@@ -484,7 +485,7 @@ impl Size {
     pub fn extra_small() -> Self {
         Self {
             width: Length::Shrink,
-            height: Pixels(constants::BUTTON_HEIGHT_EXTRA_SMALL),
+            height: Length::Fixed(constants::BUTTON_HEIGHT_EXTRA_SMALL),
             spacing: Pixels(4.0),
             padding: padding::horizontal(12.0),
             icon_size: 20.0,
@@ -496,7 +497,7 @@ impl Size {
     pub fn small() -> Self {
         Self {
             width: Length::Shrink,
-            height: Pixels(constants::BUTTON_HEIGHT_SMALL),
+            height: Length::Fixed(constants::BUTTON_HEIGHT_SMALL),
             spacing: Pixels(8.0),
             padding: padding::horizontal(16.0),
             icon_size: 20.0,
@@ -508,7 +509,7 @@ impl Size {
     pub fn medium() -> Self {
         Self {
             width: Length::Shrink,
-            height: Pixels(constants::BUTTON_HEIGHT_MEDIUM),
+            height: Length::Fixed(constants::BUTTON_HEIGHT_MEDIUM),
             spacing: Pixels(8.0),
             padding: padding::horizontal(24.0),
             icon_size: 24.0,
@@ -520,7 +521,7 @@ impl Size {
     pub fn large() -> Self {
         Self {
             width: Length::Shrink,
-            height: Pixels(constants::BUTTON_HEIGHT_LARGE),
+            height: Length::Fixed(constants::BUTTON_HEIGHT_LARGE),
             spacing: Pixels(12.0),
             padding: padding::horizontal(48.0),
             icon_size: 32.0,
@@ -532,7 +533,7 @@ impl Size {
     pub fn extra_large() -> Self {
         Self {
             width: Length::Shrink,
-            height: Pixels(constants::BUTTON_HEIGHT_EXTRA_LARGE),
+            height: Length::Fixed(constants::BUTTON_HEIGHT_EXTRA_LARGE),
             spacing: Pixels(16.0),
             padding: padding::horizontal(64.0),
             icon_size: 40.0,
@@ -546,7 +547,7 @@ impl Size {
         self
     }
 
-    pub fn height(mut self, height: Pixels) -> Self {
+    pub fn height(mut self, height: Length) -> Self {
         self.height = height;
         self
     }
@@ -837,7 +838,7 @@ struct State {
     is_pressed: bool,
     style_spring: SpringValue<StateStyle>,
     state_layer_spring: SpringValue<Color>,
-    corner_radius_spring: SpringValue<Radius>,
+    corner_radius_spring: Option<SpringValue<Radius>>,
     last_style: Style,
 }
 
@@ -860,10 +861,6 @@ where
             self.on_press.is_none() && !self.force_enabled,
             self.selected,
         );
-        let corner_radius = normalize_radius(
-            *self.size.corner_radius.radius(false, self.selected),
-            self.size.height.0,
-        );
         let now = Instant::now();
         let state = State {
             is_pressed: false,
@@ -874,12 +871,7 @@ where
                 self.get_state_layer_spring(),
                 now,
             ),
-            corner_radius_spring: SpringValue::new(
-                corner_radius,
-                corner_radius,
-                self.get_corner_radius_spring(),
-                now,
-            ),
+            corner_radius_spring: None,
             last_style: self.style,
         };
 
@@ -895,7 +887,7 @@ where
 
     fn layout(
         &mut self,
-        _tree: &mut Tree,
+        tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
@@ -972,9 +964,28 @@ where
             .as_ref()
             .map_or(0.0, |node| node.size().height)
             .max(label_node.as_ref().map_or(0.0, |node| node.size().height));
-
-        let intrinsic_size = iced::Size::new(width, self.size.height.into());
+        let height = match self.size.height {
+            Length::Fixed(height) => height,
+            _ => content_height + padding.top + padding.bottom,
+        };
+        let intrinsic_size = iced::Size::new(width, height);
         let size = limits.resolve(intrinsic_size.width, intrinsic_size.height, intrinsic_size);
+
+        let state = tree.state.downcast_mut::<State>();
+        if state.corner_radius_spring.is_none() {
+            let corner_radius = self.size.corner_radius.radius(
+                state.is_pressed && self.is_hovered,
+                self.selected,
+                size.width.min(size.height) / 2.0,
+            );
+            let now = Instant::now();
+            state.corner_radius_spring = Some(SpringValue::new(
+                corner_radius,
+                corner_radius,
+                self.get_corner_radius_spring(),
+                now,
+            ));
+        }
 
         let content_area_width = size.width - padding.left - padding.right;
         let content_area_height = size.height - padding.top - padding.bottom;
@@ -1047,17 +1058,18 @@ where
             _ => {}
         }
 
-        let style_spring = self.get_style_spring();
-        if state.style_spring.spring != style_spring {
-            state.style_spring.spring = style_spring;
+        let spring = self.get_style_spring();
+        if state.style_spring.spring != spring {
+            state.style_spring.spring = spring;
         }
-        let state_layer_spring = self.get_state_layer_spring();
-        if state.state_layer_spring.spring != state_layer_spring {
-            state.state_layer_spring.spring = state_layer_spring;
+        let spring = self.get_state_layer_spring();
+        if state.state_layer_spring.spring != spring {
+            state.state_layer_spring.spring = spring;
         }
-        let corner_radius_spring = self.get_corner_radius_spring();
-        if state.corner_radius_spring.spring != corner_radius_spring {
-            state.corner_radius_spring.spring = corner_radius_spring;
+        let corner_radius_spring = state.corner_radius_spring.as_mut().unwrap();
+        let spring = self.get_corner_radius_spring();
+        if corner_radius_spring.spring != spring {
+            corner_radius_spring.spring = spring;
         }
 
         let now = Instant::now();
@@ -1093,27 +1105,25 @@ where
             state.style_spring.set_target(*style, now);
         }
 
-        let corner_radius = normalize_radius(
-            *self
-                .size
-                .corner_radius
-                .radius(state.is_pressed && self.is_hovered, self.selected),
+        let corner_radius = self.size.corner_radius.radius(
+            state.is_pressed && self.is_hovered,
+            self.selected,
             bounds.width.min(bounds.height) / 2.0,
         );
-        if state.corner_radius_spring.to != corner_radius {
-            state.corner_radius_spring.set_target(corner_radius, now);
+        if corner_radius_spring.to != corner_radius {
+            corner_radius_spring.set_target(corner_radius, now);
         }
 
         if !state.style_spring.is_at_rest()
             || !state.state_layer_spring.is_at_rest()
-            || !state.corner_radius_spring.is_at_rest()
+            || !corner_radius_spring.is_at_rest()
         {
             shell.request_redraw();
         }
 
         state.state_layer_spring.step(now);
         state.style_spring.step(now);
-        state.corner_radius_spring.step(now);
+        corner_radius_spring.step(now);
     }
 
     fn draw(
@@ -1142,7 +1152,7 @@ where
             self.style.elevation.idle
         };
         let style = state.style_spring.value();
-        let corner_radius = state.corner_radius_spring.value();
+        let corner_radius = state.corner_radius_spring.as_ref().unwrap().value();
 
         renderer.fill_quad(
             renderer::Quad {

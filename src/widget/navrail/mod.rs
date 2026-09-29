@@ -638,14 +638,14 @@ where
                 Mode::Collapsed => svg::Handle::from_memory(common_icons::MENU),
                 Mode::Expanded { width: _ } => svg::Handle::from_memory(common_icons::MENU_OPEN),
             };
-            let button_size = Pixels(MENU_ICON_SIZE + MENU_BUTTON_PADDING * 2.0);
+            let button_size = MENU_ICON_SIZE + MENU_BUTTON_PADDING * 2.0;
             crate::widget::button(
                 value.style.menu_button_style,
                 button::Content::Icon(Icon::Svg(icon)),
             )
             .size(button::Size {
-                width: Length::Fixed(button_size.0),
-                height: button_size,
+                width: Length::Fixed(button_size),
+                height: Length::Fixed(button_size),
                 spacing: Pixels::ZERO,
                 padding: Padding::default(),
                 icon_size: MENU_ICON_SIZE,

@@ -79,7 +79,7 @@ impl Size {
         };
         button::Size {
             width: container_width,
-            height: Pixels(self.container_height()),
+            height: Length::Fixed(self.container_height()),
             spacing: Pixels(self.content_spacing()),
             padding: padding::horizontal(padding),
             icon_size: self.icon_size(),
