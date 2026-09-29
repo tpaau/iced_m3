@@ -46,7 +46,7 @@ pub enum IconMode {
     Always,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StateStyle {
     pub track_color: Color,
     pub handle_color: Color,
@@ -67,6 +67,7 @@ impl Interpolable for StateStyle {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Style {
     pub state_layer_selected: StateLayer,
     pub state_later_unselected: StateLayer,
@@ -277,7 +278,7 @@ struct State {
     last_spatial_spring: Spring,
     state_layer_color: SpringValue<Color>,
     icon_rotation_spring: SpringValue<Radians>,
-    icon_fade_spring: SpringValue<f32>,
+    icon_opacity_spring: SpringValue<f32>,
     style_spring: SpringValue<StateStyle>,
     handle_position_spring: SpringValue<f32>,
     handle_size_spring: SpringValue<f32>,
@@ -292,7 +293,7 @@ impl State {
 
     fn set_effects_spring(&mut self, effects: Spring) {
         self.state_layer_color.spring = effects;
-        self.icon_fade_spring.spring = effects;
+        self.icon_opacity_spring.spring = effects;
         self.style_spring.spring = effects;
     }
 }
@@ -324,6 +325,16 @@ where
         let spatial_spring = self
             .effects_spring
             .unwrap_or(fast_spatial(motion::Scheme::default()));
+        let handle_position = self.handle_position();
+        let handle_size = self.handle_size(false);
+        let icon_opacity = if self.icon_mode == IconMode::Always {
+            0.5
+        } else if self.icon_mode == IconMode::WhenSelected {
+            1.0
+        } else {
+            0.0
+        } * style.icon_color.a;
+
         let state = State {
             is_hovered: false,
             is_pressed: false,
@@ -344,20 +355,15 @@ where
                 effects_spring,
                 now,
             ),
-            icon_fade_spring: SpringValue::new(1.0, 1.0, effects_spring, now),
-            style_spring: SpringValue::new(style.clone(), style, effects_spring, now),
+            icon_opacity_spring: SpringValue::new(icon_opacity, icon_opacity, effects_spring, now),
+            style_spring: SpringValue::new(style, style, effects_spring, now),
             handle_position_spring: SpringValue::new(
-                self.handle_position(),
-                self.handle_position(),
+                handle_position,
+                handle_position,
                 spatial_spring,
                 now,
             ),
-            handle_size_spring: SpringValue::new(
-                self.handle_size(false),
-                self.handle_size(false),
-                spatial_spring,
-                now,
-            ),
+            handle_size_spring: SpringValue::new(handle_size, handle_size, spatial_spring, now),
         };
 
         iced::advanced::widget::tree::State::new(state)
@@ -393,22 +399,6 @@ where
         let style = state.style_spring.value();
         let bounds = layout.bounds();
 
-        let handle_size = state.handle_size_spring.position;
-        let handle_center = state.handle_position_spring.position;
-        let handle_bounds = Rectangle {
-            x: bounds.x + handle_center - handle_size / 2.0,
-            y: bounds.y + (TRACK_SIZE.height - handle_size) / 2.0,
-            width: handle_size,
-            height: handle_size,
-        };
-
-        let icon_bounds = Rectangle {
-            x: handle_bounds.x + (handle_size - ICON_SIZE) / 2.0,
-            y: handle_bounds.y + (handle_size - ICON_SIZE) / 2.0,
-            width: ICON_SIZE,
-            height: ICON_SIZE,
-        };
-
         renderer.fill_quad(
             Quad {
                 bounds,
@@ -421,6 +411,15 @@ where
             style.track_color,
         );
 
+        let handle_size = state.handle_size_spring.value();
+        let handle_center = state.handle_position_spring.value();
+        let handle_bounds = Rectangle {
+            x: bounds.x + handle_center - handle_size / 2.0,
+            y: bounds.y + (TRACK_SIZE.height - handle_size) / 2.0,
+            width: handle_size,
+            height: handle_size,
+        };
+
         renderer.fill_quad(
             Quad {
                 bounds: handle_bounds,
@@ -430,28 +429,32 @@ where
             style.handle_color,
         );
 
-        let state = tree.state.downcast_ref::<State>();
-        let icon = Svg::new(if state.icon_fade_spring.position < 0.5 {
-            state.close_icon.clone()
-        } else {
-            state.check_icon.clone()
-        })
-        .rotation(state.icon_rotation_spring.value());
-
-        let color = Color {
-            r: style.icon_color.r,
-            g: style.icon_color.g,
-            b: style.icon_color.b,
-            a: 1.0,
-        };
         let opacity = if self.icon_mode == IconMode::Always {
-            midpoint_distance(state.icon_fade_spring.position)
+            midpoint_distance(state.icon_opacity_spring.value())
         } else if self.icon_mode == IconMode::WhenSelected {
-            state.icon_fade_spring.position
+            state.icon_opacity_spring.value()
         } else {
             0.0
         } * style.icon_color.a;
         (opacity > 0.0).then(|| {
+            let icon = Svg::new(if state.icon_opacity_spring.value() < 0.5 {
+                state.close_icon.clone()
+            } else {
+                state.check_icon.clone()
+            })
+            .rotation(state.icon_rotation_spring.value());
+            let color = Color {
+                r: style.icon_color.r,
+                g: style.icon_color.g,
+                b: style.icon_color.b,
+                a: 1.0,
+            };
+            let icon_bounds = Rectangle {
+                x: handle_bounds.x + (handle_size - ICON_SIZE) / 2.0,
+                y: handle_bounds.y + (handle_size - ICON_SIZE) / 2.0,
+                width: ICON_SIZE,
+                height: ICON_SIZE,
+            };
             renderer.draw_svg(icon.color(color).opacity(opacity), icon_bounds, icon_bounds)
         });
     }
@@ -509,17 +512,30 @@ where
         if style != &state.style_spring.to {
             state.style_spring.from = style.clone();
             state.style_spring.to = style.clone();
+            state.style_spring.position = state.style_spring.target;
+            state.style_spring.velocity = 0.0;
             shell.request_redraw();
         }
 
-        state.handle_size_spring.target = self.handle_size(state.is_pressed);
-        state.handle_position_spring.target = self.handle_position();
-
-        let radians = self.icon_rotation();
-        if state.icon_rotation_spring.to != radians {
-            state.icon_rotation_spring.set_target(radians, now);
+        let target = self.handle_size(state.is_pressed);
+        if state.handle_size_spring.to != target {
+            state.handle_size_spring.set_target(target, now);
         }
-        state.icon_fade_spring.target = if self.selected { 1.0 } else { 0.0 };
+        let target = self.handle_position();
+        if state.handle_position_spring.to != target {
+            state.handle_position_spring.set_target(target, now);
+        }
+
+        let target = self.icon_rotation();
+        if state.icon_rotation_spring.to != target {
+            state.icon_rotation_spring.set_target(target, now);
+        }
+
+        let target = self.selected as usize as f32;
+        if state.icon_opacity_spring.to != target {
+            dbg!(target);
+            state.icon_opacity_spring.set_target(target, now);
+        }
 
         let state_layer_color = match state.is_hovered {
             true => match state.is_pressed {
@@ -536,7 +552,7 @@ where
         if !state.handle_position_spring.is_at_rest()
             || !state.handle_size_spring.is_at_rest()
             || !state.style_spring.is_at_rest()
-            || !state.icon_fade_spring.is_at_rest()
+            || !state.icon_opacity_spring.is_at_rest()
             || !state.icon_rotation_spring.is_at_rest()
             || !state.state_layer_color.is_at_rest()
         {
@@ -546,7 +562,7 @@ where
         // Those DO need to be updated every frame, otherwise wacky things happen
         state.state_layer_color.step(now);
         state.icon_rotation_spring.step(now);
-        state.icon_fade_spring.step(now);
+        state.icon_opacity_spring.step(now);
         state.handle_size_spring.step(now);
         state.handle_position_spring.step(now);
         state.style_spring.step(now);
@@ -593,8 +609,8 @@ where
         let color = state.state_layer_color.value();
         (self.on_toggle.is_some() && color.a > 0.0).then_some({
             let bounds = layout.bounds();
-            let handle_size = state.handle_size_spring.position;
-            let handle_center = state.handle_position_spring.position;
+            let handle_size = state.handle_size_spring.value();
+            let handle_center = state.handle_position_spring.value();
             let handle_bounds = Rectangle {
                 x: bounds.x + handle_center - handle_size / 2.0,
                 y: bounds.y + (TRACK_SIZE.height - handle_size) / 2.0,

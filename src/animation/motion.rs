@@ -148,7 +148,7 @@ where
     }
 
     pub fn step(&mut self, now: Instant) {
-        let delta_time = now.duration_since(self.time);
+        let delta_time = now.duration_since(self.time).as_secs_f32();
         self.time = now;
         if self.is_at_rest() {
             return;
@@ -175,8 +175,8 @@ where
             let a = x0;
             let b = (v0 - decay * x0) / frequency;
 
-            let envelope = (decay * delta_time.as_secs_f32()).exp();
-            let angle = frequency * delta_time.as_secs_f32();
+            let envelope = (decay * delta_time).exp();
+            let angle = frequency * delta_time;
             let sin = angle.sin();
             let cos = angle.cos();
 
@@ -184,11 +184,11 @@ where
             v = envelope * ((decay * a + frequency * b) * cos + (decay * b - frequency * a) * sin);
         } else if zeta == 1.0 {
             // Critically damped: fastest motion without overshoot.
-            let envelope = (-omega * delta_time.as_secs_f32()).exp();
+            let envelope = (-omega * delta_time).exp();
             let b = v0 + omega * x0;
 
-            x = envelope * (x0 + b * delta_time.as_secs_f32());
-            v = envelope * (v0 - omega * b * delta_time.as_secs_f32());
+            x = envelope * (x0 + b * delta_time);
+            v = envelope * (v0 - omega * b * delta_time);
         } else {
             // Overdamped: slower motion without overshoot.
             let root = (zeta * zeta - 1.0).sqrt();
@@ -198,8 +198,8 @@ where
             let a = (v0 - r2 * x0) / (r1 - r2);
             let b = x0 - a;
 
-            let e1 = (r1 * delta_time.as_secs_f32()).exp();
-            let e2 = (r2 * delta_time.as_secs_f32()).exp();
+            let e1 = (r1 * delta_time).exp();
+            let e2 = (r2 * delta_time).exp();
 
             x = a * e1 + b * e2;
             v = a * r1 * e1 + b * r2 * e2;

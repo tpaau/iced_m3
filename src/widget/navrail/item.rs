@@ -182,6 +182,7 @@ where
         let state = State {
             is_pressed: false,
             is_hovered: false,
+            // FIX: Doesn't get initialize properly
             active_transition_spring: SpringValue::new(
                 self.active as usize as f32,
                 self.active as usize as f32,

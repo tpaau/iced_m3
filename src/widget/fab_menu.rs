@@ -198,6 +198,7 @@ where
             true => &mut self.close_button_expanded,
             false => &mut self.close_button_collapsed,
         };
+        // FIX: The style change in the state causes the button to not play the color transition
         widget.as_widget_mut().update(
             &mut tree.children[0],
             event,
