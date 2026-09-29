@@ -1,4 +1,4 @@
-use iced::{Element, Font, Length, advanced::text, border::Radius, padding};
+use iced::{Element, Font, Length, Pixels, advanced::text, border::Radius, padding};
 use iced_widget::text::IntoFragment;
 
 pub const EDGE_SPACING: f32 = 16.0;
@@ -79,8 +79,8 @@ impl Size {
         };
         button::Size {
             width: container_width,
-            height: Length::Fixed(self.container_height()),
-            spacing: self.content_spacing(),
+            height: Pixels(self.container_height()),
+            spacing: Pixels(self.content_spacing()),
             padding: padding::horizontal(padding),
             icon_size: self.icon_size(),
             label_size: self.label_size(),

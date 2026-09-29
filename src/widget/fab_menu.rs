@@ -193,7 +193,12 @@ where
         shell: &mut iced::advanced::Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
-        self.close_button_collapsed.as_widget_mut().update(
+        let state = tree.state.downcast_ref::<State>();
+        let widget = match state.is_opened {
+            true => &mut self.close_button_expanded,
+            false => &mut self.close_button_collapsed,
+        };
+        widget.as_widget_mut().update(
             &mut tree.children[0],
             event,
             layout,

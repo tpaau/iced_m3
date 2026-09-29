@@ -38,6 +38,15 @@ pub use constants::*;
 const DISABLED_CONTAINER_OPACITY: f32 = 0.1;
 const DISABLED_CONTENT_OPACITY: f32 = DISABLED_STATE_LAYER_OPACITY;
 
+fn normalize_radius(radius: Radius, max: f32) -> Radius {
+    Radius {
+        top_left: radius.top_left.clamp(0.0, max),
+        top_right: radius.top_right.clamp(0.0, max),
+        bottom_right: radius.bottom_right.clamp(0.0, max),
+        bottom_left: radius.bottom_left.clamp(0.0, max),
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Outline {
     pub width: f32,
@@ -386,7 +395,7 @@ impl CornerRadius {
         Self {
             style: CornerStyle::default(),
             shape_morph: true,
-            rounded: (constants::BUTTON_HEIGHT_EXTRA_SMALL / 2.0).into(),
+            rounded: f32::MAX.into(),
             square: 12.0.into(),
             pressed: 8.0.into(),
         }
@@ -396,7 +405,7 @@ impl CornerRadius {
         Self {
             style: CornerStyle::default(),
             shape_morph: true,
-            rounded: (constants::BUTTON_HEIGHT_SMALL / 2.0).into(),
+            rounded: f32::MAX.into(),
             square: 12.0.into(),
             pressed: 8.0.into(),
         }
@@ -406,7 +415,7 @@ impl CornerRadius {
         Self {
             style: CornerStyle::default(),
             shape_morph: true,
-            rounded: (constants::BUTTON_HEIGHT_MEDIUM / 2.0).into(),
+            rounded: f32::MAX.into(),
             square: 16.0.into(),
             pressed: 12.0.into(),
         }
@@ -416,7 +425,7 @@ impl CornerRadius {
         Self {
             style: CornerStyle::default(),
             shape_morph: true,
-            rounded: (constants::BUTTON_HEIGHT_LARGE / 2.0).into(),
+            rounded: f32::MAX.into(),
             square: 28.0.into(),
             pressed: 16.0.into(),
         }
@@ -426,7 +435,7 @@ impl CornerRadius {
         Self {
             style: CornerStyle::default(),
             shape_morph: true,
-            rounded: (constants::BUTTON_HEIGHT_EXTRA_LARGE / 2.0).into(),
+            rounded: f32::MAX.into(),
             square: 28.0.into(),
             pressed: 16.0.into(),
         }
@@ -457,8 +466,8 @@ impl CornerRadius {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Size {
     pub width: Length,
-    pub height: Length,
-    pub spacing: f32,
+    pub height: Pixels,
+    pub spacing: Pixels,
     pub padding: Padding,
     pub icon_size: f32,
     pub label_size: f32,
@@ -475,8 +484,8 @@ impl Size {
     pub fn extra_small() -> Self {
         Self {
             width: Length::Shrink,
-            height: Length::Fixed(constants::BUTTON_HEIGHT_EXTRA_SMALL),
-            spacing: 4.0,
+            height: Pixels(constants::BUTTON_HEIGHT_EXTRA_SMALL),
+            spacing: Pixels(4.0),
             padding: padding::horizontal(12.0),
             icon_size: 20.0,
             label_size: 14.0,
@@ -487,8 +496,8 @@ impl Size {
     pub fn small() -> Self {
         Self {
             width: Length::Shrink,
-            height: Length::Fixed(constants::BUTTON_HEIGHT_SMALL),
-            spacing: 8.0,
+            height: Pixels(constants::BUTTON_HEIGHT_SMALL),
+            spacing: Pixels(8.0),
             padding: padding::horizontal(16.0),
             icon_size: 20.0,
             label_size: 14.0,
@@ -499,8 +508,8 @@ impl Size {
     pub fn medium() -> Self {
         Self {
             width: Length::Shrink,
-            height: Length::Fixed(constants::BUTTON_HEIGHT_MEDIUM),
-            spacing: 8.0,
+            height: Pixels(constants::BUTTON_HEIGHT_MEDIUM),
+            spacing: Pixels(8.0),
             padding: padding::horizontal(24.0),
             icon_size: 24.0,
             label_size: 16.0,
@@ -511,8 +520,8 @@ impl Size {
     pub fn large() -> Self {
         Self {
             width: Length::Shrink,
-            height: Length::Fixed(constants::BUTTON_HEIGHT_LARGE),
-            spacing: 12.0,
+            height: Pixels(constants::BUTTON_HEIGHT_LARGE),
+            spacing: Pixels(12.0),
             padding: padding::horizontal(48.0),
             icon_size: 32.0,
             label_size: 24.0,
@@ -523,8 +532,8 @@ impl Size {
     pub fn extra_large() -> Self {
         Self {
             width: Length::Shrink,
-            height: Length::Fixed(constants::BUTTON_HEIGHT_EXTRA_LARGE),
-            spacing: 16.0,
+            height: Pixels(constants::BUTTON_HEIGHT_EXTRA_LARGE),
+            spacing: Pixels(16.0),
             padding: padding::horizontal(64.0),
             icon_size: 40.0,
             label_size: 32.0,
@@ -537,12 +546,12 @@ impl Size {
         self
     }
 
-    pub fn height(mut self, height: Length) -> Self {
+    pub fn height(mut self, height: Pixels) -> Self {
         self.height = height;
         self
     }
 
-    pub fn spacing(mut self, spacing: f32) -> Self {
+    pub fn spacing(mut self, spacing: Pixels) -> Self {
         self.spacing = spacing;
         self
     }
@@ -848,7 +857,10 @@ where
             self.on_press.is_none() && !self.force_enabled,
             self.selected,
         );
-        let corner_radius = self.size.corner_radius.radius(false, self.selected);
+        let corner_radius = normalize_radius(
+            *self.size.corner_radius.radius(false, self.selected),
+            self.size.height.0,
+        );
         let now = Instant::now();
         let state = State {
             is_pressed: false,
@@ -860,8 +872,8 @@ where
                 now,
             ),
             corner_radius_spring: ValueMotion::new(
-                *corner_radius,
-                *corner_radius,
+                corner_radius,
+                corner_radius,
                 self.get_corner_radius_spring(),
                 now,
             ),
@@ -873,7 +885,7 @@ where
     fn size(&self) -> iced::Size<Length> {
         iced::Size {
             width: self.size.width,
-            height: self.size.height,
+            height: self.size.height.into(),
         }
     }
 
@@ -941,12 +953,12 @@ where
         let spacing = if icon_node.is_some() && label_node.is_some() {
             self.size.spacing
         } else {
-            0.0
+            Pixels::ZERO
         };
 
         let content_width = icon_node.as_ref().map_or(0.0, |node| node.size().width)
             + label_node.as_ref().map_or(0.0, |node| node.size().width)
-            + spacing;
+            + spacing.0;
         let width = match self.size.width {
             Length::Fixed(width) => width,
             _ => content_width + padding.left + padding.right,
@@ -956,12 +968,8 @@ where
             .as_ref()
             .map_or(0.0, |node| node.size().height)
             .max(label_node.as_ref().map_or(0.0, |node| node.size().height));
-        let height = match self.size.height {
-            Length::Fixed(height) => height,
-            _ => content_height + padding.top + padding.bottom,
-        };
 
-        let intrinsic_size = iced::Size::new(width, height);
+        let intrinsic_size = iced::Size::new(width, self.size.height.into());
         let size = limits.resolve(intrinsic_size.width, intrinsic_size.height, intrinsic_size);
 
         let content_area_width = size.width - padding.left - padding.right;
@@ -975,7 +983,7 @@ where
 
         if let Some(icon) = icon_node {
             let y = group_y + (content_height - icon.size().height) / 2.0;
-            offset += icon.size().width + spacing;
+            offset += icon.size().width + spacing.0;
             children.push(icon.move_to(iced::Point::new(group_x, y)));
         }
 
@@ -1006,7 +1014,7 @@ where
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerPressed { .. }) => {
                 if self.on_press.is_some() || self.force_enabled {
-                    if cursor.is_over(bounds) {
+                    if self.is_hovered {
                         state.is_pressed = true;
 
                         shell.capture_event();
@@ -1019,7 +1027,7 @@ where
                     if state.is_pressed {
                         state.is_pressed = false;
 
-                        if cursor.is_over(bounds)
+                        if self.is_hovered
                             && let Some(on_press) = &self.on_press
                         {
                             shell.publish(on_press.resolve());
@@ -1075,12 +1083,15 @@ where
             state.style_spring.set_target(*style, now);
         }
 
-        let corner_radius = self
-            .size
-            .corner_radius
-            .radius(state.is_pressed, self.selected);
-        if state.corner_radius_spring.to != *corner_radius {
-            state.corner_radius_spring.set_target(*corner_radius, now);
+        let corner_radius = normalize_radius(
+            *self
+                .size
+                .corner_radius
+                .radius(state.is_pressed && self.is_hovered, self.selected),
+            bounds.width.min(bounds.height),
+        );
+        if state.corner_radius_spring.to != corner_radius {
+            state.corner_radius_spring.set_target(corner_radius, now);
         }
 
         if !state.style_spring.is_at_rest()
