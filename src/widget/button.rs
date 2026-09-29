@@ -668,6 +668,7 @@ where
 
     // Cache
     is_hovered: bool,
+    style_change_checked: bool,
     icon_paragraph: Option<Renderer::Paragraph>,
     label_paragraph: Option<Renderer::Paragraph>,
 }
@@ -696,6 +697,7 @@ where
             is_hovered: false,
             icon_paragraph: None,
             label_paragraph: None,
+            style_change_checked: false,
         }
     }
 
@@ -836,6 +838,7 @@ struct State {
     style_spring: ValueMotion<StateStyle>,
     state_layer_spring: ValueMotion<Color>,
     corner_radius_spring: ValueMotion<Radius>,
+    last_style: Style,
 }
 
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
@@ -877,6 +880,7 @@ where
                 self.get_corner_radius_spring(),
                 now,
             ),
+            last_style: self.style,
         };
 
         tree::State::new(state)
@@ -1078,8 +1082,14 @@ where
             self.on_press.is_none() && !self.force_enabled,
             self.selected,
         );
-        // TODO: Apply the style immediately if the base changes
-        if state.style_spring.to != *style {
+        if !self.style_change_checked && state.last_style != self.style {
+            self.style_change_checked = true;
+            state.style_spring.from = *style;
+            state.style_spring.to = *style;
+            state.style_spring.spring.position = 0.0;
+            state.style_spring.spring.velocity = 0.0;
+            state.last_style = self.style;
+        } else if state.style_spring.to != *style {
             state.style_spring.set_target(*style, now);
         }
 
@@ -1088,7 +1098,7 @@ where
                 .size
                 .corner_radius
                 .radius(state.is_pressed && self.is_hovered, self.selected),
-            bounds.width.min(bounds.height),
+            bounds.width.min(bounds.height) / 2.0,
         );
         if state.corner_radius_spring.to != corner_radius {
             state.corner_radius_spring.set_target(corner_radius, now);
