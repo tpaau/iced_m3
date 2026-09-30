@@ -158,7 +158,7 @@ where
     pub fn step(&mut self, now: Instant) {
         let delta_time = now.duration_since(self.time).as_secs_f32();
         self.time = now;
-        if self.is_at_rest() {
+        if self.is_at_rest() || delta_time == 0.0 {
             return;
         }
         let zeta = self.spring.damping.max(0.0);

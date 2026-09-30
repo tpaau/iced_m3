@@ -185,6 +185,20 @@ where
         self.effects_spring = spring;
         self
     }
+
+    fn state_layer_color(&self, expanded: bool, pressed: bool, hovered: bool) -> Color {
+        let state_layer = match expanded {
+            true => self.style.state_layer_expanded,
+            false => self.style.state_layer_collapsed,
+        };
+        match hovered {
+            true => match pressed {
+                true => state_layer.pressed,
+                false => state_layer.hovered,
+            },
+            false => state_layer.idle,
+        }
+    }
 }
 
 struct State {
@@ -193,6 +207,7 @@ struct State {
     style_spring: SpringValue<StateStyle>,
     icon_rotation_spring: SpringValue<Radians>,
     corner_radius_spring: SpringValue<Radius>,
+    state_layer_spring: SpringValue<Color>,
     icon_handle: svg::Handle,
     last_style: Style,
 }
@@ -201,7 +216,8 @@ impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
     for FABMenu<'a, Message, Theme, Renderer>
 where
     Message: Clone,
-    Renderer: iced::advanced::Renderer + iced::advanced::svg::Renderer,
+    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer::Font: From<iced::Font>,
 {
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<State>()
@@ -223,6 +239,11 @@ where
             corner_radius_spring: SpringValue::new(
                 self.size.unwrap_or_default().rounding(),
                 spatial_spring,
+                now,
+            ),
+            state_layer_spring: SpringValue::new(
+                self.state_layer_color(false, false, false),
+                effects_spring,
                 now,
             ),
             icon_handle: svg::Handle::from_memory(common_icons::ADD),
@@ -284,7 +305,6 @@ where
         let state = tree.state.downcast_ref::<State>();
         let style = state.style_spring.value();
         let corner_radius = state.corner_radius_spring.value();
-        let icon_rotation = state.icon_rotation_spring.value();
 
         renderer.fill_quad(
             Quad {
@@ -298,10 +318,19 @@ where
         let bounds = layout.child(0).bounds();
         renderer.draw_svg(
             svg::Svg::new(state.icon_handle.clone())
-                .rotation(icon_rotation)
+                .rotation(state.icon_rotation_spring.value())
                 .color(style.icon_color),
             bounds,
             bounds,
+        );
+
+        renderer.fill_quad(
+            Quad {
+                bounds: layout.bounds(),
+                border: Border::default().rounded(corner_radius),
+                ..Default::default()
+            },
+            state.state_layer_spring.value(),
         );
     }
 
@@ -318,10 +347,12 @@ where
     ) {
         let state = tree.state.downcast_mut::<State>();
 
+        let is_hovered = cursor.is_over(layout.bounds());
+
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerPressed { .. }) => {
-                if cursor.is_over(layout.bounds()) {
+                if is_hovered {
                     state.is_pressed = true;
                     shell.capture_event();
                 }
@@ -331,7 +362,7 @@ where
                 if state.is_pressed {
                     state.is_pressed = false;
 
-                    if cursor.is_over(layout.bounds()) {
+                    if is_hovered {
                         state.is_expanded = !state.is_expanded;
                     }
                 }
@@ -369,13 +400,22 @@ where
                 Radians(0.0),
             ),
         };
+
+        let state_layer = self.state_layer_color(state.is_expanded, state.is_pressed, is_hovered);
         if !self.style_checked && state.last_style != self.style {
             state.style_spring.reset(style, now);
+            state.state_layer_spring.reset(state_layer, now);
             state.last_style = self.style;
             self.style_checked = true;
-        } else if state.style_spring.to != style {
-            state.style_spring.set_target(style, now);
+        } else {
+            if state.style_spring.to != style {
+                state.style_spring.set_target(style, now);
+            }
+            if state.state_layer_spring.to != state_layer {
+                state.state_layer_spring.set_target(state_layer, now);
+            }
         }
+
         if state.corner_radius_spring.to != corner_radius {
             state.corner_radius_spring.set_target(corner_radius, now);
         }
@@ -386,6 +426,7 @@ where
         if !state.style_spring.is_at_rest()
             || !state.corner_radius_spring.is_at_rest()
             || !state.icon_rotation_spring.is_at_rest()
+            || !state.state_layer_spring.is_at_rest()
         {
             shell.request_redraw();
         }
@@ -393,6 +434,7 @@ where
         state.style_spring.step(now);
         state.corner_radius_spring.step(now);
         state.icon_rotation_spring.step(now);
+        state.state_layer_spring.step(now);
     }
 
     fn mouse_interaction(
@@ -434,7 +476,8 @@ impl<'a, Message, Theme, Renderer> From<FABMenu<'a, Message, Theme, Renderer>>
 where
     Message: 'a + Clone,
     Theme: 'a,
-    Renderer: 'a + iced::advanced::svg::Renderer,
+    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer::Font: From<iced::Font>,
 {
     fn from(menu: FABMenu<'a, Message, Theme, Renderer>) -> Self {
         Element::new(menu)
