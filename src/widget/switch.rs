@@ -146,6 +146,9 @@ where
     on_toggle: Option<Message>,
     effects_spring: Option<Spring>,
     spatial_spring: Option<Spring>,
+
+    // Cache
+    style_checked: bool,
 }
 
 impl<Message> Switch<Message>
@@ -161,6 +164,7 @@ where
             on_toggle: None,
             effects_spring: None,
             spatial_spring: None,
+            style_checked: false,
         }
     }
 
@@ -249,33 +253,14 @@ where
     }
 }
 
-#[derive(Debug, PartialEq)]
-enum Status {
-    Selected,
-    SelectedDisabled,
-    Unselected,
-    UnselectedDisabled,
-}
-
-impl Status {
-    fn new(selected: bool, enabled: bool) -> Self {
-        match (selected, enabled) {
-            (true, true) => Self::Selected,
-            (true, false) => Self::SelectedDisabled,
-            (false, true) => Self::Unselected,
-            (false, false) => Self::UnselectedDisabled,
-        }
-    }
-}
-
 struct State {
     is_hovered: bool,
     is_pressed: bool,
     check_icon: Handle,
     close_icon: Handle,
-    last_status: Status,
     last_effects_spring: Spring,
     last_spatial_spring: Spring,
+    last_style: Style,
     state_layer_color: SpringValue<Color>,
     icon_rotation_spring: SpringValue<Radians>,
     icon_opacity_spring: SpringValue<f32>,
@@ -340,7 +325,6 @@ where
             is_pressed: false,
             check_icon: Handle::from_memory(common_icons::CHECK),
             close_icon: Handle::from_memory(common_icons::CLOSE),
-            last_status: Status::new(self.selected, self.on_toggle.is_some()),
             last_effects_spring: effects_spring,
             last_spatial_spring: spatial_spring,
             state_layer_color: SpringValue::new(state_layer_color, effects_spring, now),
@@ -349,6 +333,7 @@ where
             style_spring: SpringValue::new(style, effects_spring, now),
             handle_position_spring: SpringValue::new(handle_position, spatial_spring, now),
             handle_size_spring: SpringValue::new(handle_size, spatial_spring, now),
+            last_style: self.style,
         };
 
         iced::advanced::widget::tree::State::new(state)
@@ -488,18 +473,14 @@ where
             state.set_spatial_spring(spatial_spring);
         }
 
-        let style = self.style.state(self.selected, self.on_toggle.is_some());
-        let status = Status::new(self.selected, self.on_toggle.is_some());
-        if status != state.last_status {
-            state.style_spring.set_target(style.clone(), now);
-            state.last_status = status;
-        }
-        if style != &state.style_spring.to {
-            state.style_spring.from = style.clone();
-            state.style_spring.to = style.clone();
-            state.style_spring.position = state.style_spring.target;
-            state.style_spring.velocity = 0.0;
+        let style = *self.style.state(self.selected, self.on_toggle.is_some());
+        if !self.style_checked && self.style != state.last_style {
+            state.style_spring.reset(style, now);
+            state.last_style = self.style;
+            self.style_checked = true;
             shell.request_redraw();
+        } else if state.style_spring.to != style {
+            state.style_spring.set_target(style.clone(), now);
         }
 
         let target = self.handle_size(state.is_pressed);
@@ -518,7 +499,6 @@ where
 
         let target = self.selected as usize as f32;
         if state.icon_opacity_spring.to != target {
-            dbg!(target);
             state.icon_opacity_spring.set_target(target, now);
         }
 

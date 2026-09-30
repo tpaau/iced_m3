@@ -28,7 +28,7 @@ use std::ops::RangeInclusive;
 use iced::{Color, Element, Font, Pixels};
 
 use crate::{
-    theme::{Accent, ColorScheme},
+    theme::ColorScheme,
     widget::{
         button::Button,
         card::Card,
@@ -84,18 +84,18 @@ where
 }
 
 #[must_use]
-pub fn fab_menu<'a, Message, I>(
+pub fn fab_menu<'a, I, Message, Theme, Renderer>(
+    style: fab_menu::Style,
     items: I,
-    size: fab::Size,
     label_font: Option<Font>,
-    theme: &(impl ColorScheme + ?Sized),
-    accent: Accent,
-) -> FABMenu<'a, Message>
+) -> FABMenu<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
     I: IntoIterator<Item = fab_menu::Item<'a, Message>>,
+    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer::Font: From<iced::Font>,
 {
-    FABMenu::new(items, size, label_font, theme, accent)
+    FABMenu::new(style, items, label_font)
 }
 
 #[must_use]

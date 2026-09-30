@@ -31,7 +31,7 @@ impl Size {
         }
     }
 
-    fn content_spacing(&self) -> f32 {
+    pub(crate) fn content_spacing(&self) -> f32 {
         match self {
             Size::Regular => 8.0,
             Size::Medium => 12.0,
@@ -39,7 +39,7 @@ impl Size {
         }
     }
 
-    fn label_size(&self) -> f32 {
+    pub(crate) fn label_size(&self) -> f32 {
         match self {
             Size::Regular => 16.0,
             Size::Medium => 22.0,
@@ -47,7 +47,7 @@ impl Size {
         }
     }
 
-    fn padding(&self) -> f32 {
+    pub(crate) fn padding(&self) -> f32 {
         match self {
             Size::Regular => 16.0,
             Size::Medium => 26.0,
@@ -55,7 +55,7 @@ impl Size {
         }
     }
 
-    fn icon_size(&self) -> f32 {
+    pub(crate) fn icon_size(&self) -> f32 {
         match self {
             Size::Regular => 24.0,
             Size::Medium => 28.0,
@@ -63,7 +63,7 @@ impl Size {
         }
     }
 
-    fn rounding(&self) -> Radius {
+    pub(crate) fn rounding(&self) -> Radius {
         match self {
             Size::Regular => 16.0,
             Size::Medium => 20.0,

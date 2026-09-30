@@ -147,6 +147,14 @@ where
         self.time = now;
     }
 
+    pub fn reset(&mut self, value: T, now: Instant) {
+        self.from = value.clone();
+        self.to = value;
+        self.position = 0.0;
+        self.velocity = 0.0;
+        self.time = now;
+    }
+
     pub fn step(&mut self, now: Instant) {
         let delta_time = now.duration_since(self.time).as_secs_f32();
         self.time = now;

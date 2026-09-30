@@ -41,6 +41,7 @@ impl State {
 
     fn view(&self) -> Element<'_, Message> {
         let menu = fab_menu(
+            fab_menu::Style::new(&self.theme, Accent::default()),
             vec![
                 fab_menu::Item {
                     on_press: OnPress::Direct(Message::Noop),
@@ -67,10 +68,7 @@ impl State {
                     },
                 },
             ],
-            iced_m3::widget::fab::Size::Regular,
             None,
-            &self.theme,
-            Accent::default(),
         );
 
         let content = column![

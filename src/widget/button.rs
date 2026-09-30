@@ -1088,19 +1088,16 @@ where
             state.state_layer_spring.set_target(state_layer_color, now);
         }
 
-        let style = self.style.state_style(
+        let style = *self.style.state_style(
             self.on_press.is_none() && !self.force_enabled,
             self.selected,
         );
         if !self.style_change_checked && state.last_style != self.style {
+            state.style_spring.reset(style, now);
             self.style_change_checked = true;
-            state.style_spring.from = *style;
-            state.style_spring.to = *style;
-            state.style_spring.position = 0.0;
-            state.style_spring.velocity = 0.0;
             state.last_style = self.style;
-        } else if state.style_spring.to != *style {
-            state.style_spring.set_target(*style, now);
+        } else if state.style_spring.to != style {
+            state.style_spring.set_target(style, now);
         }
 
         let corner_radius = self.size.corner_radius.radius(

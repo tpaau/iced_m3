@@ -3,7 +3,7 @@ mod tests;
 
 use iced::{Color, color};
 
-#[derive(Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Accent {
     #[default]
     Primary,
