@@ -3,9 +3,10 @@ use iced::{
     advanced::{
         Widget,
         layout::{Limits, Node},
-        overlay, svg, text,
+        mouse, overlay, svg, text,
         widget::{Tree, tree},
     },
+    touch,
 };
 
 use crate::{
@@ -211,14 +212,16 @@ where
         );
 
         match event {
-            iced::Event::Mouse(iced::mouse::Event::ButtonPressed(_)) => {
+            Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
+            | Event::Touch(touch::Event::FingerPressed { .. }) => {
                 if cursor.is_over(layout.bounds()) {
                     let state = tree.state.downcast_mut::<State>();
                     state.is_pressed = true;
                     shell.capture_event();
                 }
             }
-            iced::Event::Mouse(iced::mouse::Event::ButtonReleased(_)) => {
+            Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
+            | Event::Touch(touch::Event::FingerLifted { .. }) => {
                 let state = tree.state.downcast_mut::<State>();
                 if state.is_pressed {
                     state.is_pressed = false;
@@ -227,6 +230,10 @@ where
                         state.is_opened = !state.is_opened;
                     }
                 }
+            }
+            Event::Touch(touch::Event::FingerLost { .. }) => {
+                let state = tree.state.downcast_mut::<State>();
+                state.is_pressed = false;
             }
             _ => {}
         }
