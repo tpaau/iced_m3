@@ -479,13 +479,10 @@ where
             state_layer: state_layer_color,
             content: content_color,
         };
-        if state.color_spring.to != colors {
-            state.color_spring.set_target(colors, now);
-        }
-        let target = self.active as usize as f32;
-        if state.active_transition_spring.to != target {
-            state.active_transition_spring.set_target(target, now);
-        }
+        state.color_spring.set_target(colors, now);
+        state
+            .active_transition_spring
+            .set_target(self.active as usize as f32, now);
 
         if !state.active_transition_spring.is_at_rest() || !state.color_spring.is_at_rest() {
             shell.request_redraw();

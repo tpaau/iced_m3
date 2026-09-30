@@ -408,20 +408,11 @@ where
             state.last_style = self.style;
             self.style_checked = true;
         } else {
-            if state.style_spring.to != style {
-                state.style_spring.set_target(style, now);
-            }
-            if state.state_layer_spring.to != state_layer {
-                state.state_layer_spring.set_target(state_layer, now);
-            }
+            state.style_spring.set_target(style, now);
+            state.state_layer_spring.set_target(state_layer, now);
         }
-
-        if state.corner_radius_spring.to != corner_radius {
-            state.corner_radius_spring.set_target(corner_radius, now);
-        }
-        if state.icon_rotation_spring.to != icon_rotation {
-            state.icon_rotation_spring.set_target(icon_rotation, now);
-        }
+        state.corner_radius_spring.set_target(corner_radius, now);
+        state.icon_rotation_spring.set_target(icon_rotation, now);
 
         if !state.style_spring.is_at_rest()
             || !state.corner_radius_spring.is_at_rest()

@@ -1071,9 +1071,7 @@ where
         } else {
             state_layer.idle
         };
-        if state.state_layer_spring.to != state_layer_color {
-            state.state_layer_spring.set_target(state_layer_color, now);
-        }
+        state.state_layer_spring.set_target(state_layer_color, now);
 
         let style = *self
             .style
@@ -1082,7 +1080,7 @@ where
             state.style_spring.reset(style, now);
             self.style_change_checked = true;
             state.last_style = self.style;
-        } else if state.style_spring.to != style {
+        } else {
             state.style_spring.set_target(style, now);
         }
 
@@ -1091,9 +1089,7 @@ where
             self.selected,
             bounds.width.min(bounds.height) / 2.0,
         );
-        if corner_radius_spring.to != corner_radius {
-            corner_radius_spring.set_target(corner_radius, now);
-        }
+        corner_radius_spring.set_target(corner_radius, now);
 
         if !state.style_spring.is_at_rest()
             || !state.state_layer_spring.is_at_rest()

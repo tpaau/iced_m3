@@ -479,28 +479,22 @@ where
             state.last_style = self.style;
             self.style_checked = true;
             shell.request_redraw();
-        } else if state.style_spring.to != style {
+        } else {
             state.style_spring.set_target(style.clone(), now);
         }
 
-        let target = self.handle_size(state.is_pressed);
-        if state.handle_size_spring.to != target {
-            state.handle_size_spring.set_target(target, now);
-        }
-        let target = self.handle_position();
-        if state.handle_position_spring.to != target {
-            state.handle_position_spring.set_target(target, now);
-        }
-
-        let target = self.icon_rotation();
-        if state.icon_rotation_spring.to != target {
-            state.icon_rotation_spring.set_target(target, now);
-        }
-
-        let target = self.selected as usize as f32;
-        if state.icon_opacity_spring.to != target {
-            state.icon_opacity_spring.set_target(target, now);
-        }
+        state
+            .handle_size_spring
+            .set_target(self.handle_size(state.is_pressed), now);
+        state
+            .handle_position_spring
+            .set_target(self.handle_position(), now);
+        state
+            .icon_rotation_spring
+            .set_target(self.icon_rotation(), now);
+        state
+            .icon_opacity_spring
+            .set_target(self.selected as usize as f32, now);
 
         let state_layer_color = match state.is_hovered {
             true => match state.is_pressed {
