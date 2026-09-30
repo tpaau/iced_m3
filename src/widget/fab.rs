@@ -140,26 +140,13 @@ where
     corner_style: CornerStyle,
     style: Style,
     label_font: Option<Font>,
-    on_press: Option<OnPress<'a, Message>>,
+    on_press: OnPress<'a, Message>,
 }
 
 impl<'a, Message> Fab<'a, Message>
 where
     Message: 'a + Clone,
 {
-    /// Creates a new FAB menu that doesn't emit messages but appears enabled.
-    #[must_use]
-    pub fn new_dummy(style: Style, content: Content<'a>) -> Self {
-        Self {
-            content,
-            size: Size::default(),
-            corner_style: CornerStyle::Square,
-            style,
-            label_font: None,
-            on_press: None,
-        }
-    }
-
     #[must_use]
     pub fn new(style: Style, content: Content<'a>, on_press: OnPress<'a, Message>) -> Self {
         Self {
@@ -168,7 +155,7 @@ where
             corner_style: CornerStyle::Square,
             style,
             label_font: None,
-            on_press: Some(on_press),
+            on_press: on_press,
         }
     }
 
@@ -223,11 +210,10 @@ where
             .elevation(Elevation::Level3);
 
         match value.on_press {
-            Some(on_press) => match on_press {
+            on_press => match on_press {
                 OnPress::Direct(on_press) => button.on_press(on_press),
                 OnPress::Closure(on_press) => button.on_press_with(on_press),
             },
-            None => button.force_enabled(true),
         }
         .into()
     }

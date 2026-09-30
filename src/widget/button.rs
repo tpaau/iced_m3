@@ -655,8 +655,6 @@ where
 {
     style: Style,
     on_press: Option<OnPress<'a, Message>>,
-    /// Make the button appear enabled even when there is no message is being emitted on press.
-    force_enabled: bool,
     clip: bool,
     content: Content<'a>,
     label_font: Option<iced::Font>,
@@ -684,7 +682,6 @@ where
         Self {
             style,
             on_press: None,
-            force_enabled: false,
             clip: false,
             content,
             label_font: None,
@@ -822,15 +819,6 @@ where
         self.corner_radius_spring
             .unwrap_or(fast_spatial(motion::Scheme::default()))
     }
-
-    /// Make the button appear enabled even when there is no message is being emitted on press.
-    ///
-    /// This is currently only used for the FAB Menu widget as its opened state is managed internally.
-    #[must_use]
-    pub(crate) fn force_enabled(mut self, force_enabled: bool) -> Self {
-        self.force_enabled = force_enabled;
-        self
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -857,10 +845,9 @@ where
     }
 
     fn state(&self) -> tree::State {
-        let style = self.style.state_style(
-            self.on_press.is_none() && !self.force_enabled,
-            self.selected,
-        );
+        let style = self
+            .style
+            .state_style(self.on_press.is_none(), self.selected);
         let now = Instant::now();
         let state = State {
             is_pressed: false,
@@ -1026,7 +1013,7 @@ where
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerPressed { .. }) => {
-                if self.on_press.is_some() || self.force_enabled {
+                if self.on_press.is_some() {
                     if self.is_hovered {
                         state.is_pressed = true;
 
@@ -1036,7 +1023,7 @@ where
             }
             Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerLifted { .. }) => {
-                if self.on_press.is_some() || self.force_enabled {
+                if self.on_press.is_some() {
                     if state.is_pressed {
                         state.is_pressed = false;
 
@@ -1073,7 +1060,7 @@ where
         let now = Instant::now();
 
         let state_layer = self.style.state_layer(self.selected);
-        let state_layer_color = if self.on_press.is_none() && !self.force_enabled {
+        let state_layer_color = if self.on_press.is_none() {
             state_layer.idle
         } else if cursor.is_over(layout.bounds()) {
             if state.is_pressed {
@@ -1088,10 +1075,9 @@ where
             state.state_layer_spring.set_target(state_layer_color, now);
         }
 
-        let style = *self.style.state_style(
-            self.on_press.is_none() && !self.force_enabled,
-            self.selected,
-        );
+        let style = *self
+            .style
+            .state_style(self.on_press.is_none(), self.selected);
         if !self.style_change_checked && state.last_style != self.style {
             state.style_spring.reset(style, now);
             self.style_change_checked = true;
@@ -1135,7 +1121,7 @@ where
         let bounds = layout.bounds();
         let mut children = layout.children();
 
-        let elevation = if self.on_press.is_none() && !self.force_enabled {
+        let elevation = if self.on_press.is_none() {
             self.style.elevation.disabled
         } else if self.is_hovered {
             if state.is_pressed {
@@ -1209,7 +1195,7 @@ where
     ) -> mouse::Interaction {
         let is_mouse_over = cursor.is_over(layout.bounds());
 
-        if is_mouse_over && (self.on_press.is_some() || self.force_enabled) {
+        if is_mouse_over && self.on_press.is_some() {
             mouse::Interaction::Pointer
         } else {
             mouse::Interaction::default()
