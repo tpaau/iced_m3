@@ -115,10 +115,10 @@ impl<T> SpringValue<T>
 where
     T: Interpolable + Clone + PartialEq,
 {
-    pub const fn new(from: T, to: T, spring: Spring, now: Instant) -> Self {
+    pub fn new(initial_value: T, spring: Spring, now: Instant) -> Self {
         Self {
-            from,
-            to,
+            from: initial_value.clone(),
+            to: initial_value,
             spring,
             position: 0.0,
             velocity: 0.0,

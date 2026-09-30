@@ -184,13 +184,11 @@ where
             is_hovered: false,
             active_transition_spring: SpringValue::new(
                 self.active as usize as f32,
-                self.active as usize as f32,
                 self.active_transition_spring
                     .unwrap_or(default_effects(motion::Scheme::default())),
                 now,
             ),
             color_spring: SpringValue::new(
-                colors,
                 colors,
                 self.color_spring
                     .unwrap_or(fast_effects(motion::Scheme::default())),

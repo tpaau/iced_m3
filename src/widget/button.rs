@@ -864,9 +864,8 @@ where
         let now = Instant::now();
         let state = State {
             is_pressed: false,
-            style_spring: SpringValue::new(*style, *style, self.get_style_spring(), now),
+            style_spring: SpringValue::new(*style, self.get_style_spring(), now),
             state_layer_spring: SpringValue::new(
-                self.style.state_layer.idle,
                 self.style.state_layer.idle,
                 self.get_state_layer_spring(),
                 now,
@@ -980,7 +979,6 @@ where
             );
             let now = Instant::now();
             state.corner_radius_spring = Some(SpringValue::new(
-                corner_radius,
                 corner_radius,
                 self.get_corner_radius_spring(),
                 now,
