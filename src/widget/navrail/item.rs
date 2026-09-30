@@ -182,7 +182,6 @@ where
         let state = State {
             is_pressed: false,
             is_hovered: false,
-            // FIX: Doesn't get initialize properly
             active_transition_spring: SpringValue::new(
                 self.active as usize as f32,
                 self.active as usize as f32,
@@ -358,7 +357,7 @@ where
         };
 
         let state = tree.state.downcast_ref::<State>();
-        let width = state.active_transition_spring.position * indicator_bounds.width;
+        let width = state.active_transition_spring.value() * indicator_bounds.width;
         if width > 0.0 {
             let bounds = Rectangle {
                 x: indicator_bounds.x + (indicator_bounds.width - width) / 2.0,
@@ -374,7 +373,7 @@ where
                 },
                 self.style
                     .container_color
-                    .scale_alpha(state.active_transition_spring.position),
+                    .scale_alpha(state.active_transition_spring.value()),
             );
         }
 
