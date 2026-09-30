@@ -483,8 +483,8 @@ where
             state.color_spring.set_target(colors, now);
         }
         let target = self.active as usize as f32;
-        if state.active_transition_spring.target != target {
-            state.active_transition_spring.target = target;
+        if state.active_transition_spring.to != target {
+            state.active_transition_spring.set_target(target, now);
         }
 
         if !state.active_transition_spring.is_at_rest() || !state.color_spring.is_at_rest() {
