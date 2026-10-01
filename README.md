@@ -8,8 +8,34 @@
 </div>
 
 <div align="center">
-  <a href="https://m3.material.io">Material Design 3</a> widgets for the <a href="https://iced.rs/">iced GUI library</a>
+  Implementation of the <a href="https://m3.material.io">Material Design 3</a> system for the <a href="https://iced.rs/">Iced GUI library</a>
 </div>
+
+
+## Features
+- [Motion Physics](https://m3.material.io/styles/motion/overview) system
+- [Dynamic Color](https://m3.material.io/styles/color/system) system
+- [Elevation](https://m3.material.io/styles/elevation/overview) system
+- Support for text or SVG icons
+- [Widgets](#widgets)
+  - [Badges](#widgets-badges)
+  - [Common Buttons](#widgets-common-buttons)
+  - [Cards](#widgets-cards)
+  - [Dialog](#widgets-dialog)
+  - [Floating Action Buttons](#widgets-fabs)
+  - [FAB Menu](#widgets-fab-menu)
+  - [Progress Bar](#widgets-progress-bar)
+  - [Navigation Bar](#widgets-navbar)
+  - [Navigation Rail](#widgets-navrail)
+  - [Vertical Menu](#widgets-vertical-menu)
+  - [Switch](#widgets-switch)
+  - [Slider](#widgets-slider)
+  - [Text Field](#widgets-text-field)
+
+You can go see the demos [here](https://github.com/tpaau/iced_m3/blob/main/demos/)!
+
+[Chilen](https://github.com/tpaau/chilen) uses `iced_m3` extensively, you can check how the library
+is used there too!
 
 
 ## Usage
@@ -20,143 +46,193 @@ cargo add iced_m3 --git https://github.com/tpaau/iced_m3.git
 
 This library is largely for use in my personal projects (like
 [Chilen](https://github.com/tpaau/chilen)), and constantly changing, so consider pinning a commit if
-you wish to use it in your project.
+you wish to use it in your project. I also don't plan on releasing this on
+[crates.io](https://crates.io) anytime soon, largely for the same reason.
 
-I also don't plan on releasing this on [crates.io](https://crates.io) anytime soon, largely for the
-same reason, but also because I don't think `iced_m3` is mature enough to be put there.
-
-`iced_m3` is compatible with iced **`0.14.0`** and most likely will be kept up to date with stable
-releases.
+`iced_m3` is compatible with Iced **`0.14.0`** and will most likely be kept up to date with stable
+Iced releases.
 
 
+<a name="widgets"></a>
 ## Widgets
-Implementations of material widgets. Some of them more complete, some of them less complete. Some
-animated, others not... You get the idea.
-
-Note that those **aren't** styles, but rather widget wrappers, completely custom widgets or forks of
-widgets from `iced_widget`.
 
 
+<a name="widgets-badges"></a>
 ### Badges
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/badges)
+
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/badges.jpg)
 
-[reference](https://m3.material.io/components/badges/overview)
+> Badges show notifications, counts, or status information on navigation items and icons
+>
+> [Reference](https://m3.material.io/components/badges/overview)
 
-[demo](https://github.com/tpaau/iced_m3/blob/main/demos/badges)
 
+<a name="widgets-common-buttons"></a>
+### Common Buttons
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/buttons)
 
-### Buttons
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/buttons-demo.gif)
 
-[reference](https://m3.material.io/components/buttons/overview)
-
-[demo](https://github.com/tpaau/iced_m3/blob/main/demos/buttons)
+> Buttons prompt most actions in a UI
+>
+> [Reference](https://m3.material.io/components/buttons/overview)
 
 TODOs:
 - Animated ripple effect
-- Corner radius animation
 
+
+<a name="widgets-cards"></a>
 ### Cards
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/cards)
+
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/cards.gif)
 
-[reference](https://m3.material.io/components/cards/overview)
-
-[demo](https://github.com/tpaau/iced_m3/blob/main/demos/cards)
+> Cards display content and actions about a single subject
+>
+> [Reference](https://m3.material.io/components/cards/overview)
 
 TODOs:
 - Animated ripple affect
 - Drag-and-drop
 
+
+<a name="widgets-dialog"></a>
 ### Dialog
-~![showcase]()~
-
-[reference](https://m3.material.io/components/dialogs/overview)
-
 ~[demo]()~
 
-### FABs (Floating Action Buttons)
+~![showcase]()~
+
+> Dialogs provide important prompts in a user flow
+>
+> [Reference](https://m3.material.io/components/dialogs/overview)
+
+
+<a name="widgets-fabs"></a>
+### Floating Action Buttons
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/fab)
+
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/fab.jpg)
 
-Reference: [FABs](https://m3.material.io/components/floating-action-button/overview), [Extended FABs](https://m3.material.io/components/extended-fab/overview) (yes, adding a label makes it a separate widget somehow)
-
-[demo](https://github.com/tpaau/iced_m3/blob/main/demos/fab)
-
-### FAB Menu
-![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/fab-menu-demo.gif)
-
-[reference](https://m3.material.io/components/fab-menu/overview)
-
-[demo](https://github.com/tpaau/iced_m3/blob/main/demos/fab_menu)
+> Floating action buttons (FABs) help people take primary actions
+>
+> Reference: [FABs](https://m3.material.io/components/floating-action-button/overview), [Extended FABs](https://m3.material.io/components/extended-fab/overview) (yes, adding a label makes it a separate widget somehow)
 
 TODOs:
-- Animation
+- Animated ripple affect
 
 
-### Vertical Menu
-~![showcase]()~
+<a name="widgets-fab-menu"></a>
+### FAB Menu
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/fab_menu)
 
-[reference](https://m3.material.io/components/menus/overview)
+![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/fab-menu-demo.gif)
 
-~[demo]()~
+> The floating action button (FAB) menu opens from a FAB to display multiple related actions
+>
+> [Reference](https://m3.material.io/components/fab-menu/overview)
 
 TODOs:
 - Nested menus
 - Menu entry animation/ripple effect
 
+
+<a name="widgets-navbar"></a>
 ### Navigation Bar
-~![showcase]()~
-
-[reference](https://m3.material.io/components/navigation-bar/overview)
-
 ~[demo]()~
 
+~![showcase]()~
+
+> Navigation bars let people switch between UI views on smaller devices
+>
+> [Reference](https://m3.material.io/components/navigation-bar/overview)
+
 TODOs:
 - Animation
 
+
+<a name="widgets-navrail"></a>
 ### Navigation Rail
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/navrail)
+
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/navigation-rail.gif)
 
-[reference](https://m3.material.io/components/navigation-rail/overview)
-
-[demo](https://github.com/tpaau/iced_m3/blob/main/demos/navrail)
+> Navigation rails let people switch between UI views on mid-sized devices
+>
+> [Reference](https://m3.material.io/components/navigation-rail/overview)
 
 TODOs:
-- Animation
+- Expand/Contract animation
 
+
+<a name="widgets-progress-bar"></a>
 ### Progress Bar
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/progress_indicators)
+
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/progress-bar-demo.gif)
 
-[reference](https://m3.material.io/components/progress-indicators/overview)
-
-[demo](https://github.com/tpaau/iced_m3/blob/main/demos/fab_menu)
+> Progress indicators show the status of a process in real time
+>
+> [Reference](https://m3.material.io/components/progress-indicators/overview)
 
 TODOs:
+- Circular progress indicator
 - Squiggly variant!!
 - Fix jank in animation
 
-### Slider
-~![showcase]()~
 
-[reference](https://m3.material.io/components/sliders/overview)
-
+<a name="widgets-vertical-menu"></a>
+### Vertical Menu
 ~[demo]()~
 
-### Switch
-![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/switch.gif)
+~![showcase]()~
 
-[reference](https://m3.material.io/components/switch/overview)
-
-[demo](https://github.com/tpaau/iced_m3/blob/main/demos/fab_menu)
+> Menus display a list of choices on a temporary surface
+>
+> [Reference](https://m3.material.io/components/menus/overview)
 
 TODOs:
-- Animation
+- Item state layer ripple
 
-### Text Field
+
+<a name="widgets-switch"></a>
+### Switch
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/switch)
+
+![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/switch.gif)
+
+> Switches toggle the selection of an item on and off
+>
+> [Reference](https://m3.material.io/components/switch/overview)
+
+TODOs:
+- State layer ripple effect
+
+
+<a name="widgets-slider"></a>
+### Slider
+~[demo]()~
+
 ~![showcase]()~
 
-[reference](https://m3.material.io/components/text-fields/overview)
+> Sliders allow users to make selections from a range of values
+>
+> [Reference](https://m3.material.io/components/sliders/overview)
 
+TODOs:
+- Other value type variants
+- Snapping
+
+
+<a name="widgets-text-field"></a>
+### Text Field
 ~[demo]()~
+
+~![showcase]()~
+
+> Text fields let users enter text into a UI
+>
+> [Reference](https://m3.material.io/components/text-fields/overview)
 
 
 ## Advanced
