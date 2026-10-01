@@ -1,3 +1,5 @@
+mod item;
+
 use iced::{
     Alignment, Border, Element, Font, Length, Size,
     advanced::{
@@ -32,6 +34,9 @@ const COMPACT_VERTICAL_PADDING: f32 = 6.0;
 const LARGE_VERTICAL_PADDING: f32 = 12.0;
 const LARGE_BUTTON_INTERNAL_SPACING: f32 = 4.0;
 const LARGE_BUTTON_PADDING: f32 = 16.0;
+
+// pub use item::Content as Item;
+pub use item::Style as ItemStyle;
 
 // FIX: Should use a custom widget, not a styled button!
 fn item_container_style<'a>(

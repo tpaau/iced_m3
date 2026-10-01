@@ -1,0 +1,60 @@
+use iced::{Color, advanced::text};
+
+use crate::{
+    animation::{Interpolable, motion::SpringValue},
+    style::StateLayer,
+    theme::ColorScheme,
+    widget::{Badge, OnPress, hybrid_icon::Icon},
+};
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct NavigationItemStyle {
+    pub content_active: Color,
+    pub content_inactive: Color,
+    pub container_color: Color,
+    pub state_layer: StateLayer,
+}
+
+impl NavigationItemStyle {
+    pub fn new(theme: &(impl ColorScheme + ?Sized)) -> Self {
+        Self {
+            container_color: theme.secondary_container(),
+            content_active: theme.secondary(),
+            content_inactive: theme.on_surface_variant(),
+            state_layer: StateLayer::new(theme.on_secondary_container()),
+        }
+    }
+}
+
+pub struct NavigationItemContent<'a, Message>
+where
+    Message: Clone,
+{
+    pub icon_active: Icon<'a>,
+    pub icon_inactive: Icon<'a>,
+    pub badge: Option<Badge<'a>>,
+    pub label: text::Fragment<'a>,
+    pub on_press: OnPress<'a, Message>,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub struct Colors {
+    pub state_layer: Color,
+    pub content: Color,
+}
+
+impl Interpolable for Colors {
+    fn interpolate(self, other: Self, t: f32) -> Self {
+        Self {
+            state_layer: self.state_layer.interpolate(other.state_layer, t),
+            content: self.content.interpolate(other.content, t),
+        }
+    }
+}
+
+pub struct State {
+    pub is_pressed: bool,
+    pub is_hovered: bool,
+    pub active_transition_spring: SpringValue<f32>,
+    pub color_spring: SpringValue<Colors>,
+}

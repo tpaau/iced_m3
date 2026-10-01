@@ -1,23 +1,23 @@
 pub const INDICATOR_SMALL_HEIGHT: f32 = 32.0;
 pub const INDICATOR_SMALL_WIDTH: f32 = 56.0;
-pub const INDICATOR_SMALL_ICON_LABEL_SPACE: f32 = 4.0;
-pub const INDICATOR_SMALL_LABEL_SIZE: f32 = 12.0;
-pub const INDICATOR_SMALL_LABEL_LINE_HEIGHT: f32 = 16.0;
-pub const INDICATOR_SMALL_TOTAL_HEIGHT: f32 =
-    INDICATOR_SMALL_HEIGHT + INDICATOR_SMALL_ICON_LABEL_SPACE + INDICATOR_SMALL_LABEL_LINE_HEIGHT;
+pub const ITEM_SMALL_ICON_LABEL_SPACE: f32 = 4.0;
+pub const ITEM_SMALL_LABEL_SIZE: f32 = 12.0;
+pub const ITEM_SMALL_LABEL_LINE_HEIGHT: f32 = 16.0;
+pub const ITEM_SMALL_TOTAL_HEIGHT: f32 =
+    INDICATOR_SMALL_HEIGHT + ITEM_SMALL_ICON_LABEL_SPACE + ITEM_SMALL_LABEL_LINE_HEIGHT;
 
 pub const INDICATOR_LARGE_HEIGHT: f32 = 56.0;
 pub const INDICATOR_LARGE_PADDING: f32 = 16.0;
-pub const INDICATOR_LARGE_ICON_LABEL_SPACE: f32 = 8.0;
-pub const INDICATOR_LARGE_LABEL_SIZE: f32 = 14.0;
-pub const INDICATOR_LARGE_LABEL_LINE_HEIGHT: f32 = 20.0;
+pub const ITEM_LARGE_ICON_LABEL_SPACE: f32 = 8.0;
+pub const ITEM_LARGE_LABEL_SIZE: f32 = 14.0;
+pub const ITEM_LARGE_LABEL_LINE_HEIGHT: f32 = 20.0;
 
 pub const INDICATOR_ICON_SIZE: f32 = 24.0;
 
 use std::time::Instant;
 
 use iced::{
-    Border, Color, Element, Event, Font, Length, Pixels, Point, Rectangle, Size,
+    Border, Element, Event, Font, Length, Pixels, Point, Rectangle, Size,
     advanced::{
         Widget,
         layout::Node,
@@ -30,44 +30,13 @@ use iced::{
 use iced_widget::core::Svg;
 
 use crate::{
-    animation::{
-        Interpolable,
-        motion::{self, Spring, SpringValue, default_effects, fast_effects},
-    },
-    style::StateLayer,
-    theme::ColorScheme,
-    widget::{Badge, OnPress, hybrid_icon::Icon},
+    animation::motion::{self, Spring, SpringValue, default_effects, fast_effects},
+    widget::hybrid_icon::Icon,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Style {
-    pub content_active: Color,
-    pub content_inactive: Color,
-    pub container_color: Color,
-    pub state_layer: StateLayer,
-}
-
-impl Style {
-    pub fn new(theme: &(impl ColorScheme + ?Sized)) -> Self {
-        Self {
-            container_color: theme.secondary_container(),
-            content_active: theme.secondary(),
-            content_inactive: theme.on_surface_variant(),
-            state_layer: StateLayer::new(theme.on_secondary_container()),
-        }
-    }
-}
-
-pub struct Content<'a, Message>
-where
-    Message: Clone,
-{
-    pub icon_active: Icon<'a>,
-    pub icon_inactive: Icon<'a>,
-    pub badge: Option<Badge<'a>>,
-    pub label: text::Fragment<'a>,
-    pub on_press: OnPress<'a, Message>,
-}
+pub use crate::widget::internal::navigation_common::NavigationItemContent as Content;
+pub use crate::widget::internal::navigation_common::NavigationItemStyle as Style;
+pub use crate::widget::internal::navigation_common::{Colors, State};
 
 pub struct Item<'a, Message, Renderer>
 where
@@ -108,10 +77,10 @@ where
             content,
             label_font,
             active,
-            label_paragraph: None,
-            icon_paragraph: None,
             active_transition_spring: None,
             color_spring: None,
+            label_paragraph: None,
+            icon_paragraph: None,
         }
     }
 
@@ -134,28 +103,6 @@ where
         self.color_spring = spring;
         self
     }
-}
-
-#[derive(Clone, Copy, PartialEq)]
-struct Colors {
-    state_layer: Color,
-    content: Color,
-}
-
-impl Interpolable for Colors {
-    fn interpolate(self, other: Self, t: f32) -> Self {
-        Self {
-            state_layer: self.state_layer.interpolate(other.state_layer, t),
-            content: self.content.interpolate(other.content, t),
-        }
-    }
-}
-
-struct State {
-    is_pressed: bool,
-    is_hovered: bool,
-    active_transition_spring: SpringValue<f32>,
-    color_spring: SpringValue<Colors>,
 }
 
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Item<'a, Message, Renderer>
@@ -207,7 +154,7 @@ where
             },
             false => Size {
                 width: Length::Fixed(INDICATOR_SMALL_WIDTH),
-                height: Length::Fixed(INDICATOR_SMALL_TOTAL_HEIGHT),
+                height: Length::Fixed(ITEM_SMALL_TOTAL_HEIGHT),
             },
         }
     }
@@ -247,9 +194,9 @@ where
                     <Renderer as text::Renderer>::Paragraph::with_text(text::Text {
                         content: &self.content.label,
                         bounds: Size::INFINITE,
-                        size: Pixels(INDICATOR_LARGE_LABEL_SIZE),
+                        size: Pixels(ITEM_LARGE_LABEL_SIZE),
                         line_height: text::LineHeight::Absolute(Pixels(
-                            INDICATOR_LARGE_LABEL_LINE_HEIGHT,
+                            ITEM_LARGE_LABEL_LINE_HEIGHT,
                         )),
                         font: self
                             .label_font
@@ -270,7 +217,7 @@ where
                     label_bounds.width
                         + icon_bounds.width
                         + 2.0 * INDICATOR_LARGE_PADDING
-                        + INDICATOR_LARGE_ICON_LABEL_SPACE,
+                        + ITEM_LARGE_ICON_LABEL_SPACE,
                     INDICATOR_LARGE_HEIGHT,
                 );
 
@@ -280,9 +227,7 @@ where
                 ));
 
                 let label_node = Node::new(label_bounds).move_to(Point::new(
-                    INDICATOR_LARGE_PADDING
-                        + INDICATOR_ICON_SIZE
-                        + INDICATOR_LARGE_ICON_LABEL_SPACE,
+                    INDICATOR_LARGE_PADDING + INDICATOR_ICON_SIZE + ITEM_LARGE_ICON_LABEL_SPACE,
                     (indicator_bounds.height - label_bounds.height) / 2.0,
                 ));
 
@@ -293,9 +238,9 @@ where
                     <Renderer as text::Renderer>::Paragraph::with_text(text::Text {
                         content: &self.content.label,
                         bounds: Size::INFINITE,
-                        size: Pixels(INDICATOR_SMALL_LABEL_SIZE),
+                        size: Pixels(ITEM_SMALL_LABEL_SIZE),
                         line_height: text::LineHeight::Absolute(Pixels(
-                            INDICATOR_SMALL_LABEL_LINE_HEIGHT,
+                            ITEM_SMALL_LABEL_LINE_HEIGHT,
                         )),
                         font: self
                             .label_font
@@ -312,7 +257,7 @@ where
 
                 let indicator_bounds = Size::new(INDICATOR_SMALL_WIDTH, INDICATOR_SMALL_HEIGHT);
 
-                let parent_bounds = Size::new(INDICATOR_SMALL_WIDTH, INDICATOR_SMALL_TOTAL_HEIGHT);
+                let parent_bounds = Size::new(INDICATOR_SMALL_WIDTH, ITEM_SMALL_TOTAL_HEIGHT);
 
                 let indicator_node = Node::new(indicator_bounds);
 

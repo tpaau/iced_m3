@@ -11,6 +11,7 @@ pub mod dialog;
 pub mod fab;
 pub mod fab_menu;
 pub mod hybrid_icon;
+pub(crate) mod internal;
 pub mod navbar;
 pub mod navrail;
 pub mod progress_bar;
