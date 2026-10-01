@@ -12,7 +12,7 @@
 </div>
 
 
-## Features
+# Features
 - [Motion Physics](https://m3.material.io/styles/motion/overview) system
 - [Dynamic Color](https://m3.material.io/styles/color/system) system
 - [Elevation](https://m3.material.io/styles/elevation/overview) system
@@ -22,8 +22,8 @@
   - [Common Buttons](#widgets-common-buttons)
   - [Cards](#widgets-cards)
   - [Dialog](#widgets-dialog)
-  - [Floating Action Buttons](#widgets-fabs)
-  - [FAB Menu](#widgets-fab-menu)
+  - [Floating Action Buttons (FABs)](#widgets-fabs)
+  - [Floating Action Button Menu (FAB Menu)](#widgets-fab-menu)
   - [Progress Bar](#widgets-progress-bar)
   - [Navigation Bar](#widgets-navbar)
   - [Navigation Rail](#widgets-navrail)
@@ -38,7 +38,7 @@ You can go see the demos [here](https://github.com/tpaau/iced_m3/blob/main/demos
 is used there too!
 
 
-## Usage
+# Usage
 Run this in your project:
 ```bash
 cargo add iced_m3 --git https://github.com/tpaau/iced_m3.git
@@ -54,11 +54,11 @@ Iced releases.
 
 
 <a name="widgets"></a>
-## Widgets
+# Widgets
 
 
 <a name="widgets-badges"></a>
-### Badges
+## Badges
 [![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/badges)
 
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/badges.jpg)
@@ -69,7 +69,7 @@ Iced releases.
 
 
 <a name="widgets-common-buttons"></a>
-### Common Buttons
+## Common Buttons
 [![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/buttons)
 
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/buttons-demo.gif)
@@ -83,7 +83,7 @@ TODOs:
 
 
 <a name="widgets-cards"></a>
-### Cards
+## Cards
 [![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/cards)
 
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/cards.gif)
@@ -98,7 +98,7 @@ TODOs:
 
 
 <a name="widgets-dialog"></a>
-### Dialog
+## Dialog
 ~[demo]()~
 
 ~![showcase]()~
@@ -109,7 +109,7 @@ TODOs:
 
 
 <a name="widgets-fabs"></a>
-### Floating Action Buttons
+## Floating Action Buttons
 [![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/fab)
 
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/fab.jpg)
@@ -123,7 +123,7 @@ TODOs:
 
 
 <a name="widgets-fab-menu"></a>
-### FAB Menu
+## FAB Menu
 [![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/fab_menu)
 
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/fab-menu-demo.gif)
@@ -133,12 +133,12 @@ TODOs:
 > [Reference](https://m3.material.io/components/fab-menu/overview)
 
 TODOs:
-- Nested menus
-- Menu entry animation/ripple effect
+- Item animation
+- Item ripple effect
 
 
 <a name="widgets-navbar"></a>
-### Navigation Bar
+## Navigation Bar
 ~[demo]()~
 
 ~![showcase]()~
@@ -152,7 +152,7 @@ TODOs:
 
 
 <a name="widgets-navrail"></a>
-### Navigation Rail
+## Navigation Rail
 [![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/navrail)
 
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/navigation-rail.gif)
@@ -166,7 +166,7 @@ TODOs:
 
 
 <a name="widgets-progress-bar"></a>
-### Progress Bar
+## Progress Bar
 [![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/progress_indicators)
 
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/progress-bar-demo.gif)
@@ -182,7 +182,7 @@ TODOs:
 
 
 <a name="widgets-vertical-menu"></a>
-### Vertical Menu
+## Vertical Menu
 ~[demo]()~
 
 ~![showcase]()~
@@ -192,11 +192,12 @@ TODOs:
 > [Reference](https://m3.material.io/components/menus/overview)
 
 TODOs:
-- Item state layer ripple
+- Nested menus
+- Menu item ripple effect
 
 
 <a name="widgets-switch"></a>
-### Switch
+## Switch
 [![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/switch)
 
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/switch.gif)
@@ -210,7 +211,7 @@ TODOs:
 
 
 <a name="widgets-slider"></a>
-### Slider
+## Slider
 ~[demo]()~
 
 ~![showcase]()~
@@ -225,7 +226,7 @@ TODOs:
 
 
 <a name="widgets-text-field"></a>
-### Text Field
+## Text Field
 ~[demo]()~
 
 ~![showcase]()~
@@ -235,6 +236,6 @@ TODOs:
 > [Reference](https://m3.material.io/components/text-fields/overview)
 
 
-## Advanced
+# Advanced
 Widgets used internally by `iced_m3` for other widgets that may also be useful outside of `iced_m3`.
 Those are gated behind the `advanced` feature.
