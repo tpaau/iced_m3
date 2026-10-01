@@ -305,10 +305,11 @@ where
         let state = tree.state.downcast_ref::<State>();
         let style = state.style_spring.value();
         let corner_radius = state.corner_radius_spring.value();
+        let container_bounds = layout.bounds();
 
         renderer.fill_quad(
             Quad {
-                bounds: layout.bounds(),
+                bounds: container_bounds,
                 border: Border::default().rounded(corner_radius),
                 ..Default::default()
             },
@@ -321,7 +322,7 @@ where
                 .rotation(state.icon_rotation_spring.value())
                 .color(style.icon_color),
             bounds,
-            bounds,
+            container_bounds,
         );
 
         renderer.fill_quad(
