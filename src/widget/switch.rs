@@ -308,7 +308,7 @@ where
             .effects_spring
             .unwrap_or(fast_effects(motion::Scheme::default()));
         let spatial_spring = self
-            .effects_spring
+            .spatial_spring
             .unwrap_or(fast_spatial(motion::Scheme::default()));
         let handle_position = self.handle_position();
         let handle_size = self.handle_size(false);
@@ -328,7 +328,7 @@ where
             last_effects_spring: effects_spring,
             last_spatial_spring: spatial_spring,
             state_layer_color: SpringValue::new(state_layer_color, effects_spring, now),
-            icon_rotation_spring: SpringValue::new(icon_rotation, effects_spring, now),
+            icon_rotation_spring: SpringValue::new(icon_rotation, spatial_spring, now),
             icon_opacity_spring: SpringValue::new(icon_opacity, effects_spring, now),
             style_spring: SpringValue::new(style, effects_spring, now),
             handle_position_spring: SpringValue::new(handle_position, spatial_spring, now),
