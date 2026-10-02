@@ -227,7 +227,7 @@ where
         let now = Instant::now();
         let spatial_spring = self
             .spatial_spring
-            .unwrap_or(fast_effects(motion::Scheme::default()));
+            .unwrap_or(fast_spatial(motion::Scheme::default()));
         let effects_spring = self
             .effects_spring
             .unwrap_or(fast_effects(motion::Scheme::default()));
