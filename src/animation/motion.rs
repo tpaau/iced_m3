@@ -16,9 +16,6 @@ mod constants {
     pub const DEFAULT_EFFECTS_EXPRESSIVE: Spring = Spring::new(1.0, 1600.0);
     pub const SLOW_SPATIAL_EXPRESSIVE: Spring = Spring::new(0.8, 200.0);
     pub const SLOW_EFFECTS_EXPRESSIVE: Spring = Spring::new(1.0, 800.0);
-
-    pub const POSITION_EPSILON: f32 = 0.001;
-    pub const VELOCITY_EPSILON: f32 = 0.001;
 }
 
 use std::time::Instant;
@@ -107,7 +104,6 @@ where
     pub spring: Spring,
     pub position: f32,
     pub velocity: f32,
-    pub target: f32,
     pub time: Instant,
 }
 
@@ -115,14 +111,17 @@ impl<T> SpringValue<T>
 where
     T: Interpolable + Clone + PartialEq,
 {
+    const TARGET: f32 = 1.0;
+    const POSITION_EPSILON: f32 = 0.001;
+    const VELOCITY_EPSILON: f32 = 0.001;
+
     pub fn new(initial_value: T, spring: Spring, now: Instant) -> Self {
         Self {
             from: initial_value.clone(),
             to: initial_value,
             spring,
-            position: 0.0,
+            position: Self::TARGET,
             velocity: 0.0,
-            target: 0.0,
             time: now,
         }
     }
@@ -142,15 +141,14 @@ where
         self.to = target;
 
         self.position = 0.0;
-        self.target = 1.0;
-        self.velocity = -self.velocity;
+        self.velocity = 0.0;
         self.time = now;
     }
 
     pub fn reset(&mut self, value: T, now: Instant) {
         self.from = value.clone();
         self.to = value;
-        self.position = 0.0;
+        self.position = Self::TARGET;
         self.velocity = 0.0;
         self.time = now;
     }
@@ -169,7 +167,7 @@ where
         }
 
         // Solve relative to the target.
-        let x0 = self.position - self.target;
+        let x0 = self.position - Self::TARGET;
         let v0 = self.velocity;
 
         let x;
@@ -213,12 +211,12 @@ where
             v = a * r1 * e1 + b * r2 * e2;
         }
 
-        self.position = self.target + x;
+        self.position = Self::TARGET + x;
         self.velocity = v;
     }
 
     pub fn is_at_rest(&self) -> bool {
-        (self.position - self.target).abs() <= constants::POSITION_EPSILON
-            && self.velocity.abs() <= constants::VELOCITY_EPSILON
+        (self.position - Self::TARGET).abs() <= Self::POSITION_EPSILON
+            && self.velocity.abs() <= Self::VELOCITY_EPSILON
     }
 }
