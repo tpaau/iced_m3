@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use iced::{
-    Border, Event, Font, Length, Pixels, Point, Rectangle, Size,
+    Border, Element, Event, Font, Length, Pixels, Point, Rectangle, Size,
     advanced::{
         Widget,
         layout::Node,
@@ -12,7 +12,7 @@ use iced::{
     },
     touch,
 };
-use iced_widget::core::Svg;
+use iced_widget::{core::Svg, space};
 
 const LABEL_SIZE: f32 = 12.0;
 const LABEL_LINE_HEIGHT: f32 = 16.0;
@@ -31,7 +31,7 @@ pub use crate::widget::internal::navigation_common::NavigationItemStyle as Style
 pub use crate::widget::internal::navigation_common::{Colors, State};
 use crate::{
     animation::motion::{self, Spring, SpringValue, default_effects, fast_effects},
-    widget::hybrid_icon::Icon,
+    widget::{self, hybrid_icon::Icon},
 };
 
 #[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
@@ -43,7 +43,7 @@ pub enum Mode {
     Compact,
 }
 
-pub struct Item<'a, Message, Renderer>
+pub struct Item<'a, Message, Theme, Renderer>
 where
     Message: Clone,
     Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
@@ -60,12 +60,14 @@ where
     // Cache
     label_paragraph: Option<Renderer::Paragraph>,
     icon_paragraph: Option<Renderer::Paragraph>,
+    badge: Option<Element<'a, Message, Theme, Renderer>>,
 }
 
-impl<'a, Message, Renderer> Item<'a, Message, Renderer>
+impl<'a, Message, Theme, Renderer> Item<'a, Message, Theme, Renderer>
 where
-    Message: Clone,
-    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Message: 'a + Clone,
+    Theme: 'a,
+    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     #[must_use]
@@ -75,6 +77,14 @@ where
         label_font: Option<Font>,
         active: bool,
     ) -> Self {
+        let badge = content.badge.as_ref().map(|badge| {
+            widget::badge(
+                style.badge_style,
+                space().width(ICON_SIZE).height(ICON_SIZE),
+            )
+            .label_maybe(badge.label.clone())
+        });
+
         Self {
             mode: Mode::default(),
             style,
@@ -85,6 +95,7 @@ where
             color_spring: None,
             label_paragraph: None,
             icon_paragraph: None,
+            badge: Some(badge.into()),
         }
     }
 
@@ -116,7 +127,8 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Item<'a, Message, Renderer>
+impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
+    for Item<'a, Message, Theme, Renderer>
 where
     Message: Clone,
     Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
@@ -157,6 +169,22 @@ where
         iced::advanced::widget::tree::State::new(state)
     }
 
+    fn children(&self) -> Vec<Tree> {
+        match &self.badge {
+            Some(badge) => vec![Tree::new(badge.as_widget())],
+            None => vec![],
+        }
+    }
+
+    fn diff(&self, tree: &mut Tree) {
+        let children = match &self.badge {
+            Some(badge) => vec![badge.as_widget()],
+            None => Vec::new(),
+        };
+
+        tree.diff_children(&children);
+    }
+
     fn size(&self) -> Size<Length> {
         match self.mode {
             Mode::Large { width } => Size::new(
@@ -172,9 +200,9 @@ where
 
     fn layout(
         &mut self,
-        _tree: &mut Tree,
+        tree: &mut Tree,
         renderer: &Renderer,
-        _limits: &iced::advanced::layout::Limits,
+        limits: &iced::advanced::layout::Limits,
     ) -> iced::advanced::layout::Node {
         let icon = match self.active {
             true => &self.content.icon_active,
@@ -199,6 +227,12 @@ where
 
         let icon_bounds = Size::new(ICON_SIZE, ICON_SIZE);
         let icon_node = Node::new(icon_bounds);
+
+        let badge_node = self.badge.as_mut().map(|badge| {
+            badge
+                .as_widget_mut()
+                .layout(&mut tree.children[0], renderer, limits)
+        });
 
         match self.mode {
             Mode::Large { width } => {
@@ -233,17 +267,25 @@ where
 
                 let content_width = icon_bounds.width + label_bounds.width + ICON_LABEL_SPACE;
                 let offset = (indicator_bounds.width - content_width) / 2.0;
-                let icon_node = icon_node.move_to(Point::new(
-                    offset,
-                    (indicator_bounds.height - ICON_SIZE) / 2.0,
-                ));
+                let icon_position = Point::new(offset, (indicator_bounds.height - ICON_SIZE) / 2.0);
+
+                let icon_node = icon_node.move_to(icon_position);
 
                 let label_node = Node::new(label_bounds).move_to(Point::new(
                     offset + ICON_SIZE + ICON_LABEL_SPACE,
                     (indicator_bounds.height - label_bounds.height) / 2.0,
                 ));
 
-                Node::with_children(indicator_bounds, vec![icon_node, label_node])
+                let mut children = vec![icon_node, label_node];
+                badge_node.map(|node| {
+                    let position = Point::new(
+                        icon_position.x,
+                        icon_position.y + icon_bounds.height - node.bounds().height,
+                    );
+                    children.push(node.move_to(position))
+                });
+
+                Node::with_children(indicator_bounds, children)
             }
             Mode::Compact => {
                 let label_paragraph =
@@ -271,17 +313,27 @@ where
 
                 let indicator_node = Node::new(indicator_bounds);
 
-                let icon_node = icon_node.move_to(Point::new(
+                let icon_position = Point::new(
                     (indicator_bounds.width - icon_bounds.width) / 2.0,
                     (indicator_bounds.height - icon_bounds.height) / 2.0,
-                ));
+                );
+                let icon_node = icon_node.move_to(icon_position);
 
                 let label_node = Node::new(indicator_bounds).move_to(Point::new(
                     (indicator_bounds.width - label_bounds.width) / 2.0,
                     parent_bounds.height - label_bounds.height,
                 ));
 
-                Node::with_children(parent_bounds, vec![indicator_node, icon_node, label_node])
+                let mut children = vec![indicator_node, icon_node, label_node];
+                badge_node.map(|node| {
+                    let position = Point::new(
+                        icon_position.x,
+                        icon_position.y + icon_bounds.height - node.bounds().height,
+                    );
+                    children.push(node.move_to(position))
+                });
+
+                Node::with_children(parent_bounds, children)
             }
         }
     }
@@ -290,22 +342,24 @@ where
         &self,
         tree: &iced::advanced::widget::Tree,
         renderer: &mut Renderer,
-        _theme: &Theme,
-        _style: &iced::advanced::renderer::Style,
+        theme: &Theme,
+        style: &iced::advanced::renderer::Style,
         layout: iced::advanced::Layout<'_>,
-        _cursor: iced::advanced::mouse::Cursor,
-        _viewport: &iced::Rectangle,
+        cursor: iced::advanced::mouse::Cursor,
+        viewport: &iced::Rectangle,
     ) {
-        let (indicator_bounds, icon_bounds, label_bounds) = match self.mode {
+        let (indicator_bounds, icon_bounds, label_bounds, badge_node) = match self.mode {
             Mode::Large { width: _ } => (
                 layout.bounds(),
                 layout.child(0).bounds(),
                 layout.child(1).bounds(),
+                self.badge.is_some().then_some(layout.child(2)),
             ),
             Mode::Compact => (
                 layout.child(0).bounds(),
                 layout.child(1).bounds(),
                 layout.child(2).bounds(),
+                self.badge.is_some().then_some(layout.child(3)),
             ),
         };
 
@@ -345,6 +399,18 @@ where
                     icon_bounds,
                 );
             }
+        }
+
+        if let Some(badge) = &self.badge {
+            badge.as_widget().draw(
+                &tree.children[0],
+                renderer,
+                theme,
+                style,
+                badge_node.unwrap(),
+                cursor,
+                viewport,
+            );
         }
 
         if let Some(label) = &self.label_paragraph {

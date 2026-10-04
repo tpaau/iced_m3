@@ -4,7 +4,7 @@ use crate::{
     animation::{Interpolable, motion::SpringValue},
     style::StateLayer,
     theme::ColorScheme,
-    widget::{Badge, hybrid_icon::Icon},
+    widget::{self, Badge, hybrid_icon::Icon},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -12,6 +12,7 @@ pub struct NavigationItemStyle {
     pub content_active: Color,
     pub content_inactive: Color,
     pub container_color: Color,
+    pub badge_style: widget::badge::Style,
     pub state_layer: StateLayer,
 }
 
@@ -21,6 +22,7 @@ impl NavigationItemStyle {
             container_color: theme.secondary_container(),
             content_active: theme.secondary(),
             content_inactive: theme.on_surface_variant(),
+            badge_style: widget::badge::Style::new(theme),
             state_layer: StateLayer::new(theme.on_secondary_container()),
         }
     }

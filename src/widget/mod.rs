@@ -67,13 +67,14 @@ where
 }
 
 #[must_use]
-pub fn navbar<'a, Message, Renderer>(
+pub fn navbar<'a, Message, Theme, Renderer>(
     style: navbar::Style,
     items: Vec<navbar::Item<'a, Message>>,
-) -> NavBar<'a, Message, Renderer>
+) -> NavBar<'a, Message, Theme, Renderer>
 where
-    Message: Clone,
-    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Message: 'a + Clone,
+    Theme: 'a,
+    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     NavBar::new(style, items)

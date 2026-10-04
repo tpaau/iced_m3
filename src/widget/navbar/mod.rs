@@ -51,7 +51,7 @@ impl Style {
     }
 }
 
-pub struct NavBar<'a, Message, Renderer>
+pub struct NavBar<'a, Message, Theme, Renderer>
 where
     Message: Clone,
     Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
@@ -67,13 +67,14 @@ where
     spatial_spring: Option<Spring>,
 
     // Cache
-    item_widgets: Vec<item::Item<'a, Message, Renderer>>,
+    item_widgets: Vec<item::Item<'a, Message, Theme, Renderer>>,
 }
 
-impl<'a, Message, Renderer> NavBar<'a, Message, Renderer>
+impl<'a, Message, Theme, Renderer> NavBar<'a, Message, Theme, Renderer>
 where
-    Message: Clone,
-    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Message: 'a + Clone,
+    Theme: 'a,
+    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     #[must_use]
@@ -157,7 +158,7 @@ where
         self
     }
 
-    fn get_items(&self, mode: item::Mode) -> Vec<item::Item<'a, Message, Renderer>> {
+    fn get_items(&self, mode: item::Mode) -> Vec<item::Item<'a, Message, Theme, Renderer>> {
         self.items
             .clone()
             .into_iter()
@@ -177,7 +178,7 @@ where
             .collect()
     }
 
-    fn compact_layout<Theme>(
+    fn compact_layout(
         &mut self,
         container_bounds: Size,
         tree: &mut iced::advanced::widget::Tree,
@@ -209,7 +210,7 @@ where
         Node::with_children(container_bounds, item_nodes)
     }
 
-    fn large_layout<Theme>(
+    fn large_layout(
         &mut self,
         container_bounds: Size,
         item_width: f32,
@@ -250,10 +251,11 @@ where
 }
 
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-    for NavBar<'a, Message, Renderer>
+    for NavBar<'a, Message, Theme, Renderer>
 where
-    Message: Clone,
-    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Message: 'a + Clone,
+    Theme: 'a,
+    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     fn size(&self) -> Size<Length> {
@@ -314,11 +316,9 @@ where
             .flatten();
 
         match self.mode {
-            Mode::Compact => self.compact_layout::<Theme>(container_bounds, tree, renderer, limits),
+            Mode::Compact => self.compact_layout(container_bounds, tree, renderer, limits),
             Mode::Large => match widest {
-                Some(width) => {
-                    self.large_layout::<Theme>(container_bounds, width, tree, renderer, limits)
-                }
+                Some(width) => self.large_layout(container_bounds, width, tree, renderer, limits),
                 None => Node::new(container_bounds),
             },
             Mode::Auto => match widest {
@@ -326,9 +326,9 @@ where
                     let total_width = width * self.item_widgets.len() as f32
                         + constants::ITEM_LARGE_SPACING * (self.item_widgets.len() - 1) as f32;
                     if total_width > container_bounds.width {
-                        self.compact_layout::<Theme>(container_bounds, tree, renderer, limits)
+                        self.compact_layout(container_bounds, tree, renderer, limits)
                     } else {
-                        self.large_layout::<Theme>(container_bounds, width, tree, renderer, limits)
+                        self.large_layout(container_bounds, width, tree, renderer, limits)
                     }
                 }
                 None => Node::new(container_bounds),
@@ -421,14 +421,15 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<NavBar<'a, Message, Renderer>>
+impl<'a, Message, Theme, Renderer> From<NavBar<'a, Message, Theme, Renderer>>
     for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
+    Theme: 'a,
     Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
     Renderer::Font: From<iced::Font>,
 {
-    fn from(mut value: NavBar<'a, Message, Renderer>) -> Self {
+    fn from(mut value: NavBar<'a, Message, Theme, Renderer>) -> Self {
         value.item_widgets = value.get_items(item::Mode::Compact);
         Element::new(value)
     }
