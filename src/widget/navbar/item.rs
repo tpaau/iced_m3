@@ -1,20 +1,47 @@
-use iced::advanced::Widget;
-use iced::{Font, Size};
+use std::time::Instant;
+
+use iced::{
+    Border, Event, Font, Length, Pixels, Point, Rectangle, Size,
+    advanced::{
+        Widget,
+        layout::Node,
+        mouse,
+        renderer::Quad,
+        text::{self, Paragraph},
+        widget::{Tree, tree},
+    },
+    touch,
+};
+use iced_widget::core::Svg;
 
 const LABEL_SIZE: f32 = 12.0;
 const LABEL_LINE_HEIGHT: f32 = 16.0;
 const ICON_LABEL_SPACE: f32 = 4.0;
+const ICON_SIZE: f32 = 24.0;
 
 const INDICATOR_SMALL_SIZE: Size = Size::new(56.0, 32.0);
-const INDICATOR_SMALL_TOTAL_HEIGHT: f32 =
+const ITEM_SMALL_TOTAL_HEIGHT: f32 =
     INDICATOR_SMALL_SIZE.height + ICON_LABEL_SPACE + LABEL_LINE_HEIGHT;
 
-const INDICATOR_HEIGHT: f32 = 40.0;
+const INDICATOR_LARGE_PADDING: f32 = 16.0;
+const INDICATOR_LARGE_HEIGHT: f32 = 40.0;
 
-use crate::animation::motion::{self, Spring, default_effects, fast_effects};
 pub use crate::widget::internal::navigation_common::NavigationItemContent as Content;
 pub use crate::widget::internal::navigation_common::NavigationItemStyle as Style;
 pub use crate::widget::internal::navigation_common::{Colors, State};
+use crate::{
+    animation::motion::{self, Spring, SpringValue, default_effects, fast_effects},
+    widget::hybrid_icon::Icon,
+};
+
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
+pub enum Mode {
+    Large {
+        width: Option<Pixels>,
+    },
+    #[default]
+    Compact,
+}
 
 pub struct Item<'a, Message, Renderer>
 where
@@ -22,7 +49,7 @@ where
     Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
     Renderer::Font: From<iced::Font>,
 {
-    expanded: bool,
+    mode: Mode,
     style: Style,
     content: Content<'a, Message>,
     label_font: Option<Font>,
@@ -45,12 +72,11 @@ where
     pub fn new(
         style: Style,
         content: Content<'a, Message>,
-        expanded: bool,
         label_font: Option<Font>,
         active: bool,
     ) -> Self {
         Self {
-            expanded,
+            mode: Mode::default(),
             style,
             content,
             label_font,
@@ -62,6 +88,7 @@ where
         }
     }
 
+    #[must_use]
     pub fn motion_scheme_maybe(mut self, scheme: Option<motion::Scheme>) -> Self {
         if let Some(scheme) = scheme {
             self.color_spring = Some(fast_effects(scheme));
@@ -81,6 +108,12 @@ where
         self.color_spring = spring;
         self
     }
+
+    #[must_use]
+    pub fn mode(mut self, mode: Mode) -> Self {
+        self.mode = mode;
+        self
+    }
 }
 
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Item<'a, Message, Renderer>
@@ -89,62 +122,346 @@ where
     Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
     Renderer::Font: From<iced::Font>,
 {
-    fn tag(&self) -> iced::advanced::widget::tree::Tag {
-        todo!()
+    fn tag(&self) -> tree::Tag {
+        tree::Tag::of::<State>()
     }
 
-    fn state(&self) -> iced::advanced::widget::tree::State {
-        todo!()
+    fn state(&self) -> tree::State {
+        let now = Instant::now();
+
+        let content_color = match self.active {
+            true => self.style.content_active,
+            false => self.style.content_inactive,
+        };
+        let colors = Colors {
+            state_layer: self.style.state_layer.idle,
+            content: content_color,
+        };
+        let state = State {
+            is_pressed: false,
+            is_hovered: false,
+            active_transition_spring: SpringValue::new(
+                self.active as usize as f32,
+                self.active_transition_spring
+                    .unwrap_or(default_effects(motion::Scheme::default())),
+                now,
+            ),
+            color_spring: SpringValue::new(
+                colors,
+                self.color_spring
+                    .unwrap_or(fast_effects(motion::Scheme::default())),
+                now,
+            ),
+        };
+
+        iced::advanced::widget::tree::State::new(state)
     }
 
-    fn size(&self) -> Size<iced::Length> {
-        todo!()
+    fn size(&self) -> Size<Length> {
+        match self.mode {
+            Mode::Large { width } => Size::new(
+                width.map(|w| Length::Fixed(w.0)).unwrap_or(Length::Shrink),
+                Length::Fixed(INDICATOR_LARGE_HEIGHT),
+            ),
+            Mode::Compact => Size::new(
+                Length::Fixed(INDICATOR_SMALL_SIZE.width),
+                Length::Fixed(INDICATOR_SMALL_SIZE.height),
+            ),
+        }
     }
 
     fn layout(
         &mut self,
-        tree: &mut iced::advanced::widget::Tree,
+        _tree: &mut Tree,
         renderer: &Renderer,
-        limits: &iced::advanced::layout::Limits,
+        _limits: &iced::advanced::layout::Limits,
     ) -> iced::advanced::layout::Node {
-        todo!()
+        let icon = match self.active {
+            true => &self.content.icon_active,
+            false => &self.content.icon_inactive,
+        };
+        if let Icon::Text { text, font } = icon {
+            let icon_paragraph = <Renderer as text::Renderer>::Paragraph::with_text(text::Text {
+                content: &text,
+                bounds: Size::INFINITE,
+                size: Pixels(ICON_SIZE),
+                line_height: text::LineHeight::Absolute(Pixels(ICON_SIZE)),
+                font: font
+                    .map(Renderer::Font::from)
+                    .unwrap_or_else(|| renderer.default_font()),
+                shaping: text::Shaping::Advanced,
+                wrapping: text::Wrapping::None,
+                align_x: text::Alignment::Left,
+                align_y: iced::alignment::Vertical::Center,
+            });
+            self.icon_paragraph = Some(icon_paragraph);
+        }
+
+        let icon_bounds = Size::new(ICON_SIZE, ICON_SIZE);
+        let icon_node = Node::new(icon_bounds);
+
+        match self.mode {
+            Mode::Large { width } => {
+                let label_paragraph =
+                    <Renderer as text::Renderer>::Paragraph::with_text(text::Text {
+                        content: &self.content.label,
+                        bounds: Size::INFINITE,
+                        size: Pixels(LABEL_SIZE),
+                        line_height: text::LineHeight::Absolute(Pixels(LABEL_LINE_HEIGHT)),
+                        font: self
+                            .label_font
+                            .map(Renderer::Font::from)
+                            .unwrap_or_else(|| renderer.default_font()),
+                        shaping: text::Shaping::Advanced,
+                        wrapping: text::Wrapping::None,
+                        align_x: text::Alignment::Left,
+                        align_y: iced::alignment::Vertical::Center,
+                    });
+
+                let label_bounds = label_paragraph.min_bounds();
+                self.label_paragraph = Some(label_paragraph);
+
+                let indicator_bounds = Size::new(
+                    width.map(|w| w.0).unwrap_or(
+                        label_bounds.width
+                            + icon_bounds.width
+                            + 2.0 * INDICATOR_LARGE_PADDING
+                            + ICON_LABEL_SPACE,
+                    ),
+                    INDICATOR_LARGE_HEIGHT,
+                );
+
+                let content_width = icon_bounds.width + label_bounds.width + ICON_LABEL_SPACE;
+                let offset = (indicator_bounds.width - content_width) / 2.0;
+                let icon_node = icon_node.move_to(Point::new(
+                    offset,
+                    (indicator_bounds.height - ICON_SIZE) / 2.0,
+                ));
+
+                let label_node = Node::new(label_bounds).move_to(Point::new(
+                    offset + ICON_SIZE + ICON_LABEL_SPACE,
+                    (indicator_bounds.height - label_bounds.height) / 2.0,
+                ));
+
+                Node::with_children(indicator_bounds, vec![icon_node, label_node])
+            }
+            Mode::Compact => {
+                let label_paragraph =
+                    <Renderer as text::Renderer>::Paragraph::with_text(text::Text {
+                        content: &self.content.label,
+                        bounds: Size::INFINITE,
+                        size: Pixels(LABEL_SIZE),
+                        line_height: text::LineHeight::Absolute(Pixels(LABEL_LINE_HEIGHT)),
+                        font: self
+                            .label_font
+                            .map(Renderer::Font::from)
+                            .unwrap_or_else(|| renderer.default_font()),
+                        shaping: text::Shaping::Advanced,
+                        wrapping: text::Wrapping::None,
+                        align_x: text::Alignment::Left,
+                        align_y: iced::alignment::Vertical::Center,
+                    });
+
+                let label_bounds = label_paragraph.min_bounds();
+                self.label_paragraph = Some(label_paragraph);
+
+                let indicator_bounds = INDICATOR_SMALL_SIZE;
+
+                let parent_bounds = Size::new(indicator_bounds.width, ITEM_SMALL_TOTAL_HEIGHT);
+
+                let indicator_node = Node::new(indicator_bounds);
+
+                let icon_node = icon_node.move_to(Point::new(
+                    (indicator_bounds.width - icon_bounds.width) / 2.0,
+                    (indicator_bounds.height - icon_bounds.height) / 2.0,
+                ));
+
+                let label_node = Node::new(indicator_bounds).move_to(Point::new(
+                    (indicator_bounds.width - label_bounds.width) / 2.0,
+                    parent_bounds.height - label_bounds.height,
+                ));
+
+                Node::with_children(parent_bounds, vec![indicator_node, icon_node, label_node])
+            }
+        }
     }
 
     fn draw(
         &self,
         tree: &iced::advanced::widget::Tree,
         renderer: &mut Renderer,
-        theme: &Theme,
-        style: &iced::advanced::renderer::Style,
+        _theme: &Theme,
+        _style: &iced::advanced::renderer::Style,
         layout: iced::advanced::Layout<'_>,
-        cursor: iced::advanced::mouse::Cursor,
-        viewport: &iced::Rectangle,
+        _cursor: iced::advanced::mouse::Cursor,
+        _viewport: &iced::Rectangle,
     ) {
-        todo!()
+        let (indicator_bounds, icon_bounds, label_bounds) = match self.mode {
+            Mode::Large { width: _ } => (
+                layout.bounds(),
+                layout.child(0).bounds(),
+                layout.child(1).bounds(),
+            ),
+            Mode::Compact => (
+                layout.child(0).bounds(),
+                layout.child(1).bounds(),
+                layout.child(2).bounds(),
+            ),
+        };
+
+        let state = tree.state.downcast_ref::<State>();
+        let width = state.active_transition_spring.value() * indicator_bounds.width;
+        if width > 0.0 {
+            let bounds = Rectangle {
+                x: indicator_bounds.x + (indicator_bounds.width - width) / 2.0,
+                y: indicator_bounds.y,
+                width,
+                height: indicator_bounds.height,
+            };
+            renderer.fill_quad(
+                Quad {
+                    bounds,
+                    border: Border::default().rounded(f32::MAX),
+                    ..Default::default()
+                },
+                self.style
+                    .container_color
+                    .scale_alpha(state.active_transition_spring.value()),
+            );
+        }
+
+        let content_color = state.color_spring.value().content;
+        if let Some(icon) = &self.icon_paragraph {
+            renderer.fill_paragraph(icon, icon_bounds.position(), content_color, icon_bounds);
+        } else {
+            let icon = match self.active {
+                true => &self.content.icon_active,
+                false => &self.content.icon_inactive,
+            };
+            if let Icon::Svg(handle) = icon.clone() {
+                renderer.draw_svg(
+                    Svg::new(handle).color(content_color),
+                    icon_bounds,
+                    icon_bounds,
+                );
+            }
+        }
+
+        if let Some(label) = &self.label_paragraph {
+            renderer.fill_paragraph(label, label_bounds.position(), content_color, label_bounds);
+        }
+
+        renderer.fill_quad(
+            Quad {
+                bounds: indicator_bounds,
+                border: Border::default().rounded(f32::MAX),
+                ..Default::default()
+            },
+            state.color_spring.value().state_layer,
+        );
     }
 
     fn update(
         &mut self,
-        _tree: &mut iced::advanced::widget::Tree,
-        _event: &iced::Event,
-        _layout: iced::advanced::Layout<'_>,
-        _cursor: iced::advanced::mouse::Cursor,
+        tree: &mut iced::advanced::widget::Tree,
+        event: &iced::Event,
+        layout: iced::advanced::Layout<'_>,
+        cursor: iced::advanced::mouse::Cursor,
         _renderer: &Renderer,
         _clipboard: &mut dyn iced::advanced::Clipboard,
-        _shell: &mut iced::advanced::Shell<'_, Message>,
+        shell: &mut iced::advanced::Shell<'_, Message>,
         _viewport: &iced::Rectangle,
     ) {
-        todo!()
+        let state = tree.state.downcast_mut::<State>();
+        let indicator_bounds = match self.mode {
+            Mode::Large { width: _ } => layout.bounds(),
+            Mode::Compact => layout.child(0).bounds(),
+        };
+        let is_hovered = cursor.is_over(indicator_bounds);
+
+        match event {
+            Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
+            | Event::Touch(touch::Event::FingerPressed { .. }) => {
+                if is_hovered {
+                    state.is_pressed = true;
+                    shell.request_redraw();
+                }
+            }
+            Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
+            | Event::Touch(touch::Event::FingerLifted { .. }) => {
+                state.is_pressed = false;
+                if is_hovered {
+                    shell.publish(self.content.on_press.clone());
+                }
+                shell.request_redraw();
+            }
+            Event::Touch(touch::Event::FingerLost { .. }) => {
+                state.is_pressed = false;
+                shell.request_redraw();
+            }
+            _ => {}
+        }
+
+        if state.is_hovered != is_hovered {
+            state.is_hovered = is_hovered;
+            shell.request_redraw();
+        }
+
+        if let Some(spring) = self.active_transition_spring
+            && state.active_transition_spring.spring != spring
+        {
+            state.active_transition_spring.spring = spring;
+        }
+        if let Some(spring) = self.color_spring
+            && state.color_spring.spring != spring
+        {
+            state.color_spring.spring = spring;
+        }
+
+        let now = Instant::now();
+        let state_layer_color = match is_hovered {
+            true => match state.is_pressed {
+                true => self.style.state_layer.pressed,
+                false => self.style.state_layer.hovered,
+            },
+            false => self.style.state_layer.idle,
+        };
+        let content_color = match self.active {
+            true => self.style.content_active,
+            false => self.style.content_inactive,
+        };
+        let colors = Colors {
+            state_layer: state_layer_color,
+            content: content_color,
+        };
+        state.color_spring.set_target(colors, now);
+        state
+            .active_transition_spring
+            .set_target(self.active as usize as f32, now);
+
+        if !state.active_transition_spring.is_at_rest() || !state.color_spring.is_at_rest() {
+            shell.request_redraw();
+        }
+        state.active_transition_spring.step(now);
+        state.color_spring.step(now);
     }
 
     fn mouse_interaction(
         &self,
-        _tree: &iced::advanced::widget::Tree,
-        _layout: iced::advanced::Layout<'_>,
-        _cursor: iced::advanced::mouse::Cursor,
+        _tree: &Tree,
+        layout: iced::advanced::Layout<'_>,
+        cursor: iced::advanced::mouse::Cursor,
         _viewport: &iced::Rectangle,
         _renderer: &Renderer,
     ) -> iced::advanced::mouse::Interaction {
-        todo!()
+        let indicator_bounds = match self.mode {
+            Mode::Large { width: _ } => layout.bounds(),
+            Mode::Compact => layout.child(0).bounds(),
+        };
+
+        match cursor.is_over(indicator_bounds) {
+            true => iced::advanced::mouse::Interaction::Pointer,
+            false => iced::advanced::mouse::Interaction::None,
+        }
     }
 }

@@ -187,6 +187,7 @@ where
         }
 
         let icon_bounds = Size::new(INDICATOR_ICON_SIZE, INDICATOR_ICON_SIZE);
+        let icon_node = Node::new(icon_bounds);
 
         match self.expanded {
             true => {
@@ -211,8 +212,6 @@ where
                 let label_bounds = label_paragraph.min_bounds();
                 self.label_paragraph = Some(label_paragraph);
 
-                let icon_bounds = Size::new(INDICATOR_ICON_SIZE, INDICATOR_ICON_SIZE);
-
                 let indicator_bounds = Size::new(
                     label_bounds.width
                         + icon_bounds.width
@@ -221,7 +220,7 @@ where
                     INDICATOR_LARGE_HEIGHT,
                 );
 
-                let icon_node = Node::new(icon_bounds).move_to(Point::new(
+                let icon_node = icon_node.move_to(Point::new(
                     INDICATOR_LARGE_PADDING,
                     (indicator_bounds.height - INDICATOR_ICON_SIZE) / 2.0,
                 ));
@@ -261,7 +260,7 @@ where
 
                 let indicator_node = Node::new(indicator_bounds);
 
-                let icon_node = Node::new(icon_bounds).move_to(Point::new(
+                let icon_node = icon_node.move_to(Point::new(
                     (indicator_bounds.width - icon_bounds.width) / 2.0,
                     (indicator_bounds.height - icon_bounds.height) / 2.0,
                 ));
@@ -381,7 +380,7 @@ where
             | Event::Touch(touch::Event::FingerLifted { .. }) => {
                 state.is_pressed = false;
                 if is_hovered {
-                    shell.publish(self.content.on_press.resolve());
+                    shell.publish(self.content.on_press.clone());
                 }
                 shell.request_redraw();
             }

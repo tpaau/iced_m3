@@ -4,7 +4,7 @@ use crate::{
     animation::{Interpolable, motion::SpringValue},
     style::StateLayer,
     theme::ColorScheme,
-    widget::{Badge, OnPress, hybrid_icon::Icon},
+    widget::{Badge, hybrid_icon::Icon},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -26,6 +26,7 @@ impl NavigationItemStyle {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct NavigationItemContent<'a, Message>
 where
     Message: Clone,
@@ -34,7 +35,7 @@ where
     pub icon_inactive: Icon<'a>,
     pub badge: Option<Badge<'a>>,
     pub label: text::Fragment<'a>,
-    pub on_press: OnPress<'a, Message>,
+    pub on_press: Message,
 }
 
 #[derive(Clone, Copy, PartialEq)]

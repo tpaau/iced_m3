@@ -28,7 +28,8 @@ members = [
   "demos/badges",
   "demos/navrail",
   "demos/switch",
-  "demos/card"
+  "demos/card",
+  "demos/navbar"
 ]
 
 [package.metadata.docs.rs]

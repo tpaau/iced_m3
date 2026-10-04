@@ -55,21 +55,28 @@ pub fn menu<'a, Message>(
 }
 
 #[must_use]
-pub fn text_input<'a, Message: Clone, Renderer>(
+pub fn text_input<'a, Message, Renderer>(
     placeholder: &str,
     value: &'a str,
     theme: &'a impl ColorScheme,
-) -> TextInput<'a, Message> {
+) -> TextInput<'a, Message>
+where
+    Message: Clone,
+{
     TextInput::new(placeholder, value, theme)
 }
 
 #[must_use]
-pub fn navbar<'a, Message, Theme, Renderer>(
+pub fn navbar<'a, Message, Renderer>(
+    style: navbar::Style,
     items: Vec<navbar::Item<'a, Message>>,
-    label_font: Font,
-    theme: &'a impl ColorScheme,
-) -> Navbar<'a, Message> {
-    Navbar::new(items, label_font, theme)
+) -> Navbar<'a, Message, Renderer>
+where
+    Message: Clone,
+    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer::Font: From<iced::Font>,
+{
+    Navbar::new(style, items)
 }
 
 #[must_use]
@@ -147,7 +154,7 @@ pub fn badge<'a, Message, Theme, Renderer>(
     base: impl Into<Element<'a, Message, Theme, Renderer>>,
 ) -> badge::Badge<'a, Message, Theme, Renderer>
 where
-    Renderer: 'a + iced_widget::core::text::Renderer,
+    Renderer: 'a + iced::advanced::text::Renderer,
 {
     badge::Badge::new(style, base)
 }

@@ -62,7 +62,7 @@ impl Style {
 
 pub struct Badge<'a, Message, Theme, Renderer>
 where
-    Renderer: 'a + iced_widget::core::text::Renderer,
+    Renderer: 'a + iced::advanced::text::Renderer,
 {
     style: Style,
     base: Element<'a, Message, Theme, Renderer>,
@@ -73,7 +73,7 @@ where
 
 impl<'a, Message, Theme, Renderer> Badge<'a, Message, Theme, Renderer>
 where
-    Renderer: 'a + iced_widget::core::text::Renderer,
+    Renderer: 'a + iced::advanced::text::Renderer,
 {
     #[must_use]
     pub fn new(style: Style, base: impl Into<Element<'a, Message, Theme, Renderer>>) -> Self {
@@ -128,7 +128,7 @@ where
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
     for Badge<'a, Message, Theme, Renderer>
 where
-    Renderer: 'a + iced_widget::core::text::Renderer,
+    Renderer: 'a + iced::advanced::text::Renderer,
 {
     fn tag(&self) -> iced::advanced::widget::tree::Tag {
         tree::Tag::of::<State<Renderer::Paragraph>>()
@@ -306,7 +306,7 @@ impl<'a, Message, Theme, Renderer> From<Badge<'a, Message, Theme, Renderer>>
 where
     Message: 'a,
     Theme: 'a,
-    Renderer: 'a + iced_widget::core::text::Renderer,
+    Renderer: 'a + iced::advanced::text::Renderer,
 {
     fn from(value: Badge<'a, Message, Theme, Renderer>) -> Self {
         Element::new(value)

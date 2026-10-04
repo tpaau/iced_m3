@@ -1,76 +1,34 @@
 mod item;
 
-use iced::{
-    Alignment, Border, Element, Font, Length, Size,
-    advanced::{
-        Text,
-        text::{self, Paragraph},
-    },
-    padding,
-};
-use iced_widget::{
-    button, center, center_x, column, responsive, row,
-    text::{LineHeight, Shaping, Wrapping},
-};
+use iced::Color;
+use iced::Element;
+use iced::Font;
+use iced::Length;
+use iced::Pixels;
+use iced::Point;
+use iced::Size;
+use iced::advanced::Widget;
+use iced::advanced::layout::Node;
+use iced::advanced::mouse;
+use iced::advanced::renderer::Quad;
+use iced::advanced::widget::Tree;
 
-use crate::{
-    style::mix_colors,
-    theme::ColorScheme,
-    widget::{self, hybrid_icon::Icon},
-};
+use crate::animation::motion;
+use crate::animation::motion::Spring;
+use crate::theme::ColorScheme;
 
-const COMPACT_BUTTON_SIZE: Size<f32> = Size {
-    width: 56.0,
-    height: 32.0,
-};
-const LARGE_BUTTON_SIZE: Size<f32> = Size {
-    width: 100.0,
-    height: 40.0,
-};
-const LARGE_BUTTON_SPACING: f32 = 24.0;
-const DEFAULT_LABEL_SIZE: f32 = 14.0;
-const DEFAULT_ICON_SIZE: f32 = 24.0;
-const COMPACT_VERTICAL_PADDING: f32 = 6.0;
-const LARGE_VERTICAL_PADDING: f32 = 12.0;
-const LARGE_BUTTON_INTERNAL_SPACING: f32 = 4.0;
-const LARGE_BUTTON_PADDING: f32 = 16.0;
-
-// pub use item::Content as Item;
+pub use item::Content as Item;
 pub use item::Style as ItemStyle;
 
-// FIX: Should use a custom widget, not a styled button!
-fn item_container_style<'a>(
-    status: iced_widget::button::Status,
-    active: bool,
-    theme: &'a dyn ColorScheme,
-) -> iced_widget::button::Style {
-    let state_layer_color = theme.on_secondary_container();
-    let layer_opacity = match status {
-        button::Status::Active => 0.0,
-        button::Status::Hovered => 0.08,
-        button::Status::Pressed => 0.1,
-        button::Status::Disabled => unreachable!(),
-    };
-    let color = if active {
-        mix_colors(
-            theme.secondary_container(),
-            state_layer_color,
-            layer_opacity,
-        )
-    } else {
-        state_layer_color.scale_alpha(layer_opacity)
-    };
-    button::Style {
-        background: Some(iced::Background::Color(color)),
-        border: Border {
-            radius: f32::MAX.into(),
-            ..Default::default()
-        },
-        ..Default::default()
-    }
+mod constants {
+    pub const CONTAINER_HEIGHT: f32 = 64.0;
+    pub const ITEM_LARGE_SPACING: f32 = 20.0;
 }
 
-#[derive(Default)]
+#[cfg(feature = "pub-internal-const")]
+pub use constants::*;
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Mode {
     Compact,
     Large,
@@ -78,47 +36,59 @@ pub enum Mode {
     Auto,
 }
 
-pub struct Item<'a, Message> {
-    pub icon_active: Icon<'a>,
-    pub icon_inactive: Icon<'a>,
-    pub label: text::Fragment<'a>,
-    pub message: Message,
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Style {
+    pub container_color: Color,
+    pub item_style: ItemStyle,
 }
 
-pub struct Navbar<'a, Message> {
-    compact: bool,
-    items: Vec<Item<'a, Message>>,
-    theme: &'a dyn ColorScheme,
-    label_font: Font,
-    mode: Mode,
-    focused_index: usize,
-    icon_size: f32,
-    label_size: f32,
-}
-
-impl<'a, Message> Navbar<'a, Message> {
-    #[must_use]
-    pub fn new(
-        items: Vec<Item<'a, Message>>,
-        label_font: Font,
-        theme: &'a impl ColorScheme,
-    ) -> Self {
+impl Style {
+    pub fn new(theme: &(impl ColorScheme + ?Sized)) -> Self {
         Self {
-            compact: false,
-            items,
-            theme,
-            label_font,
-            mode: Mode::default(),
-            focused_index: 0,
-            icon_size: DEFAULT_ICON_SIZE,
-            label_size: DEFAULT_LABEL_SIZE,
+            container_color: theme.surface_container(),
+            item_style: ItemStyle::new(theme),
         }
     }
+}
 
+pub struct Navbar<'a, Message, Renderer>
+where
+    Message: Clone,
+    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer::Font: From<iced::Font>,
+{
+    items: Vec<Item<'a, Message>>,
+    style: Style,
+    label_font: Option<Font>,
+    mode: Mode,
+    active_index: usize,
+    motion_scheme: Option<motion::Scheme>,
+    effects_spring: Option<Spring>,
+    spatial_spring: Option<Spring>,
+
+    // Cache
+    item_widgets: Vec<item::Item<'a, Message, Renderer>>,
+}
+
+impl<'a, Message, Renderer> Navbar<'a, Message, Renderer>
+where
+    Message: Clone,
+    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer::Font: From<iced::Font>,
+{
     #[must_use]
-    pub fn compact(mut self, val: bool) -> Self {
-        self.compact = val;
-        self
+    pub fn new(style: Style, items: Vec<Item<'a, Message>>) -> Self {
+        Self {
+            items,
+            style,
+            label_font: None,
+            mode: Mode::default(),
+            active_index: 0,
+            motion_scheme: None,
+            effects_spring: None,
+            spatial_spring: None,
+            item_widgets: Vec::new(),
+        }
     }
 
     #[must_use]
@@ -134,175 +104,332 @@ impl<'a, Message> Navbar<'a, Message> {
     }
 
     #[must_use]
-    pub fn focused_index(mut self, index: usize) -> Self {
-        self.focused_index = index;
+    pub fn active_index(mut self, index: usize) -> Self {
+        self.active_index = index;
         self
     }
 
     #[must_use]
-    pub fn icon_size(mut self, size: f32) -> Self {
-        self.icon_size = size;
+    pub fn label_font(mut self, font: Font) -> Self {
+        self.label_font = Some(font);
         self
     }
 
     #[must_use]
-    pub fn label_size(mut self, size: f32) -> Self {
-        self.label_size = size;
+    pub fn label_font_maybe(mut self, font: Option<Font>) -> Self {
+        self.label_font = font;
         self
+    }
+
+    #[must_use]
+    pub fn motion_scheme(mut self, scheme: motion::Scheme) -> Self {
+        self.motion_scheme = Some(scheme);
+        self
+    }
+
+    #[must_use]
+    pub fn motion_scheme_maybe(mut self, scheme: Option<motion::Scheme>) -> Self {
+        self.motion_scheme = scheme;
+        self
+    }
+
+    #[must_use]
+    pub fn effects_spring(mut self, spring: Spring) -> Self {
+        self.effects_spring = Some(spring);
+        self
+    }
+
+    #[must_use]
+    pub fn effects_spring_maybe(mut self, spring: Option<Spring>) -> Self {
+        self.effects_spring = spring;
+        self
+    }
+
+    #[must_use]
+    pub fn spatial_spring(mut self, spring: Spring) -> Self {
+        self.spatial_spring = Some(spring);
+        self
+    }
+
+    #[must_use]
+    pub fn spatial_spring_maybe(mut self, spring: Option<Spring>) -> Self {
+        self.spatial_spring = spring;
+        self
+    }
+
+    fn get_items(&self, mode: item::Mode) -> Vec<item::Item<'a, Message, Renderer>> {
+        self.items
+            .clone()
+            .into_iter()
+            .enumerate()
+            .map(|(index, item)| {
+                item::Item::new(
+                    self.style.item_style,
+                    item,
+                    self.label_font,
+                    index == self.active_index,
+                )
+                .mode(mode)
+                .motion_scheme_maybe(self.motion_scheme)
+                .active_transition_spring_maybe(self.spatial_spring)
+                .color_spring_maybe(self.effects_spring)
+            })
+            .collect()
+    }
+
+    fn compact_layout<Theme>(
+        &mut self,
+        container_bounds: Size,
+        tree: &mut iced::advanced::widget::Tree,
+        renderer: &Renderer,
+        limits: &iced::advanced::layout::Limits,
+    ) -> Node {
+        let mut item_widgets = self.get_items(item::Mode::Compact);
+
+        let cell_width = container_bounds.width / self.items.len() as f32;
+        let item_nodes = item_widgets
+            .iter_mut()
+            .enumerate()
+            .map(|(index, item)| {
+                let item = (item as &mut dyn Widget<Message, Theme, Renderer>).layout(
+                    &mut tree.children[index],
+                    renderer,
+                    limits,
+                );
+
+                let item_bounds = item.size();
+                item.move_to(Point::new(
+                    cell_width * index as f32 + (cell_width - item_bounds.width) / 2.0,
+                    (container_bounds.height - item_bounds.height) / 2.0,
+                ))
+            })
+            .collect();
+        self.item_widgets = item_widgets;
+
+        Node::with_children(container_bounds, item_nodes)
+    }
+
+    fn large_layout<Theme>(
+        &mut self,
+        container_bounds: Size,
+        item_width: f32,
+        tree: &mut iced::advanced::widget::Tree,
+        renderer: &Renderer,
+        limits: &iced::advanced::layout::Limits,
+    ) -> Node {
+        let mut item_widgets = self.get_items(item::Mode::Large {
+            width: Some(Pixels(item_width)),
+        });
+
+        let spacing = constants::ITEM_LARGE_SPACING;
+        let total_width =
+            item_width * item_widgets.len() as f32 + spacing * (item_widgets.len() - 1) as f32;
+        let offset = (container_bounds.width - total_width) / 2.0;
+
+        let item_nodes = item_widgets
+            .iter_mut()
+            .enumerate()
+            .map(|(index, item)| {
+                let item = (item as &mut dyn Widget<Message, Theme, Renderer>).layout(
+                    &mut tree.children[index],
+                    renderer,
+                    limits,
+                );
+
+                let item_bounds = item.size();
+                item.move_to(Point::new(
+                    offset + (item_width + spacing) * index as f32,
+                    (container_bounds.height - item_bounds.height) / 2.0,
+                ))
+            })
+            .collect();
+        self.item_widgets = item_widgets;
+
+        Node::with_children(container_bounds, item_nodes)
     }
 }
 
-impl<'a, Message> From<Navbar<'a, Message>> for Element<'a, Message>
+impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
+    for Navbar<'a, Message, Renderer>
 where
-    Message: 'a + Clone,
+    Message: Clone,
+    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer::Font: From<iced::Font>,
 {
-    fn from(navbar: Navbar<'a, Message>) -> Self {
-        let mut max_width = 0.0;
-        for item in &navbar.items {
-            let p = iced::advanced::graphics::text::Paragraph::with_text(Text {
-                content: &item.label,
-                bounds: Size::INFINITE,
-                size: navbar.label_size.into(),
-                line_height: LineHeight::default(),
-                font: navbar.label_font,
-                align_x: iced_widget::text::Alignment::Left,
-                align_y: iced::alignment::Vertical::Top,
-                shaping: Shaping::Advanced,
-                wrapping: Wrapping::None,
-            });
-            let width = p.min_bounds().width;
+    fn size(&self) -> Size<Length> {
+        Size::new(Length::Fill, Length::Fixed(constants::CONTAINER_HEIGHT))
+    }
 
-            if width > max_width {
-                max_width = width
+    fn state(&self) -> iced::advanced::widget::tree::State {
+        iced::advanced::widget::tree::State::None
+    }
+
+    fn diff(&self, tree: &mut iced::advanced::widget::Tree) {
+        let children: Vec<&dyn Widget<Message, Theme, Renderer>> = self
+            .item_widgets
+            .iter()
+            .map(|item| item as &dyn Widget<Message, Theme, Renderer>)
+            .collect();
+
+        tree.diff_children(&children);
+    }
+
+    fn children(&self) -> Vec<iced::advanced::widget::Tree> {
+        self.item_widgets
+            .iter()
+            .map(|item| Tree::new(item as &dyn Widget<Message, Theme, Renderer>))
+            .collect()
+    }
+
+    fn layout(
+        &mut self,
+        tree: &mut iced::advanced::widget::Tree,
+        renderer: &Renderer,
+        limits: &iced::advanced::layout::Limits,
+    ) -> iced::advanced::layout::Node {
+        let container_bounds = limits.resolve(
+            Length::Fill,
+            Length::Fixed(constants::CONTAINER_HEIGHT),
+            Size::ZERO,
+        );
+
+        let widest_needed = self.mode == Mode::Large || self.mode == Mode::Auto;
+        let widest = widest_needed
+            .then(|| {
+                self.get_items(item::Mode::Large { width: None })
+                    .iter_mut()
+                    .enumerate()
+                    .map(|(index, item)| {
+                        let node = (item as &mut dyn Widget<Message, Theme, Renderer>).layout(
+                            &mut tree.children[index],
+                            renderer,
+                            limits,
+                        );
+
+                        node.bounds()
+                    })
+                    .max_by(|a, b| a.size().width.total_cmp(&b.size().width))
+                    .map(|bounds| bounds.width)
+            })
+            .flatten();
+
+        match self.mode {
+            Mode::Compact => self.compact_layout::<Theme>(container_bounds, tree, renderer, limits),
+            Mode::Large => match widest {
+                Some(width) => {
+                    self.large_layout::<Theme>(container_bounds, width, tree, renderer, limits)
+                }
+                None => Node::new(container_bounds),
+            },
+            Mode::Auto => match widest {
+                Some(width) => {
+                    let total_width = width * self.item_widgets.len() as f32
+                        + constants::ITEM_LARGE_SPACING * (self.item_widgets.len() - 1) as f32;
+                    if total_width > container_bounds.width {
+                        self.compact_layout::<Theme>(container_bounds, tree, renderer, limits)
+                    } else {
+                        self.large_layout::<Theme>(container_bounds, width, tree, renderer, limits)
+                    }
+                }
+                None => Node::new(container_bounds),
+            },
+        }
+    }
+
+    fn draw(
+        &self,
+        tree: &iced::advanced::widget::Tree,
+        renderer: &mut Renderer,
+        theme: &Theme,
+        style: &iced::advanced::renderer::Style,
+        layout: iced::advanced::Layout<'_>,
+        cursor: mouse::Cursor,
+        viewport: &iced::Rectangle,
+    ) {
+        renderer.fill_quad(
+            Quad {
+                bounds: layout.bounds(),
+                ..Default::default()
+            },
+            self.style.container_color,
+        );
+
+        for (index, item) in self.item_widgets.iter().enumerate() {
+            item.draw(
+                &tree.children[index],
+                renderer,
+                theme,
+                style,
+                layout.child(index),
+                cursor,
+                viewport,
+            );
+        }
+    }
+
+    fn update(
+        &mut self,
+        tree: &mut iced::advanced::widget::Tree,
+        event: &iced::Event,
+        layout: iced::advanced::Layout<'_>,
+        cursor: mouse::Cursor,
+        renderer: &Renderer,
+        clipboard: &mut dyn iced::advanced::Clipboard,
+        shell: &mut iced::advanced::Shell<'_, Message>,
+        viewport: &iced::Rectangle,
+    ) {
+        for (index, item) in self.item_widgets.iter_mut().enumerate() {
+            (item as &mut dyn Widget<Message, Theme, Renderer>).update(
+                &mut tree.children[index],
+                event,
+                layout.child(index),
+                cursor,
+                renderer,
+                clipboard,
+                shell,
+                viewport,
+            )
+        }
+    }
+
+    fn mouse_interaction(
+        &self,
+        tree: &iced::advanced::widget::Tree,
+        layout: iced::advanced::Layout<'_>,
+        cursor: mouse::Cursor,
+        viewport: &iced::Rectangle,
+        renderer: &Renderer,
+    ) -> mouse::Interaction {
+        for (index, item) in self.item_widgets.iter().enumerate() {
+            let interaction = (item as &dyn Widget<Message, Theme, Renderer>).mouse_interaction(
+                &tree.children[index],
+                layout.child(index),
+                cursor,
+                viewport,
+                renderer,
+            );
+
+            if interaction != mouse::Interaction::None {
+                return interaction;
             }
         }
 
-        // There seems to be a slight mismatch between the calculated and actual text size. The one
-        // I estimate here is sometimes less than one pixel off than the actual size, but that
-        // already causes the text to wrap which just looks bad.
-        //
-        // So I apply the padding here because that less than 1px won't even make a difference
-        // visually.
-        max_width += navbar.icon_size + LARGE_BUTTON_INTERNAL_SPACING + 2.0 * LARGE_BUTTON_PADDING;
+        match cursor.is_over(layout.bounds()) {
+            true => mouse::Interaction::Idle,
+            false => mouse::Interaction::None,
+        }
+    }
+}
 
-        responsive(move |size| {
-            let compact = match navbar.mode {
-                Mode::Compact => true,
-                Mode::Large => false,
-                Mode::Auto => {
-                    navbar.items.len() as f32 * max_width
-                        + (navbar.items.len() as i64 - 1) as f32 * LARGE_BUTTON_SPACING
-                        > size.width
-                }
-            };
-
-            let buttons = if navbar.items.is_empty() {
-                Vec::new()
-            } else {
-                if compact {
-                    let mut buttons = Vec::with_capacity(navbar.items.len());
-                    // TODO: Should use a custom widget instead
-                    for (i, item) in navbar.items.iter().enumerate() {
-                        let active = i == navbar.focused_index;
-                        let label_color = if active {
-                            navbar.theme.secondary()
-                        } else {
-                            navbar.theme.on_surface_variant()
-                        };
-                        let icon_color = if active {
-                            navbar.theme.on_secondary_container()
-                        } else {
-                            navbar.theme.on_surface_variant()
-                        };
-                        let icon = if active {
-                            item.icon_active.clone()
-                        } else {
-                            item.icon_inactive.clone()
-                        };
-
-                        buttons.push(
-                            center_x(
-                                column![
-                                    button(center(widget::hybrid_icon(
-                                        icon,
-                                        navbar.icon_size,
-                                        icon_color
-                                    )))
-                                    .style(move |_, status| {
-                                        item_container_style(status, active, navbar.theme)
-                                    })
-                                    .on_press(item.message.clone())
-                                    .width(Length::Fixed(COMPACT_BUTTON_SIZE.width))
-                                    .height(Length::Fixed(COMPACT_BUTTON_SIZE.height)),
-                                    iced_widget::text(item.label.clone())
-                                        .font(navbar.label_font)
-                                        .color(label_color)
-                                        .size(navbar.label_size)
-                                        .wrapping(Wrapping::None),
-                                ]
-                                .align_x(Alignment::Center)
-                                .spacing(4.0),
-                            )
-                            .into(),
-                        );
-                    }
-                    buttons
-                } else {
-                    let mut buttons = Vec::with_capacity(navbar.items.len());
-                    for (i, item) in navbar.items.iter().enumerate() {
-                        let active = i == navbar.focused_index;
-                        let label_color = if active {
-                            navbar.theme.secondary()
-                        } else {
-                            navbar.theme.on_surface_variant()
-                        };
-                        let icon_color = if active {
-                            navbar.theme.on_secondary_container()
-                        } else {
-                            navbar.theme.on_surface_variant()
-                        };
-                        let icon = if active {
-                            item.icon_active.clone()
-                        } else {
-                            item.icon_inactive.clone()
-                        };
-
-                        buttons.push(
-                            button(center(
-                                row![
-                                    widget::hybrid_icon(icon, navbar.icon_size, icon_color),
-                                    iced_widget::text(item.label.clone())
-                                        .font(navbar.label_font)
-                                        .color(label_color)
-                                        .size(navbar.label_size)
-                                ]
-                                .align_y(Alignment::Center)
-                                .spacing(LARGE_BUTTON_INTERNAL_SPACING),
-                            ))
-                            .style(move |_, status| {
-                                item_container_style(status, active, navbar.theme)
-                            })
-                            .on_press(item.message.clone())
-                            .width(Length::Fixed(max_width))
-                            .height(Length::Fixed(LARGE_BUTTON_SIZE.height))
-                            .into(),
-                        )
-                    }
-                    buttons
-                }
-            };
-
-            let padding = if compact {
-                COMPACT_VERTICAL_PADDING
-            } else {
-                LARGE_VERTICAL_PADDING
-            };
-            let spacing = if compact { 0.0 } else { LARGE_BUTTON_SPACING };
-            center_x(row(buttons).spacing(spacing))
-                .padding(padding::vertical(padding))
-                .into()
-        })
-        .height(Length::Shrink)
-        .into()
+impl<'a, Message, Theme, Renderer> From<Navbar<'a, Message, Renderer>>
+    for Element<'a, Message, Theme, Renderer>
+where
+    Message: 'a + Clone,
+    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer::Font: From<iced::Font>,
+{
+    fn from(mut value: Navbar<'a, Message, Renderer>) -> Self {
+        value.item_widgets = value.get_items(item::Mode::Compact);
+        Element::new(value)
     }
 }
