@@ -37,7 +37,7 @@ use crate::{
         fab::Fab,
         fab_menu::FABMenu,
         hybrid_icon::{HybridIcon, Icon},
-        navbar::Navbar,
+        navbar::NavBar,
         navrail::NavRail,
         progress_bar::ProgressBar,
         switch::Switch,
@@ -70,13 +70,13 @@ where
 pub fn navbar<'a, Message, Renderer>(
     style: navbar::Style,
     items: Vec<navbar::Item<'a, Message>>,
-) -> Navbar<'a, Message, Renderer>
+) -> NavBar<'a, Message, Renderer>
 where
     Message: Clone,
     Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
     Renderer::Font: From<iced::Font>,
 {
-    Navbar::new(style, items)
+    NavBar::new(style, items)
 }
 
 #[must_use]

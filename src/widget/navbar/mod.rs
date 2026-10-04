@@ -51,7 +51,7 @@ impl Style {
     }
 }
 
-pub struct Navbar<'a, Message, Renderer>
+pub struct NavBar<'a, Message, Renderer>
 where
     Message: Clone,
     Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
@@ -70,7 +70,7 @@ where
     item_widgets: Vec<item::Item<'a, Message, Renderer>>,
 }
 
-impl<'a, Message, Renderer> Navbar<'a, Message, Renderer>
+impl<'a, Message, Renderer> NavBar<'a, Message, Renderer>
 where
     Message: Clone,
     Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
@@ -250,7 +250,7 @@ where
 }
 
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-    for Navbar<'a, Message, Renderer>
+    for NavBar<'a, Message, Renderer>
 where
     Message: Clone,
     Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
@@ -421,14 +421,14 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<Navbar<'a, Message, Renderer>>
+impl<'a, Message, Theme, Renderer> From<NavBar<'a, Message, Renderer>>
     for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
     Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
     Renderer::Font: From<iced::Font>,
 {
-    fn from(mut value: Navbar<'a, Message, Renderer>) -> Self {
+    fn from(mut value: NavBar<'a, Message, Renderer>) -> Self {
         value.item_widgets = value.get_items(item::Mode::Compact);
         Element::new(value)
     }
