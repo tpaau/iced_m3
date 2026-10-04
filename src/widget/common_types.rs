@@ -22,10 +22,12 @@ where
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Badge<'a> {
     pub label: Option<text::Fragment<'a>>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct BadgeIcon<'a> {
     pub icon: Icon<'a>,
     pub badge: Option<Badge<'a>>,

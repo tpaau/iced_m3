@@ -14,7 +14,7 @@ use crate::{
         button::{self, ElevationStates, Outline},
         common_icons::{self},
         hybrid_icon::Icon,
-        navrail::item::{INDICATOR_LARGE_HEIGHT, INDICATOR_SMALL_TOTAL_HEIGHT},
+        navrail::item::{INDICATOR_LARGE_HEIGHT, ITEM_SMALL_TOTAL_HEIGHT},
     },
 };
 
@@ -404,7 +404,7 @@ where
             Mode::Expanded { width: _ } => 0.0,
         };
         let item_height = match self.mode {
-            Mode::Collapsed => INDICATOR_SMALL_TOTAL_HEIGHT,
+            Mode::Collapsed => ITEM_SMALL_TOTAL_HEIGHT,
             Mode::Expanded { width: _ } => INDICATOR_LARGE_HEIGHT,
         };
         let total_height = item_height * self.item_elements.len() as f32

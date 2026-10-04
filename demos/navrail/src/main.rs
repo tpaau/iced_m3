@@ -95,7 +95,7 @@ impl State {
                 },
                 badge: None,
                 label: "Star".into_fragment(),
-                on_press: OnPress::Direct(Message::GoTo(Tab::Star)),
+                on_press: Message::GoTo(Tab::Star),
             },
             Item {
                 icon_active: Icon::Text {
@@ -104,24 +104,26 @@ impl State {
                 },
                 icon_inactive: Icon::Text {
                     text: FAVORITE.into_fragment(),
-                    font: Some(icons_outlined()),
-                },
-                badge: None,
-                label: "Favorites".into_fragment(),
-                on_press: OnPress::Direct(Message::GoTo(Tab::Favorites)),
-            },
-            Item {
-                icon_active: Icon::Text {
-                    text: SEARCH.into_fragment(),
-                    font: Some(icons_filled()),
-                },
-                icon_inactive: Icon::Text {
-                    text: SEARCH.into_fragment(),
                     font: Some(icons_outlined()),
                 },
                 badge: Some(Badge { label: None }),
+                label: "Favorites".into_fragment(),
+                on_press: Message::GoTo(Tab::Favorites),
+            },
+            Item {
+                icon_active: Icon::Text {
+                    text: SEARCH.into_fragment(),
+                    font: Some(icons_filled()),
+                },
+                icon_inactive: Icon::Text {
+                    text: SEARCH.into_fragment(),
+                    font: Some(icons_outlined()),
+                },
+                badge: Some(Badge {
+                    label: Some("3".into_fragment()),
+                }),
                 label: "Search".into_fragment(),
-                on_press: OnPress::Direct(Message::GoTo(Tab::Search)),
+                on_press: Message::GoTo(Tab::Search),
             },
             Item {
                 icon_active: Icon::Text {
@@ -133,10 +135,10 @@ impl State {
                     font: Some(icons_outlined()),
                 },
                 badge: Some(Badge {
-                    label: Some("3".into_fragment()),
+                    label: Some("999+".into_fragment()),
                 }),
                 label: "Settings".into_fragment(),
-                on_press: OnPress::Direct(Message::GoTo(Tab::Settings)),
+                on_press: Message::GoTo(Tab::Settings),
             },
         ];
         let current_index = self.tab.index();

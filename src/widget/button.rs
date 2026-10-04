@@ -1089,6 +1089,7 @@ where
             self.selected,
             bounds.width.min(bounds.height) / 2.0,
         );
+        // FIX: Snap if the button size changed
         corner_radius_spring.set_target(corner_radius, now);
 
         if !state.style_spring.is_at_rest()

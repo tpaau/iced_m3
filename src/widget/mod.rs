@@ -11,6 +11,7 @@ pub mod dialog;
 pub mod fab;
 pub mod fab_menu;
 pub mod hybrid_icon;
+pub(crate) mod internal;
 pub mod navbar;
 pub mod navrail;
 pub mod progress_bar;
@@ -36,7 +37,7 @@ use crate::{
         fab::Fab,
         fab_menu::FABMenu,
         hybrid_icon::{HybridIcon, Icon},
-        navbar::Navbar,
+        navbar::NavBar,
         navrail::NavRail,
         progress_bar::ProgressBar,
         switch::Switch,
@@ -54,21 +55,29 @@ pub fn menu<'a, Message>(
 }
 
 #[must_use]
-pub fn text_input<'a, Message: Clone, Renderer>(
+pub fn text_input<'a, Message, Renderer>(
     placeholder: &str,
     value: &'a str,
     theme: &'a impl ColorScheme,
-) -> TextInput<'a, Message> {
+) -> TextInput<'a, Message>
+where
+    Message: Clone,
+{
     TextInput::new(placeholder, value, theme)
 }
 
 #[must_use]
 pub fn navbar<'a, Message, Theme, Renderer>(
+    style: navbar::Style,
     items: Vec<navbar::Item<'a, Message>>,
-    label_font: Font,
-    theme: &'a impl ColorScheme,
-) -> Navbar<'a, Message> {
-    Navbar::new(items, label_font, theme)
+) -> NavBar<'a, Message, Theme, Renderer>
+where
+    Message: 'a + Clone,
+    Theme: 'a,
+    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer::Font: From<iced::Font>,
+{
+    NavBar::new(style, items)
 }
 
 #[must_use]
@@ -146,7 +155,7 @@ pub fn badge<'a, Message, Theme, Renderer>(
     base: impl Into<Element<'a, Message, Theme, Renderer>>,
 ) -> badge::Badge<'a, Message, Theme, Renderer>
 where
-    Renderer: 'a + iced_widget::core::text::Renderer,
+    Renderer: 'a + iced::advanced::text::Renderer,
 {
     badge::Badge::new(style, base)
 }
