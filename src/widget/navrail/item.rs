@@ -12,7 +12,7 @@ pub const ITEM_LARGE_ICON_LABEL_SPACE: f32 = 8.0;
 pub const ITEM_LARGE_LABEL_SIZE: f32 = 14.0;
 pub const ITEM_LARGE_LABEL_LINE_HEIGHT: f32 = 20.0;
 
-pub const INDICATOR_ICON_SIZE: f32 = 24.0;
+pub const ICON_SIZE: f32 = 24.0;
 
 use std::time::Instant;
 
@@ -24,21 +24,22 @@ use iced::{
         mouse,
         renderer::Quad,
         text::{self, Paragraph},
+        widget::Tree,
     },
     touch,
 };
-use iced_widget::core::Svg;
+use iced_widget::{core::Svg, space};
 
 use crate::{
     animation::motion::{self, Spring, SpringValue, default_effects, fast_effects},
-    widget::hybrid_icon::Icon,
+    widget::{self, hybrid_icon::Icon},
 };
 
 pub use crate::widget::internal::navigation_common::NavigationItemContent as Content;
 pub use crate::widget::internal::navigation_common::NavigationItemStyle as Style;
 pub use crate::widget::internal::navigation_common::{Colors, State};
 
-pub struct Item<'a, Message, Renderer>
+pub struct Item<'a, Message, Theme, Renderer>
 where
     Message: Clone,
     Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
@@ -55,12 +56,14 @@ where
     // Cache
     label_paragraph: Option<Renderer::Paragraph>,
     icon_paragraph: Option<Renderer::Paragraph>,
+    badge: Option<Element<'a, Message, Theme, Renderer>>,
 }
 
-impl<'a, Message, Renderer> Item<'a, Message, Renderer>
+impl<'a, Message, Theme, Renderer> Item<'a, Message, Theme, Renderer>
 where
-    Message: Clone,
-    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Message: 'a + Clone,
+    Theme: 'a,
+    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     #[must_use]
@@ -71,6 +74,15 @@ where
         label_font: Option<Font>,
         active: bool,
     ) -> Self {
+        let badge = content.badge.as_ref().map(|badge| {
+            widget::badge(
+                style.badge_style,
+                space().width(ICON_SIZE).height(ICON_SIZE),
+            )
+            .label_maybe(badge.label.clone())
+            .into()
+        });
+
         Self {
             expanded,
             style,
@@ -81,6 +93,7 @@ where
             color_spring: None,
             label_paragraph: None,
             icon_paragraph: None,
+            badge,
         }
     }
 
@@ -105,12 +118,26 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Item<'a, Message, Renderer>
+impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
+    for Item<'a, Message, Theme, Renderer>
 where
     Message: Clone,
     Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
     Renderer::Font: From<iced::Font>,
 {
+    fn size(&self) -> Size<Length> {
+        match self.expanded {
+            true => Size {
+                width: Length::Shrink,
+                height: Length::Fixed(INDICATOR_LARGE_HEIGHT),
+            },
+            false => Size {
+                width: Length::Fixed(INDICATOR_SMALL_WIDTH),
+                height: Length::Fixed(ITEM_SMALL_TOTAL_HEIGHT),
+            },
+        }
+    }
+
     fn tag(&self) -> iced::advanced::widget::tree::Tag {
         iced::advanced::widget::tree::Tag::of::<State>()
     }
@@ -146,24 +173,27 @@ where
         iced::advanced::widget::tree::State::new(state)
     }
 
-    fn size(&self) -> Size<Length> {
-        match self.expanded {
-            true => Size {
-                width: Length::Shrink,
-                height: Length::Fixed(INDICATOR_LARGE_HEIGHT),
-            },
-            false => Size {
-                width: Length::Fixed(INDICATOR_SMALL_WIDTH),
-                height: Length::Fixed(ITEM_SMALL_TOTAL_HEIGHT),
-            },
+    fn children(&self) -> Vec<Tree> {
+        match &self.badge {
+            Some(badge) => vec![Tree::new(badge.as_widget())],
+            None => vec![],
         }
+    }
+
+    fn diff(&self, tree: &mut Tree) {
+        let children = match &self.badge {
+            Some(badge) => vec![badge.as_widget()],
+            None => Vec::new(),
+        };
+
+        tree.diff_children(&children);
     }
 
     fn layout(
         &mut self,
-        _tree: &mut iced::advanced::widget::Tree,
+        tree: &mut Tree,
         renderer: &Renderer,
-        _limits: &iced::advanced::layout::Limits,
+        limits: &iced::advanced::layout::Limits,
     ) -> iced::advanced::layout::Node {
         let icon = match self.active {
             true => &self.content.icon_active,
@@ -173,8 +203,8 @@ where
             let icon_paragraph = <Renderer as text::Renderer>::Paragraph::with_text(text::Text {
                 content: &text,
                 bounds: Size::INFINITE,
-                size: Pixels(INDICATOR_ICON_SIZE),
-                line_height: text::LineHeight::Absolute(Pixels(INDICATOR_ICON_SIZE)),
+                size: Pixels(ICON_SIZE),
+                line_height: text::LineHeight::Absolute(Pixels(ICON_SIZE)),
                 font: font
                     .map(Renderer::Font::from)
                     .unwrap_or_else(|| renderer.default_font()),
@@ -186,8 +216,14 @@ where
             self.icon_paragraph = Some(icon_paragraph);
         }
 
-        let icon_bounds = Size::new(INDICATOR_ICON_SIZE, INDICATOR_ICON_SIZE);
+        let icon_bounds = Size::new(ICON_SIZE, ICON_SIZE);
         let icon_node = Node::new(icon_bounds);
+
+        let badge_node = self.badge.as_mut().map(|badge| {
+            badge
+                .as_widget_mut()
+                .layout(&mut tree.children[0], renderer, limits)
+        });
 
         match self.expanded {
             true => {
@@ -220,17 +256,27 @@ where
                     INDICATOR_LARGE_HEIGHT,
                 );
 
-                let icon_node = icon_node.move_to(Point::new(
+                let icon_position = Point::new(
                     INDICATOR_LARGE_PADDING,
-                    (indicator_bounds.height - INDICATOR_ICON_SIZE) / 2.0,
-                ));
+                    (indicator_bounds.height - ICON_SIZE) / 2.0,
+                );
+                let icon_node = icon_node.move_to(icon_position);
 
                 let label_node = Node::new(label_bounds).move_to(Point::new(
-                    INDICATOR_LARGE_PADDING + INDICATOR_ICON_SIZE + ITEM_LARGE_ICON_LABEL_SPACE,
+                    INDICATOR_LARGE_PADDING + ICON_SIZE + ITEM_LARGE_ICON_LABEL_SPACE,
                     (indicator_bounds.height - label_bounds.height) / 2.0,
                 ));
 
-                Node::with_children(indicator_bounds, vec![icon_node, label_node])
+                let mut children = vec![icon_node, label_node];
+                badge_node.map(|node| {
+                    let position = Point::new(
+                        icon_position.x,
+                        icon_position.y + icon_bounds.height - node.bounds().height,
+                    );
+                    children.push(node.move_to(position));
+                });
+
+                Node::with_children(indicator_bounds, children)
             }
             false => {
                 let label_paragraph =
@@ -260,41 +306,53 @@ where
 
                 let indicator_node = Node::new(indicator_bounds);
 
-                let icon_node = icon_node.move_to(Point::new(
+                let icon_position = Point::new(
                     (indicator_bounds.width - icon_bounds.width) / 2.0,
                     (indicator_bounds.height - icon_bounds.height) / 2.0,
-                ));
+                );
+                let icon_node = icon_node.move_to(icon_position);
 
                 let label_node = Node::new(indicator_bounds).move_to(Point::new(
                     (indicator_bounds.width - label_bounds.width) / 2.0,
                     parent_bounds.height - label_bounds.height,
                 ));
 
-                Node::with_children(parent_bounds, vec![indicator_node, icon_node, label_node])
+                let mut children = vec![indicator_node, icon_node, label_node];
+                badge_node.map(|node| {
+                    let position = Point::new(
+                        icon_position.x,
+                        icon_position.y + icon_bounds.height - node.bounds().height,
+                    );
+                    children.push(node.move_to(position));
+                });
+
+                Node::with_children(parent_bounds, children)
             }
         }
     }
 
     fn draw(
         &self,
-        tree: &iced::advanced::widget::Tree,
+        tree: &Tree,
         renderer: &mut Renderer,
-        _theme: &Theme,
-        _style: &iced::advanced::renderer::Style,
+        theme: &Theme,
+        style: &iced::advanced::renderer::Style,
         layout: iced::advanced::Layout<'_>,
-        _cursor: iced::advanced::mouse::Cursor,
-        _viewport: &iced::Rectangle,
+        cursor: iced::advanced::mouse::Cursor,
+        viewport: &iced::Rectangle,
     ) {
-        let (indicator_bounds, icon_bounds, label_bounds) = match self.expanded {
+        let (indicator_bounds, icon_bounds, label_bounds, badge_node) = match self.expanded {
             true => (
                 layout.bounds(),
                 layout.child(0).bounds(),
                 layout.child(1).bounds(),
+                self.badge.as_ref().map(|_| layout.child(2)),
             ),
             false => (
                 layout.child(0).bounds(),
                 layout.child(1).bounds(),
                 layout.child(2).bounds(),
+                self.badge.as_ref().map(|_| layout.child(3)),
             ),
         };
 
@@ -340,6 +398,18 @@ where
             renderer.fill_paragraph(label, label_bounds.position(), content_color, label_bounds);
         }
 
+        if let Some(badge) = &self.badge {
+            badge.as_widget().draw(
+                &tree.children[0],
+                renderer,
+                theme,
+                style,
+                badge_node.unwrap(),
+                cursor,
+                viewport,
+            );
+        }
+
         renderer.fill_quad(
             Quad {
                 bounds: indicator_bounds,
@@ -352,7 +422,7 @@ where
 
     fn update(
         &mut self,
-        tree: &mut iced::advanced::widget::Tree,
+        tree: &mut Tree,
         event: &iced::Event,
         layout: iced::advanced::Layout<'_>,
         cursor: iced::advanced::mouse::Cursor,
@@ -437,7 +507,7 @@ where
 
     fn mouse_interaction(
         &self,
-        _tree: &iced::advanced::widget::Tree,
+        _tree: &Tree,
         layout: iced::advanced::Layout<'_>,
         cursor: iced::advanced::mouse::Cursor,
         _viewport: &iced::Rectangle,
@@ -455,14 +525,15 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<Item<'a, Message, Renderer>>
+impl<'a, Message, Theme, Renderer> From<Item<'a, Message, Theme, Renderer>>
     for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
+    Theme: 'a,
     Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
     Renderer::Font: From<iced::Font>,
 {
-    fn from(value: Item<'a, Message, Renderer>) -> Self {
+    fn from(value: Item<'a, Message, Theme, Renderer>) -> Self {
         Element::new(value)
     }
 }

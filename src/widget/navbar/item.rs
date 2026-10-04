@@ -83,6 +83,7 @@ where
                 space().width(ICON_SIZE).height(ICON_SIZE),
             )
             .label_maybe(badge.label.clone())
+            .into()
         });
 
         Self {
@@ -95,7 +96,7 @@ where
             color_spring: None,
             label_paragraph: None,
             icon_paragraph: None,
-            badge: Some(badge.into()),
+            badge,
         }
     }
 
@@ -134,6 +135,19 @@ where
     Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
     Renderer::Font: From<iced::Font>,
 {
+    fn size(&self) -> Size<Length> {
+        match self.mode {
+            Mode::Large { width } => Size::new(
+                width.map(|w| Length::Fixed(w.0)).unwrap_or(Length::Shrink),
+                Length::Fixed(INDICATOR_LARGE_HEIGHT),
+            ),
+            Mode::Compact => Size::new(
+                Length::Fixed(INDICATOR_SMALL_SIZE.width),
+                Length::Fixed(INDICATOR_SMALL_SIZE.height),
+            ),
+        }
+    }
+
     fn tag(&self) -> tree::Tag {
         tree::Tag::of::<State>()
     }
@@ -183,19 +197,6 @@ where
         };
 
         tree.diff_children(&children);
-    }
-
-    fn size(&self) -> Size<Length> {
-        match self.mode {
-            Mode::Large { width } => Size::new(
-                width.map(|w| Length::Fixed(w.0)).unwrap_or(Length::Shrink),
-                Length::Fixed(INDICATOR_LARGE_HEIGHT),
-            ),
-            Mode::Compact => Size::new(
-                Length::Fixed(INDICATOR_SMALL_SIZE.width),
-                Length::Fixed(INDICATOR_SMALL_SIZE.height),
-            ),
-        }
     }
 
     fn layout(
@@ -340,7 +341,7 @@ where
 
     fn draw(
         &self,
-        tree: &iced::advanced::widget::Tree,
+        tree: &Tree,
         renderer: &mut Renderer,
         theme: &Theme,
         style: &iced::advanced::renderer::Style,
@@ -353,13 +354,13 @@ where
                 layout.bounds(),
                 layout.child(0).bounds(),
                 layout.child(1).bounds(),
-                self.badge.is_some().then_some(layout.child(2)),
+                self.badge.as_ref().map(|_| layout.child(2)),
             ),
             Mode::Compact => (
                 layout.child(0).bounds(),
                 layout.child(1).bounds(),
                 layout.child(2).bounds(),
-                self.badge.is_some().then_some(layout.child(3)),
+                self.badge.as_ref().map(|_| layout.child(3)),
             ),
         };
 
@@ -401,6 +402,10 @@ where
             }
         }
 
+        if let Some(label) = &self.label_paragraph {
+            renderer.fill_paragraph(label, label_bounds.position(), content_color, label_bounds);
+        }
+
         if let Some(badge) = &self.badge {
             badge.as_widget().draw(
                 &tree.children[0],
@@ -411,10 +416,6 @@ where
                 cursor,
                 viewport,
             );
-        }
-
-        if let Some(label) = &self.label_paragraph {
-            renderer.fill_paragraph(label, label_bounds.position(), content_color, label_bounds);
         }
 
         renderer.fill_quad(
@@ -429,7 +430,7 @@ where
 
     fn update(
         &mut self,
-        tree: &mut iced::advanced::widget::Tree,
+        tree: &mut Tree,
         event: &iced::Event,
         layout: iced::advanced::Layout<'_>,
         cursor: iced::advanced::mouse::Cursor,
