@@ -148,7 +148,7 @@ TODOs:
 > [Reference](https://m3.material.io/components/navigation-bar/overview)
 
 TODOs:
-- Animation
+- Item ripple effect
 
 
 <a name="widgets-navrail"></a>
@@ -163,6 +163,7 @@ TODOs:
 
 TODOs:
 - Expand/Contract animation
+- Item ripple effect
 
 
 <a name="widgets-progress-bar"></a>
