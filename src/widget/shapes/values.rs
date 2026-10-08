@@ -1,6 +1,12 @@
 use iced_widget::canvas::Path;
 
-use crate::{animation::Interpolable, widget::shapes::Command};
+use crate::{
+    animation::Interpolable,
+    widget::shapes::{
+        Command,
+        morph::{MorphPlan, MorphPlanError},
+    },
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Point {
@@ -55,48 +61,15 @@ pub enum FeatureKind {
     ConcaveCorner,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub struct FeatureStored<'a> {
-    pub kind: FeatureKind,
-    pub cubics: &'a [Cubic],
-}
-
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Feature {
     pub kind: FeatureKind,
     pub cubics: Vec<Cubic>,
 }
 
-impl From<FeatureStored<'_>> for Feature {
-    fn from(value: FeatureStored<'_>) -> Self {
-        Self {
-            kind: value.kind,
-            cubics: value.cubics.into_iter().copied().collect(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct ShapeDataStored<'a> {
-    pub features: &'a [FeatureStored<'a>],
-}
-
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct ShapeData {
     pub features: Vec<Feature>,
-}
-
-impl From<ShapeDataStored<'_>> for ShapeData {
-    fn from(value: ShapeDataStored<'_>) -> Self {
-        Self {
-            features: value
-                .features
-                .into_iter()
-                .copied()
-                .map(|f| f.into())
-                .collect(),
-        }
-    }
 }
 
 impl ShapeData {
@@ -158,6 +131,43 @@ impl ShapeData {
 
     pub fn path(&self) -> Path {
         Self::build_path(&self.as_commands())
+    }
+
+    pub fn morph(&self, to: &Self) -> Result<MorphPlan, MorphPlanError> {
+        MorphPlan::new(self, to)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub struct FeatureStored<'a> {
+    pub kind: FeatureKind,
+    pub cubics: &'a [Cubic],
+}
+
+impl From<FeatureStored<'_>> for Feature {
+    fn from(value: FeatureStored<'_>) -> Self {
+        Self {
+            kind: value.kind,
+            cubics: value.cubics.into_iter().copied().collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct ShapeDataStored<'a> {
+    pub features: &'a [FeatureStored<'a>],
+}
+
+impl From<ShapeDataStored<'_>> for ShapeData {
+    fn from(value: ShapeDataStored<'_>) -> Self {
+        Self {
+            features: value
+                .features
+                .into_iter()
+                .copied()
+                .map(|f| f.into())
+                .collect(),
+        }
     }
 }
 

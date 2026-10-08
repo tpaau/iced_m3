@@ -1,4 +1,7 @@
+mod morph;
 mod values;
+
+use std::time::Instant;
 
 use iced::Element;
 use iced_widget::{
@@ -7,13 +10,17 @@ use iced_widget::{
 };
 
 use crate::{
+    animation::motion::{self, fast_spatial},
     theme::ColorScheme,
-    widget::shapes::values::{
-        ARCH, ARROW, BOOM, BUN, BURST, CIRCLE, CLAM_SHELL, CLOVER_4_LEAF, CLOVER_8_LEAF,
-        COOKIE_4_SIDED, COOKIE_6_SIDED, COOKIE_7_SIDED, COOKIE_9_SIDED, COOKIE_12_SIDED, DIAMOND,
-        FAN, FLOWER, GEM, GHOSTISH, HEART, OVAL, PENTAGON, PILL, PIXEL_CIRCLE, PIXEL_TRIANGLE,
-        PUFFY, PUFFY_DIAMOND, Point, SEMI_CIRCLE, SLANTED, SOFT_BOOM, SOFT_BURST, SQUARE, SUNNY,
-        TRIANGLE, VERY_SUNNY,
+    widget::shapes::{
+        morph::{MorphPlan, MorphTransition},
+        values::{
+            ARCH, ARROW, BOOM, BUN, BURST, CIRCLE, CLAM_SHELL, CLOVER_4_LEAF, CLOVER_8_LEAF,
+            COOKIE_4_SIDED, COOKIE_6_SIDED, COOKIE_7_SIDED, COOKIE_9_SIDED, COOKIE_12_SIDED,
+            DIAMOND, FAN, FLOWER, GEM, GHOSTISH, HEART, OVAL, PENTAGON, PILL, PIXEL_CIRCLE,
+            PIXEL_TRIANGLE, PUFFY, PUFFY_DIAMOND, Point, SEMI_CIRCLE, SLANTED, SOFT_BOOM,
+            SOFT_BURST, SQUARE, SUNNY, TRIANGLE, VERY_SUNNY,
+        },
     },
 };
 
@@ -140,7 +147,7 @@ impl<'a> Style<'a> {
 }
 
 pub struct MaterialShape<'a> {
-    shape: Shape,
+    morph: MorphTransition,
     style: Style<'a>,
     size: f32,
     cache: Cache,
@@ -149,8 +156,13 @@ pub struct MaterialShape<'a> {
 impl<'a> MaterialShape<'a> {
     #[must_use]
     pub fn new(shape: Shape, style: Style<'a>) -> Self {
+        let shape_data = shape.data();
         Self {
-            shape,
+            morph: MorphTransition::new(
+                fast_spatial(motion::Scheme::default()),
+                MorphPlan::new(&shape_data, &shape_data).unwrap(),
+                Instant::now(),
+            ),
             style,
             size: 100.0,
             cache: Cache::default(),
@@ -175,7 +187,7 @@ impl<'a, Message, Theme> canvas::Program<Message, Theme, iced::Renderer> for Mat
         bounds: iced::Rectangle,
         _cursor: iced::advanced::mouse::Cursor,
     ) -> Vec<canvas::Geometry<iced::Renderer>> {
-        let path = self.shape.data().path();
+        let path = self.morph.value().path();
 
         let geometry = self.cache.draw(renderer, bounds.size(), |frame| {
             frame.with_save(|frame| {

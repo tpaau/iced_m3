@@ -375,17 +375,17 @@ where
         }
 
         if let Some(spring) = self.spatial_spring {
-            if state.icon_rotation_spring.spring != spring {
-                state.icon_rotation_spring.spring = spring;
+            if state.icon_rotation_spring.spring.model != spring {
+                state.icon_rotation_spring.spring.model = spring;
             }
-            if state.corner_radius_spring.spring != spring {
-                state.corner_radius_spring.spring = spring;
+            if state.corner_radius_spring.spring.model != spring {
+                state.corner_radius_spring.spring.model = spring;
             }
         }
         if let Some(spring) = self.effects_spring
-            && state.style_spring.spring != spring
+            && state.style_spring.spring.model != spring
         {
-            state.style_spring.spring = spring;
+            state.style_spring.spring.model = spring;
         }
 
         let now = Instant::now();
