@@ -2,7 +2,7 @@ use iced_widget::canvas::Path;
 
 use crate::{animation::Interpolable, widget::shapes::Command};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Point {
     pub x: f32,
     pub y: f32,
@@ -29,7 +29,7 @@ impl Interpolable for Point {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Cubic {
     pub anchor_0: Point,
     pub control_0: Point,
@@ -48,22 +48,55 @@ impl Interpolable for Cubic {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FeatureKind {
     Edge,
     ConvexCorner,
     ConcaveCorner,
 }
 
-#[derive(Debug)]
-pub struct Feature {
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub struct FeatureStored<'a> {
     pub kind: FeatureKind,
-    pub cubics: &'static [Cubic],
+    pub cubics: &'a [Cubic],
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct Feature {
+    pub kind: FeatureKind,
+    pub cubics: Vec<Cubic>,
+}
+
+impl From<FeatureStored<'_>> for Feature {
+    fn from(value: FeatureStored<'_>) -> Self {
+        Self {
+            kind: value.kind,
+            cubics: value.cubics.into_iter().copied().collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct ShapeDataStored<'a> {
+    pub features: &'a [FeatureStored<'a>],
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct ShapeData {
-    pub features: &'static [Feature],
+    pub features: Vec<Feature>,
+}
+
+impl From<ShapeDataStored<'_>> for ShapeData {
+    fn from(value: ShapeDataStored<'_>) -> Self {
+        Self {
+            features: value
+                .features
+                .into_iter()
+                .copied()
+                .map(|f| f.into())
+                .collect(),
+        }
+    }
 }
 
 impl ShapeData {
@@ -104,8 +137,8 @@ impl ShapeData {
         let mut commands = Vec::new();
         let mut first = true;
 
-        for feature in self.features {
-            for cubic in feature.cubics {
+        for feature in &self.features {
+            for cubic in &feature.cubics {
                 if first {
                     commands.push(Command::MoveTo(cubic.anchor_0));
                     first = false;
@@ -178,11 +211,11 @@ static ARCH_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.14644665f32, 0.1464466f32),
     },
 ];
-static ARCH_FEATURES: &[Feature] = &[Feature {
+static ARCH_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: ARCH_CUBICS,
 }];
-pub const ARCH: ShapeData = ShapeData {
+pub const ARCH: ShapeDataStored = ShapeDataStored {
     features: ARCH_FEATURES,
 };
 
@@ -248,11 +281,11 @@ static ARROW_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.49938738f32, 0.8368627f32),
     },
 ];
-static ARROW_FEATURES: &[Feature] = &[Feature {
+static ARROW_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: ARROW_CUBICS,
 }];
-pub const ARROW: ShapeData = ShapeData {
+pub const ARROW: ShapeDataStored = ShapeDataStored {
     features: ARROW_FEATURES,
 };
 
@@ -624,11 +657,11 @@ static BOOM_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.4541391f32, 0.2874297f32),
     },
 ];
-static BOOM_FEATURES: &[Feature] = &[Feature {
+static BOOM_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: BOOM_CUBICS,
 }];
-pub const BOOM: ShapeData = ShapeData {
+pub const BOOM: ShapeDataStored = ShapeDataStored {
     features: BOOM_FEATURES,
 };
 
@@ -766,11 +799,11 @@ static BUN_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.79599994f32, 0.50000006f32),
     },
 ];
-static BUN_FEATURES: &[Feature] = &[Feature {
+static BUN_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: BUN_CUBICS,
 }];
-pub const BUN: ShapeData = ShapeData {
+pub const BUN: ShapeDataStored = ShapeDataStored {
     features: BUN_FEATURES,
 };
 
@@ -1070,11 +1103,11 @@ static BURST_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.50000834f32, 5.145101E-4f32),
     },
 ];
-static BURST_FEATURES: &[Feature] = &[Feature {
+static BURST_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: BURST_CUBICS,
 }];
-pub const BURST: ShapeData = ShapeData {
+pub const BURST: ShapeDataStored = ShapeDataStored {
     features: BURST_FEATURES,
 };
 
@@ -1146,11 +1179,11 @@ static CIRCLE_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(1.0f32, 0.5f32),
     },
 ];
-static CIRCLE_FEATURES: &[Feature] = &[Feature {
+static CIRCLE_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: CIRCLE_CUBICS,
 }];
-pub const CIRCLE: ShapeData = ShapeData {
+pub const CIRCLE: ShapeDataStored = ShapeDataStored {
     features: CIRCLE_FEATURES,
 };
 
@@ -1234,11 +1267,11 @@ static CLAM_SHELL_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.18728554f32, 0.8156485f32),
     },
 ];
-static CLAM_SHELL_FEATURES: &[Feature] = &[Feature {
+static CLAM_SHELL_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: CLAM_SHELL_CUBICS,
 }];
-pub const CLAM_SHELL: ShapeData = ShapeData {
+pub const CLAM_SHELL: ShapeDataStored = ShapeDataStored {
     features: CLAM_SHELL_FEATURES,
 };
 
@@ -1340,11 +1373,11 @@ static CLOVER_4_LEAF_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.5f32, 0.09812955f32),
     },
 ];
-static CLOVER_4_LEAF_FEATURES: &[Feature] = &[Feature {
+static CLOVER_4_LEAF_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: CLOVER_4_LEAF_CUBICS,
 }];
-pub const CLOVER_4_LEAF: ShapeData = ShapeData {
+pub const CLOVER_4_LEAF: ShapeDataStored = ShapeDataStored {
     features: CLOVER_4_LEAF_FEATURES,
 };
 
@@ -1494,11 +1527,11 @@ static CLOVER_8_LEAF_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.49999994f32, 0.07129116f32),
     },
 ];
-static CLOVER_8_LEAF_FEATURES: &[Feature] = &[Feature {
+static CLOVER_8_LEAF_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: CLOVER_8_LEAF_CUBICS,
 }];
-pub const CLOVER_8_LEAF: ShapeData = ShapeData {
+pub const CLOVER_8_LEAF: ShapeDataStored = ShapeDataStored {
     features: CLOVER_8_LEAF_FEATURES,
 };
 
@@ -1654,11 +1687,11 @@ static COOKIE_12_SIDED_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.5f32, 0.005154038f32),
     },
 ];
-static COOKIE_12_SIDED_FEATURES: &[Feature] = &[Feature {
+static COOKIE_12_SIDED_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: COOKIE_12_SIDED_CUBICS,
 }];
-pub const COOKIE_12_SIDED: ShapeData = ShapeData {
+pub const COOKIE_12_SIDED: ShapeDataStored = ShapeDataStored {
     features: COOKIE_12_SIDED_FEATURES,
 };
 
@@ -1766,11 +1799,11 @@ static COOKIE_4_SIDED_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.8713652f32, 0.8707754f32),
     },
 ];
-static COOKIE_4_SIDED_FEATURES: &[Feature] = &[Feature {
+static COOKIE_4_SIDED_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: COOKIE_4_SIDED_CUBICS,
 }];
-pub const COOKIE_4_SIDED: ShapeData = ShapeData {
+pub const COOKIE_4_SIDED: ShapeDataStored = ShapeDataStored {
     features: COOKIE_4_SIDED_FEATURES,
 };
 
@@ -1890,11 +1923,11 @@ static COOKIE_6_SIDED_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.71652484f32, 0.8728998f32),
     },
 ];
-static COOKIE_6_SIDED_FEATURES: &[Feature] = &[Feature {
+static COOKIE_6_SIDED_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: COOKIE_6_SIDED_CUBICS,
 }];
-pub const COOKIE_6_SIDED: ShapeData = ShapeData {
+pub const COOKIE_6_SIDED: ShapeDataStored = ShapeDataStored {
     features: COOKIE_6_SIDED_FEATURES,
 };
 
@@ -1990,11 +2023,11 @@ static COOKIE_7_SIDED_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.5f32, 0.021824071f32),
     },
 ];
-static COOKIE_7_SIDED_FEATURES: &[Feature] = &[Feature {
+static COOKIE_7_SIDED_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: COOKIE_7_SIDED_CUBICS,
 }];
-pub const COOKIE_7_SIDED: ShapeData = ShapeData {
+pub const COOKIE_7_SIDED: ShapeDataStored = ShapeDataStored {
     features: COOKIE_7_SIDED_FEATURES,
 };
 
@@ -2114,11 +2147,11 @@ static COOKIE_9_SIDED_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.5f32, 0.014150618f32),
     },
 ];
-static COOKIE_9_SIDED_FEATURES: &[Feature] = &[Feature {
+static COOKIE_9_SIDED_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: COOKIE_9_SIDED_CUBICS,
 }];
-pub const COOKIE_9_SIDED: ShapeData = ShapeData {
+pub const COOKIE_9_SIDED: ShapeDataStored = ShapeDataStored {
     features: COOKIE_9_SIDED_FEATURES,
 };
 
@@ -2202,11 +2235,11 @@ static DIAMOND_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.49999994f32, 1.0f32),
     },
 ];
-static DIAMOND_FEATURES: &[Feature] = &[Feature {
+static DIAMOND_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: DIAMOND_CUBICS,
 }];
-pub const DIAMOND: ShapeData = ShapeData {
+pub const DIAMOND: ShapeDataStored = ShapeDataStored {
     features: DIAMOND_FEATURES,
 };
 
@@ -2278,11 +2311,11 @@ static FAN_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.95717525f32, 0.95531684f32),
     },
 ];
-static FAN_FEATURES: &[Feature] = &[Feature {
+static FAN_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: FAN_CUBICS,
 }];
-pub const FAN: ShapeData = ShapeData {
+pub const FAN: ShapeDataStored = ShapeDataStored {
     features: FAN_FEATURES,
 };
 
@@ -2624,11 +2657,11 @@ static FLOWER_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.36974832f32, 0.18639387f32),
     },
 ];
-static FLOWER_FEATURES: &[Feature] = &[Feature {
+static FLOWER_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: FLOWER_CUBICS,
 }];
-pub const FLOWER: ShapeData = ShapeData {
+pub const FLOWER: ShapeDataStored = ShapeDataStored {
     features: FLOWER_FEATURES,
 };
 
@@ -2730,11 +2763,11 @@ static GEM_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.4994853f32, 0.99998444f32),
     },
 ];
-static GEM_FEATURES: &[Feature] = &[Feature {
+static GEM_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: GEM_CUBICS,
 }];
-pub const GEM: ShapeData = ShapeData {
+pub const GEM: ShapeDataStored = ShapeDataStored {
     features: GEM_FEATURES,
 };
 
@@ -2806,11 +2839,11 @@ static GHOSTISH_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.5f32, 0.0f32),
     },
 ];
-static GHOSTISH_FEATURES: &[Feature] = &[Feature {
+static GHOSTISH_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: GHOSTISH_CUBICS,
 }];
-pub const GHOSTISH: ShapeData = ShapeData {
+pub const GHOSTISH: ShapeDataStored = ShapeDataStored {
     features: GHOSTISH_FEATURES,
 };
 
@@ -2888,11 +2921,11 @@ static HEART_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.5f32, 0.28592262f32),
     },
 ];
-static HEART_FEATURES: &[Feature] = &[Feature {
+static HEART_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: HEART_CUBICS,
 }];
-pub const HEART: ShapeData = ShapeData {
+pub const HEART: ShapeDataStored = ShapeDataStored {
     features: HEART_FEATURES,
 };
 
@@ -2952,11 +2985,11 @@ static OVAL_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.9084564f32, 0.091543645f32),
     },
 ];
-static OVAL_FEATURES: &[Feature] = &[Feature {
+static OVAL_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: OVAL_CUBICS,
 }];
-pub const OVAL: ShapeData = ShapeData {
+pub const OVAL: ShapeDataStored = ShapeDataStored {
     features: OVAL_FEATURES,
 };
 
@@ -3028,11 +3061,11 @@ static PENTAGON_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.4999999f32, 0.04283998f32),
     },
 ];
-static PENTAGON_FEATURES: &[Feature] = &[Feature {
+static PENTAGON_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: PENTAGON_CUBICS,
 }];
-pub const PENTAGON: ShapeData = ShapeData {
+pub const PENTAGON: ShapeDataStored = ShapeDataStored {
     features: PENTAGON_FEATURES,
 };
 
@@ -3116,11 +3149,11 @@ static PILL_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.8731647f32, 0.12683535f32),
     },
 ];
-static PILL_FEATURES: &[Feature] = &[Feature {
+static PILL_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: PILL_CUBICS,
 }];
-pub const PILL: ShapeData = ShapeData {
+pub const PILL: ShapeDataStored = ShapeDataStored {
     features: PILL_FEATURES,
 };
 
@@ -3306,11 +3339,11 @@ static PIXEL_CIRCLE_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.49999997f32, 0.0f32),
     },
 ];
-static PIXEL_CIRCLE_FEATURES: &[Feature] = &[Feature {
+static PIXEL_CIRCLE_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: PIXEL_CIRCLE_CUBICS,
 }];
-pub const PIXEL_CIRCLE: ShapeData = ShapeData {
+pub const PIXEL_CIRCLE: ShapeDataStored = ShapeDataStored {
     features: PIXEL_CIRCLE_FEATURES,
 };
 
@@ -3466,11 +3499,11 @@ static PIXEL_TRIANGLE_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.11100009f32, 0.49999988f32),
     },
 ];
-static PIXEL_TRIANGLE_FEATURES: &[Feature] = &[Feature {
+static PIXEL_TRIANGLE_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: PIXEL_TRIANGLE_CUBICS,
 }];
-pub const PIXEL_TRIANGLE: ShapeData = ShapeData {
+pub const PIXEL_TRIANGLE: ShapeDataStored = ShapeDataStored {
     features: PIXEL_TRIANGLE_FEATURES,
 };
 
@@ -3824,11 +3857,11 @@ static PUFFY_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.5f32, 0.17030418f32),
     },
 ];
-static PUFFY_FEATURES: &[Feature] = &[Feature {
+static PUFFY_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: PUFFY_CUBICS,
 }];
-pub const PUFFY: ShapeData = ShapeData {
+pub const PUFFY: ShapeDataStored = ShapeDataStored {
     features: PUFFY_FEATURES,
 };
 
@@ -4008,11 +4041,11 @@ static PUFFY_DIAMOND_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.77894926f32, 0.22105066f32),
     },
 ];
-static PUFFY_DIAMOND_FEATURES: &[Feature] = &[Feature {
+static PUFFY_DIAMOND_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: PUFFY_DIAMOND_CUBICS,
 }];
-pub const PUFFY_DIAMOND: ShapeData = ShapeData {
+pub const PUFFY_DIAMOND: ShapeDataStored = ShapeDataStored {
     features: PUFFY_DIAMOND_FEATURES,
 };
 
@@ -4066,11 +4099,11 @@ static SEMI_CIRCLE_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.96949035f32, 0.7819903f32),
     },
 ];
-static SEMI_CIRCLE_FEATURES: &[Feature] = &[Feature {
+static SEMI_CIRCLE_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: SEMI_CIRCLE_CUBICS,
 }];
-pub const SEMI_CIRCLE: ShapeData = ShapeData {
+pub const SEMI_CIRCLE: ShapeDataStored = ShapeDataStored {
     features: SEMI_CIRCLE_FEATURES,
 };
 
@@ -4178,11 +4211,11 @@ static SLANTED_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.8755312f32, 0.9140243f32),
     },
 ];
-static SLANTED_FEATURES: &[Feature] = &[Feature {
+static SLANTED_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: SLANTED_CUBICS,
 }];
-pub const SLANTED: ShapeData = ShapeData {
+pub const SLANTED: ShapeDataStored = ShapeDataStored {
     features: SLANTED_FEATURES,
 };
 
@@ -5340,11 +5373,11 @@ static SOFT_BOOM_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.7339415f32, 0.45381412f32),
     },
 ];
-static SOFT_BOOM_FEATURES: &[Feature] = &[Feature {
+static SOFT_BOOM_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: SOFT_BOOM_CUBICS,
 }];
-pub const SOFT_BOOM: ShapeData = ShapeData {
+pub const SOFT_BOOM: ShapeDataStored = ShapeDataStored {
     features: SOFT_BOOM_FEATURES,
 };
 
@@ -5596,11 +5629,11 @@ static SOFT_BURST_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.18663658f32, 0.27241567f32),
     },
 ];
-static SOFT_BURST_FEATURES: &[Feature] = &[Feature {
+static SOFT_BURST_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: SOFT_BURST_CUBICS,
 }];
-pub const SOFT_BURST: ShapeData = ShapeData {
+pub const SOFT_BURST: ShapeDataStored = ShapeDataStored {
     features: SOFT_BURST_FEATURES,
 };
 
@@ -5660,11 +5693,11 @@ static SQUARE_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.912132f32, 0.912132f32),
     },
 ];
-static SQUARE_FEATURES: &[Feature] = &[Feature {
+static SQUARE_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: SQUARE_CUBICS,
 }];
-pub const SQUARE: ShapeData = ShapeData {
+pub const SQUARE: ShapeDataStored = ShapeDataStored {
     features: SQUARE_FEATURES,
 };
 
@@ -5868,11 +5901,11 @@ static SUNNY_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.9969052f32, 0.5f32),
     },
 ];
-static SUNNY_FEATURES: &[Feature] = &[Feature {
+static SUNNY_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: SUNNY_CUBICS,
 }];
-pub const SUNNY: ShapeData = ShapeData {
+pub const SUNNY: ShapeDataStored = ShapeDataStored {
     features: SUNNY_FEATURES,
 };
 
@@ -5920,11 +5953,11 @@ static TRIANGLE_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.5f32, 0.077812634f32),
     },
 ];
-static TRIANGLE_FEATURES: &[Feature] = &[Feature {
+static TRIANGLE_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: TRIANGLE_CUBICS,
 }];
-pub const TRIANGLE: ShapeData = ShapeData {
+pub const TRIANGLE: ShapeDataStored = ShapeDataStored {
     features: TRIANGLE_FEATURES,
 };
 
@@ -6128,10 +6161,10 @@ static VERY_SUNNY_CUBICS: &[Cubic] = &[
         anchor_1: Point::new(0.5000118f32, 0.9932915f32),
     },
 ];
-static VERY_SUNNY_FEATURES: &[Feature] = &[Feature {
+static VERY_SUNNY_FEATURES: &[FeatureStored] = &[FeatureStored {
     kind: FeatureKind::Edge,
     cubics: VERY_SUNNY_CUBICS,
 }];
-pub const VERY_SUNNY: ShapeData = ShapeData {
+pub const VERY_SUNNY: ShapeDataStored = ShapeDataStored {
     features: VERY_SUNNY_FEATURES,
 };
