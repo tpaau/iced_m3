@@ -5,7 +5,10 @@ use iced::{
 use iced_m3::{
     spacing::SPACE_150,
     theme::{Accent, ColorScheme, Mode, Theme},
-    widget::{button, shape, shapes::Shape},
+    widget::{
+        button, shape,
+        shapes::{self, Shape},
+    },
 };
 
 const APP_NAME: &str = "Shapes Demo";
@@ -124,7 +127,7 @@ impl State {
                     .font(fonts::text_bold())
                     .size(24.0)
                     .color(self.theme.on_surface()),
-                shape(self.shape, self.theme.primary()),
+                shape(self.shape, shapes::Style::new(&self.theme)).size(200.0),
                 row(buttons).spacing(SPACE_150).wrap()
             ]
             .spacing(20),

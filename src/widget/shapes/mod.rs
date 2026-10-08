@@ -1,17 +1,20 @@
 mod values;
 
-use iced::{Color, Element};
+use iced::Element;
 use iced_widget::{
     Canvas,
-    canvas::{self, Cache, Fill, fill::Rule},
+    canvas::{self, Cache, Fill, LineCap, LineDash, LineJoin, Stroke, fill::Rule},
 };
 
-use crate::widget::shapes::values::{
-    ARCH, ARROW, BOOM, BUN, BURST, CIRCLE, CLAM_SHELL, CLOVER_4_LEAF, CLOVER_8_LEAF,
-    COOKIE_4_SIDED, COOKIE_6_SIDED, COOKIE_7_SIDED, COOKIE_9_SIDED, COOKIE_12_SIDED, DIAMOND, FAN,
-    FLOWER, GEM, GHOSTISH, HEART, OVAL, PENTAGON, PILL, PIXEL_CIRCLE, PIXEL_TRIANGLE, PUFFY,
-    PUFFY_DIAMOND, Point, SEMI_CIRCLE, SLANTED, SOFT_BOOM, SOFT_BURST, SQUARE, SUNNY, TRIANGLE,
-    VERY_SUNNY,
+use crate::{
+    theme::ColorScheme,
+    widget::shapes::values::{
+        ARCH, ARROW, BOOM, BUN, BURST, CIRCLE, CLAM_SHELL, CLOVER_4_LEAF, CLOVER_8_LEAF,
+        COOKIE_4_SIDED, COOKIE_6_SIDED, COOKIE_7_SIDED, COOKIE_9_SIDED, COOKIE_12_SIDED, DIAMOND,
+        FAN, FLOWER, GEM, GHOSTISH, HEART, OVAL, PENTAGON, PILL, PIXEL_CIRCLE, PIXEL_TRIANGLE,
+        PUFFY, PUFFY_DIAMOND, Point, SEMI_CIRCLE, SLANTED, SOFT_BOOM, SOFT_BURST, SQUARE, SUNNY,
+        TRIANGLE, VERY_SUNNY,
+    },
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -111,19 +114,43 @@ impl Shape {
     }
 }
 
-pub struct MaterialShape {
+#[derive(Debug, Clone, Copy)]
+pub struct Style<'a> {
+    pub fill: Fill,
+    pub stroke: Stroke<'a>,
+}
+
+impl<'a> Style<'a> {
+    pub fn new(theme: &(impl ColorScheme + ?Sized)) -> Self {
+        Self {
+            fill: Fill {
+                style: canvas::Style::Solid(theme.primary()),
+                rule: Rule::NonZero,
+            },
+            stroke: Stroke {
+                style: canvas::Style::Solid(theme.on_primary()),
+                width: 0.0,
+                line_cap: LineCap::default(),
+                line_join: LineJoin::default(),
+                line_dash: LineDash::default(),
+            },
+        }
+    }
+}
+
+pub struct MaterialShape<'a> {
     shape: Shape,
-    color: Color,
+    style: Style<'a>,
     size: f32,
     cache: Cache,
 }
 
-impl MaterialShape {
+impl<'a> MaterialShape<'a> {
     #[must_use]
-    pub fn new(shape: Shape, color: Color) -> Self {
+    pub fn new(shape: Shape, style: Style<'a>) -> Self {
         Self {
             shape,
-            color,
+            style,
             size: 100.0,
             cache: Cache::default(),
         }
@@ -136,7 +163,7 @@ impl MaterialShape {
     }
 }
 
-impl<Message, Theme> canvas::Program<Message, Theme, iced::Renderer> for MaterialShape {
+impl<'a, Message, Theme> canvas::Program<Message, Theme, iced::Renderer> for MaterialShape<'a> {
     type State = ();
 
     fn draw(
@@ -153,13 +180,11 @@ impl<Message, Theme> canvas::Program<Message, Theme, iced::Renderer> for Materia
             frame.with_save(|frame| {
                 frame.scale(self.size);
 
-                frame.fill(
-                    &path,
-                    Fill {
-                        style: canvas::Style::Solid(self.color),
-                        rule: Rule::NonZero,
-                    },
-                );
+                frame.fill(&path, self.style.fill);
+
+                if self.style.stroke.width > 0.0 {
+                    frame.stroke(&path, self.style.stroke);
+                }
             });
         });
 
@@ -167,12 +192,12 @@ impl<Message, Theme> canvas::Program<Message, Theme, iced::Renderer> for Materia
     }
 }
 
-impl<'a, Message, Theme> From<MaterialShape> for Element<'a, Message, Theme, iced::Renderer>
+impl<'a, Message, Theme> From<MaterialShape<'a>> for Element<'a, Message, Theme, iced::Renderer>
 where
     Message: 'a,
     Theme: 'a,
 {
-    fn from(value: MaterialShape) -> Self {
+    fn from(value: MaterialShape<'a>) -> Self {
         let size = value.size;
         Element::new(Canvas::new(value).width(size).height(size))
     }

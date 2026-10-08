@@ -200,6 +200,6 @@ pub fn hybrid_icon<'a>(icon: Icon<'a>, size: impl Into<Pixels>, color: Color) ->
 }
 
 #[must_use]
-pub fn shape(shape: Shape, color: Color) -> MaterialShape {
-    MaterialShape::new(shape, color)
+pub fn shape<'a>(shape: Shape, style: shapes::Style<'a>) -> MaterialShape<'a> {
+    MaterialShape::new(shape, style)
 }
