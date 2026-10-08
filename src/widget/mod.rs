@@ -15,6 +15,7 @@ pub(crate) mod internal;
 pub mod navbar;
 pub mod navrail;
 pub mod progress_bar;
+pub mod shapes;
 pub mod slider;
 pub mod switch;
 pub mod text_input;
@@ -40,6 +41,7 @@ use crate::{
         navbar::NavBar,
         navrail::NavRail,
         progress_bar::ProgressBar,
+        shapes::{MaterialShape, Shape},
         switch::Switch,
         text_input::TextInput,
     },
@@ -195,4 +197,9 @@ where
 #[must_use]
 pub fn hybrid_icon<'a>(icon: Icon<'a>, size: impl Into<Pixels>, color: Color) -> HybridIcon<'a> {
     HybridIcon::new(icon, size, color)
+}
+
+#[must_use]
+pub fn shape(shape: Shape, color: Color) -> MaterialShape {
+    MaterialShape::new(shape, color)
 }
