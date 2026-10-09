@@ -1,20 +1,39 @@
 use std::time::Instant;
 
+use iced::Rectangle;
+
 use crate::{
     animation::{
         Interpolable,
         motion::{SimulatedSpring, Spring},
     },
-    widget::shapes::values::{Cubic, Feature, FeatureKind, ShapeData},
+    widget::shapes::{
+        cubic::Cubic,
+        features::{Feature, FeatureKind},
+        rounded_polygon::RoundedPolygon,
+        values::ShapeData,
+    },
 };
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct Morph {
+    pub start: RoundedPolygon,
+    pub end: RoundedPolygon,
+    morph_match: Vec<(Cubic, Cubic)>,
+}
+
+impl Morph {
+    pub fn calculate_bounds(&self, approximate: bool) -> Rectangle {
+        todo!()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct FeatureMorphPlan {
     kind: FeatureKind,
     interpolation: Vec<(Cubic, Cubic)>,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct MorphPlan {
     features: Vec<FeatureMorphPlan>,
 }
@@ -85,13 +104,14 @@ impl MorphPlan {
                         .iter()
                         .map(|(a, b)| (*a).interpolate(*b, t))
                         .collect(),
+                    is_ignorable: false,
                 })
                 .collect(),
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct MorphTransition {
     pub spring: SimulatedSpring,
     pub plan: MorphPlan,

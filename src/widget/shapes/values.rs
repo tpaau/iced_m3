@@ -1,73 +1,14 @@
+use iced::Point;
 use iced_widget::canvas::Path;
 
-use crate::{
-    animation::Interpolable,
-    widget::shapes::{
-        Command,
-        morph::{MorphPlan, MorphPlanError},
-    },
+use crate::widget::shapes::{
+    Command,
+    cubic::Cubic,
+    features::{Feature, FeatureKind},
+    morph::{MorphPlan, MorphPlanError},
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub struct Point {
-    pub x: f32,
-    pub y: f32,
-}
-
-impl Point {
-    pub const fn new(x: f32, y: f32) -> Self {
-        Self { x, y }
-    }
-}
-
-impl From<Point> for iced::Point {
-    fn from(value: Point) -> Self {
-        iced::Point::new(value.x, value.y)
-    }
-}
-
-impl Interpolable for Point {
-    fn interpolate(self, other: Self, t: f32) -> Self {
-        Self {
-            x: self.x.interpolate(other.x, t),
-            y: self.y.interpolate(other.y, t),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub struct Cubic {
-    pub anchor_0: Point,
-    pub control_0: Point,
-    pub control_1: Point,
-    pub anchor_1: Point,
-}
-
-impl Interpolable for Cubic {
-    fn interpolate(self, other: Self, t: f32) -> Self {
-        Self {
-            anchor_0: self.anchor_0.interpolate(other.anchor_0, t),
-            control_0: self.control_0.interpolate(other.control_0, t),
-            control_1: self.control_1.interpolate(other.control_1, t),
-            anchor_1: self.anchor_1.interpolate(other.anchor_1, t),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum FeatureKind {
-    Edge,
-    ConvexCorner,
-    ConcaveCorner,
-}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Feature {
-    pub kind: FeatureKind,
-    pub cubics: Vec<Cubic>,
-}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ShapeData {
     pub features: Vec<Feature>,
 }
@@ -113,14 +54,14 @@ impl ShapeData {
         for feature in &self.features {
             for cubic in &feature.cubics {
                 if first {
-                    commands.push(Command::MoveTo(cubic.anchor_0));
+                    commands.push(Command::MoveTo(cubic.anchor_0.into()));
                     first = false;
                 }
 
                 commands.push(Command::CubicTo {
-                    control_1: cubic.control_0,
-                    control_2: cubic.control_1,
-                    to: cubic.anchor_1,
+                    control_1: cubic.control_0.into(),
+                    control_2: cubic.control_1.into(),
+                    to: cubic.anchor_1.into(),
                 });
             }
         }
@@ -138,7 +79,7 @@ impl ShapeData {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FeatureStored<'a> {
     pub kind: FeatureKind,
     pub cubics: &'a [Cubic],
@@ -149,11 +90,12 @@ impl From<FeatureStored<'_>> for Feature {
         Self {
             kind: value.kind,
             cubics: value.cubics.into_iter().copied().collect(),
+            is_ignorable: todo!(),
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ShapeDataStored<'a> {
     pub features: &'a [FeatureStored<'a>],
 }

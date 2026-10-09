@@ -1,9 +1,14 @@
+mod corner_rounding;
+mod cubic;
+mod features;
 mod morph;
+mod rounded_polygon;
+mod utils;
 mod values;
 
 use std::time::Instant;
 
-use iced::Element;
+use iced::{Element, Point};
 use iced_widget::{
     Canvas,
     canvas::{self, Cache, Fill, LineCap, LineDash, LineJoin, Stroke, fill::Rule},
@@ -18,11 +23,13 @@ use crate::{
             ARCH, ARROW, BOOM, BUN, BURST, CIRCLE, CLAM_SHELL, CLOVER_4_LEAF, CLOVER_8_LEAF,
             COOKIE_4_SIDED, COOKIE_6_SIDED, COOKIE_7_SIDED, COOKIE_9_SIDED, COOKIE_12_SIDED,
             DIAMOND, FAN, FLOWER, GEM, GHOSTISH, HEART, OVAL, PENTAGON, PILL, PIXEL_CIRCLE,
-            PIXEL_TRIANGLE, PUFFY, PUFFY_DIAMOND, Point, SEMI_CIRCLE, SLANTED, SOFT_BOOM,
-            SOFT_BURST, SQUARE, SUNNY, TRIANGLE, VERY_SUNNY,
+            PIXEL_TRIANGLE, PUFFY, PUFFY_DIAMOND, SEMI_CIRCLE, SLANTED, SOFT_BOOM, SOFT_BURST,
+            SQUARE, SUNNY, TRIANGLE, VERY_SUNNY,
         },
     },
 };
+
+const DISTANCE_EPSILON: f32 = 0.0001;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Command {
