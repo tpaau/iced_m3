@@ -1,12 +1,13 @@
 mod corner_rounding;
 mod cubic;
+mod feature_mapping;
 mod features;
+mod float_mapping;
 mod morph;
+mod polygon_measure;
 mod rounded_polygon;
 mod utils;
 mod values;
-
-use std::time::Instant;
 
 use iced::{Element, Point};
 use iced_widget::{
@@ -15,21 +16,45 @@ use iced_widget::{
 };
 
 use crate::{
-    animation::motion::{self, fast_spatial},
     theme::ColorScheme,
-    widget::shapes::{
-        morph::{MorphPlan, MorphTransition},
-        values::{
-            ARCH, ARROW, BOOM, BUN, BURST, CIRCLE, CLAM_SHELL, CLOVER_4_LEAF, CLOVER_8_LEAF,
-            COOKIE_4_SIDED, COOKIE_6_SIDED, COOKIE_7_SIDED, COOKIE_9_SIDED, COOKIE_12_SIDED,
-            DIAMOND, FAN, FLOWER, GEM, GHOSTISH, HEART, OVAL, PENTAGON, PILL, PIXEL_CIRCLE,
-            PIXEL_TRIANGLE, PUFFY, PUFFY_DIAMOND, SEMI_CIRCLE, SLANTED, SOFT_BOOM, SOFT_BURST,
-            SQUARE, SUNNY, TRIANGLE, VERY_SUNNY,
-        },
+    widget::shapes::values::{
+        ARCH, ARROW, BOOM, BUN, BURST, CIRCLE, CLAM_SHELL, CLOVER_4_LEAF, CLOVER_8_LEAF,
+        COOKIE_4_SIDED, COOKIE_6_SIDED, COOKIE_7_SIDED, COOKIE_9_SIDED, COOKIE_12_SIDED, DIAMOND,
+        FAN, FLOWER, GEM, GHOSTISH, HEART, OVAL, PENTAGON, PILL, PIXEL_CIRCLE, PIXEL_TRIANGLE,
+        PUFFY, PUFFY_DIAMOND, SEMI_CIRCLE, SLANTED, SOFT_BOOM, SOFT_BURST, SQUARE, SUNNY, TRIANGLE,
+        VERY_SUNNY,
     },
 };
 
-const DISTANCE_EPSILON: f32 = 0.0001;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Error {
+    InvalidProgress,
+    InvalidRange,
+    EmptyProgress,
+    DuplicateProgressValue,
+    ProgressDoubleWrap,
+    NoSegmentContainsProgress,
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::InvalidProgress => write!(f, "The progress value must be between 0 and 1"),
+            Error::InvalidRange => write!(
+                f,
+                "The end of the range is expected be greater than or equal to the start of the range"
+            ),
+            Error::EmptyProgress => {
+                write!(f, "The progress list has to contain at least one element")
+            }
+            Error::DuplicateProgressValue => write!(f, "Progress repeats a value"),
+            Error::ProgressDoubleWrap => write!(f, "Progress wraps more than once"),
+            Error::NoSegmentContainsProgress => write!(f, "No segment contains the progress value"),
+        }
+    }
+}
+
+impl std::error::Error for Error {}
 
 #[derive(Debug, Clone, Copy)]
 pub enum Command {
@@ -154,7 +179,7 @@ impl<'a> Style<'a> {
 }
 
 pub struct MaterialShape<'a> {
-    morph: MorphTransition,
+    shape: Shape,
     style: Style<'a>,
     size: f32,
     cache: Cache,
@@ -163,13 +188,8 @@ pub struct MaterialShape<'a> {
 impl<'a> MaterialShape<'a> {
     #[must_use]
     pub fn new(shape: Shape, style: Style<'a>) -> Self {
-        let shape_data = shape.data();
         Self {
-            morph: MorphTransition::new(
-                fast_spatial(motion::Scheme::default()),
-                MorphPlan::new(&shape_data, &shape_data).unwrap(),
-                Instant::now(),
-            ),
+            shape,
             style,
             size: 100.0,
             cache: Cache::default(),
@@ -194,7 +214,7 @@ impl<'a, Message, Theme> canvas::Program<Message, Theme, iced::Renderer> for Mat
         bounds: iced::Rectangle,
         _cursor: iced::advanced::mouse::Cursor,
     ) -> Vec<canvas::Geometry<iced::Renderer>> {
-        let path = self.morph.value().path();
+        let path = self.shape.data().path();
 
         let geometry = self.cache.draw(renderer, bounds.size(), |frame| {
             frame.with_save(|frame| {

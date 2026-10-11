@@ -3,7 +3,7 @@ use iced::{Point, Rectangle, Size, Vector};
 use crate::{
     animation::Interpolable,
     widget::shapes::{
-        DISTANCE_EPSILON,
+        morph::DISTANCE_EPSILON,
         utils::{distance, dot_product, normalized_vector, rotate_vector_90},
     },
 };

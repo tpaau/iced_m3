@@ -1,4 +1,4 @@
-use crate::widget::shapes::{DISTANCE_EPSILON, cubic::Cubic};
+use crate::widget::shapes::{cubic::Cubic, morph::DISTANCE_EPSILON};
 
 pub enum FeatureError {
     NoCubics,

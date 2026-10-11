@@ -5,7 +5,6 @@ use crate::widget::shapes::{
     Command,
     cubic::Cubic,
     features::{Feature, FeatureKind},
-    morph::{MorphPlan, MorphPlanError},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -72,10 +71,6 @@ impl ShapeData {
 
     pub fn path(&self) -> Path {
         Self::build_path(&self.as_commands())
-    }
-
-    pub fn morph(&self, to: &Self) -> Result<MorphPlan, MorphPlanError> {
-        MorphPlan::new(self, to)
     }
 }
 
