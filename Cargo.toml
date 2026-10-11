@@ -10,14 +10,15 @@ iced = { version = "0.14.0", features = [ "advanced", "canvas" ] }
 iced_widget = {version = "0.14.2", features = [ "svg" ] }
 num-traits = "0.2.19"
 palette = "0.7.7"
-polymorpher = "0.1.4"
+polymorpher = { version = "0.1.4", optional = true }
 unicode-segmentation = "1.13.3"
 
 [features]
-default = [ "expressive-defaults" ]
+default = [ "expressive-defaults", "shapes" ]
 advanced = []
 pub-internal-const = []
 expressive-defaults = []
+shapes = ["dep:polymorpher", "iced/canvas"]
 
 [workspace]
 members = [
@@ -30,7 +31,8 @@ members = [
   "demos/navrail",
   "demos/switch",
   "demos/card",
-  "demos/navbar"
+  "demos/navbar",
+  "demos/shapes"
 ]
 
 [package.metadata.docs.rs]

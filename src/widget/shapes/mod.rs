@@ -1,7 +1,7 @@
-use iced::Element;
+use iced::{Element, Point, Size};
 use iced_widget::{
     Canvas,
-    canvas::{self, Cache, Fill, LineCap, LineDash, LineJoin, Stroke, fill::Rule},
+    canvas::{self, Cache, Fill, LineCap, LineDash, LineJoin, Path, Stroke, fill::Rule},
 };
 
 pub use polymorpher;
@@ -58,9 +58,6 @@ impl<'a> MaterialShape<'a> {
     }
 }
 
-use iced::widget::canvas::Path;
-use iced::{Point, Size};
-
 pub fn to_iced_path(polygon: &RoundedPolygon, size: Size) -> Path {
     let polygon = polygon.clone().normalized();
     let side = size.width.min(size.height);
@@ -98,18 +95,14 @@ impl<'a, Message, Theme> canvas::Program<Message, Theme, iced::Renderer> for Mat
         bounds: iced::Rectangle,
         _cursor: iced::advanced::mouse::Cursor,
     ) -> Vec<canvas::Geometry<iced::Renderer>> {
-        let path = to_iced_path(&self.polygon, Size::new(self.size, self.size));
-
         let geometry = self.cache.draw(renderer, bounds.size(), |frame| {
-            frame.with_save(|frame| {
-                frame.scale(self.size);
+            let path = to_iced_path(&self.polygon, bounds.size());
 
-                frame.fill(&path, self.style.fill);
+            frame.fill(&path, self.style.fill);
 
-                if self.style.stroke.width > 0.0 {
-                    frame.stroke(&path, self.style.stroke);
-                }
-            });
+            if self.style.stroke.width > 0.0 {
+                frame.stroke(&path, self.style.stroke);
+            }
         });
 
         vec![geometry]

@@ -15,6 +15,7 @@ pub(crate) mod internal;
 pub mod navbar;
 pub mod navrail;
 pub mod progress_bar;
+#[cfg(feature = "shapes")]
 pub mod shapes;
 pub mod slider;
 pub mod switch;
@@ -196,4 +197,13 @@ where
 #[must_use]
 pub fn hybrid_icon<'a>(icon: Icon<'a>, size: impl Into<Pixels>, color: Color) -> HybridIcon<'a> {
     HybridIcon::new(icon, size, color)
+}
+
+#[cfg(feature = "shapes")]
+#[must_use]
+pub fn shape<'a>(
+    polygon: polymorpher::RoundedPolygon,
+    style: shapes::Style<'a>,
+) -> shapes::MaterialShape<'a> {
+    shapes::MaterialShape::new(polygon, style)
 }
