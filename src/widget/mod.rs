@@ -15,6 +15,7 @@ pub(crate) mod internal;
 pub mod navbar;
 pub mod navrail;
 pub mod progress_bar;
+pub mod shapes;
 pub mod slider;
 pub mod switch;
 pub mod text_input;
