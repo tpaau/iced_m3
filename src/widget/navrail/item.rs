@@ -467,14 +467,14 @@ where
         }
 
         if let Some(spring) = self.active_transition_spring
-            && state.active_transition_spring.spring != spring
+            && state.active_transition_spring.spring.model != spring
         {
-            state.active_transition_spring.spring = spring;
+            state.active_transition_spring.spring.model = spring;
         }
         if let Some(spring) = self.color_spring
-            && state.color_spring.spring != spring
+            && state.color_spring.spring.model != spring
         {
-            state.color_spring.spring = spring;
+            state.color_spring.spring.model = spring;
         }
 
         let now = Instant::now();

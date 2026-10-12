@@ -271,15 +271,15 @@ struct State {
 
 impl State {
     fn set_spatial_spring(&mut self, spatial: Spring) {
-        self.icon_rotation_spring.spring = spatial;
-        self.handle_position_spring.spring = spatial;
-        self.handle_size_spring.spring = spatial;
+        self.icon_rotation_spring.spring.model = spatial;
+        self.handle_position_spring.spring.model = spatial;
+        self.handle_size_spring.spring.model = spatial;
     }
 
     fn set_effects_spring(&mut self, effects: Spring) {
-        self.state_layer_color.spring = effects;
-        self.icon_opacity_spring.spring = effects;
-        self.style_spring.spring = effects;
+        self.state_layer_color.spring.model = effects;
+        self.icon_opacity_spring.spring.model = effects;
+        self.style_spring.spring.model = effects;
     }
 }
 

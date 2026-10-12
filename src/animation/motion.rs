@@ -82,7 +82,7 @@ pub fn slow_effects(scheme: Scheme) -> Spring {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Spring {
     pub damping: f32,
     pub stiffness: f32,
@@ -94,61 +94,30 @@ impl Spring {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct SpringValue<T>
-where
-    T: Interpolable + Clone + PartialEq,
-{
-    pub from: T,
-    pub to: T,
-    pub spring: Spring,
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub struct SimulatedSpring {
+    pub model: Spring,
     pub position: f32,
     pub velocity: f32,
     pub time: Instant,
 }
 
-impl<T> SpringValue<T>
-where
-    T: Interpolable + Clone + PartialEq,
-{
+impl SimulatedSpring {
     const TARGET: f32 = 1.0;
     const POSITION_EPSILON: f32 = 0.001;
     const VELOCITY_EPSILON: f32 = 0.001;
 
-    pub fn new(initial_value: T, spring: Spring, now: Instant) -> Self {
+    pub fn new(spring: Spring, now: Instant) -> Self {
         Self {
-            from: initial_value.clone(),
-            to: initial_value,
-            spring,
-            position: Self::TARGET,
+            model: spring,
+            position: 0.0,
             velocity: 0.0,
             time: now,
         }
     }
 
-    pub fn value(&self) -> T {
-        self.from
-            .clone()
-            .interpolate(self.to.clone(), self.position)
-    }
-
-    pub fn set_target(&mut self, target: T, now: Instant) {
-        if self.to == target {
-            return;
-        }
-
-        self.from = self.value();
-        self.to = target;
-
+    pub fn reset(&mut self, now: Instant) {
         self.position = 0.0;
-        self.velocity = 0.0;
-        self.time = now;
-    }
-
-    pub fn reset(&mut self, value: T, now: Instant) {
-        self.from = value.clone();
-        self.to = value;
-        self.position = Self::TARGET;
         self.velocity = 0.0;
         self.time = now;
     }
@@ -159,8 +128,8 @@ where
         if self.is_at_rest() || delta_time == 0.0 {
             return;
         }
-        let zeta = self.spring.damping.max(0.0);
-        let omega = self.spring.stiffness.max(0.0).sqrt();
+        let zeta = self.model.damping.max(0.0);
+        let omega = self.model.stiffness.max(0.0).sqrt();
 
         if omega == 0.0 {
             return;
@@ -218,5 +187,61 @@ where
     pub fn is_at_rest(&self) -> bool {
         (self.position - Self::TARGET).abs() <= Self::POSITION_EPSILON
             && self.velocity.abs() <= Self::VELOCITY_EPSILON
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub struct SpringValue<T>
+where
+    T: Interpolable + Clone + PartialEq,
+{
+    pub from: T,
+    pub to: T,
+    pub spring: SimulatedSpring,
+}
+
+impl<T> SpringValue<T>
+where
+    T: Interpolable + Clone + PartialEq,
+{
+    pub fn new(initial_value: T, spring: Spring, now: Instant) -> Self {
+        Self {
+            from: initial_value.clone(),
+            to: initial_value,
+            spring: SimulatedSpring::new(spring, now),
+        }
+    }
+
+    pub fn value(&self) -> T {
+        self.from
+            .clone()
+            .interpolate(self.to.clone(), self.spring.position)
+    }
+
+    pub fn step(&mut self, now: Instant) {
+        self.spring.step(now);
+    }
+
+    pub fn set_target(&mut self, target: T, now: Instant) {
+        if self.to == target {
+            return;
+        }
+
+        self.from = self.value();
+        self.to = target;
+
+        self.spring.reset(now);
+    }
+
+    pub fn reset(&mut self, value: T, now: Instant) {
+        self.from = value.clone();
+        self.to = value;
+
+        self.spring.reset(now);
+        self.spring.position = SimulatedSpring::TARGET;
+    }
+
+    pub fn is_at_rest(&self) -> bool {
+        self.spring.is_at_rest()
     }
 }

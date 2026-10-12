@@ -1044,17 +1044,17 @@ where
         }
 
         let spring = self.get_style_spring();
-        if state.style_spring.spring != spring {
-            state.style_spring.spring = spring;
+        if state.style_spring.spring.model != spring {
+            state.style_spring.spring.model = spring;
         }
         let spring = self.get_state_layer_spring();
-        if state.state_layer_spring.spring != spring {
-            state.state_layer_spring.spring = spring;
+        if state.state_layer_spring.spring.model != spring {
+            state.state_layer_spring.spring.model = spring;
         }
         let corner_radius_spring = state.corner_radius_spring.as_mut().unwrap();
         let spring = self.get_corner_radius_spring();
-        if corner_radius_spring.spring != spring {
-            corner_radius_spring.spring = spring;
+        if corner_radius_spring.spring.model != spring {
+            corner_radius_spring.spring.model = spring;
         }
 
         let now = Instant::now();
