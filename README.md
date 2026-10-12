@@ -202,7 +202,7 @@ TODOs:
 ## Shapes
 [![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/shapes)
 
-![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/material-shapes-demo.mp4)
+<video src="https://github.com/tpaau/iced_m3/blob/main/showcase/material-shapes-demo.mp4" controls></video>
 
 > Shapes are expressive elements of Material 3 that echo key visual attributes of M3 typography.
 >
