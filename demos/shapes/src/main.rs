@@ -3,7 +3,7 @@ use iced::{
     widget::{column, container, row, text::IntoFragment},
 };
 use iced_m3::{
-    animation::motion::{self, slow_effects},
+    animation::motion::{self, fast_spatial, slow_spatial},
     spacing::SPACE_150,
     theme::{Accent, ColorScheme, Mode, Theme},
     widget::{
@@ -226,7 +226,7 @@ impl State {
                     self.polygon.clone(),
                     iced_m3::widget::shapes::Style::new(&self.theme)
                 )
-                .transition_spring(slow_effects(motion::Scheme::default()))
+                .transition_spring(fast_spatial(motion::Scheme::Expressive))
                 .size(200.0),
                 row(buttons).spacing(SPACE_150).wrap()
             ]

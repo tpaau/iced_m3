@@ -7,7 +7,7 @@ license = "MIT"
 
 [dependencies]
 iced = { version = "0.14.0", features = [ "advanced", "canvas" ] }
-iced_widget = {version = "0.14.2", features = [ "svg" ] }
+iced_widget = { version = "0.14.2", features = [ "svg" ] }
 num-traits = "0.2.19"
 palette = "0.7.7"
 polymorpher = { version = "0.1.4", optional = true }
@@ -18,7 +18,7 @@ default = [ "expressive-defaults", "shapes" ]
 advanced = []
 pub-internal-const = []
 expressive-defaults = []
-shapes = ["dep:polymorpher", "iced/canvas"]
+shapes = [ "dep:polymorpher", "iced/canvas" ]
 
 [workspace]
 members = [
@@ -36,5 +36,5 @@ members = [
 ]
 
 [package.metadata.docs.rs]
-rustdoc-args = ["--cfg", "docsrs"]
+rustdoc-args = [ "--cfg", "docsrs" ]
 all-features = true

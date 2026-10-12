@@ -7,7 +7,7 @@ use iced_widget::{
 };
 
 pub use polymorpher;
-use polymorpher::{Feature, Morph, RoundedPolygon};
+use polymorpher::{Morph, RoundedPolygon};
 
 use crate::{
     animation::motion::{SimulatedSpring, Spring},
@@ -81,27 +81,11 @@ impl MorphTransition {
 
     pub fn set_target(
         &mut self,
-        last_target: Option<RoundedPolygon>,
+        last_target: RoundedPolygon,
         target: RoundedPolygon,
         now: Instant,
     ) {
-        let current = if !self.spring.is_at_rest()
-            && let Some(last_target) = last_target
-        {
-            Some(last_target)
-        } else {
-            None
-        };
-
-        let current = current.unwrap_or({
-            let cubics = self.morph.as_cubics(self.spring.position);
-            RoundedPolygon::new(
-                vec![Feature::edge(cubics)],
-                canvas::path::lyon_path::geom::euclid::Point2D::zero(),
-            )
-        });
-
-        self.morph = Morph::new(current, target);
+        self.morph = Morph::new(last_target, target);
         self.spring.reset(now);
     }
 
@@ -217,7 +201,11 @@ impl<'a, Message, Theme> canvas::Program<Message, Theme, iced::Renderer> for Mat
 
             let now = Instant::now();
             if Some(&self.polygon) != state.prev_polygon.as_ref() {
-                transition.set_target(state.prev_polygon.clone(), self.polygon.clone(), now);
+                transition.set_target(
+                    state.prev_polygon.clone().unwrap_or(self.polygon.clone()),
+                    self.polygon.clone(),
+                    now,
+                );
                 state.prev_polygon = Some(self.polygon.clone());
             }
 
