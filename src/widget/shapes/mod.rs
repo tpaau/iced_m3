@@ -1,3 +1,5 @@
+//! The M3 shape system includes original shapes, a corner radius scale, and built-in shape morphing
+
 use std::time::Instant;
 
 use iced::{Element, Point, Size};
@@ -14,6 +16,37 @@ use crate::{
     theme::ColorScheme,
 };
 
+fn cubics_to_iced_path(cubics: &[polymorpher::Cubic], size: Size) -> Path {
+    let side = size.width.min(size.height);
+    let offset_x = (size.width - side) * 0.5;
+    let offset_y = (size.height - side) * 0.5;
+
+    let map =
+        |p: polymorpher::geometry::Point| Point::new(offset_x + p.x * side, offset_y + p.y * side);
+
+    Path::new(|builder| {
+        if let Some(first) = cubics.first() {
+            builder.move_to(map(first.anchor0()));
+
+            for cubic in cubics {
+                builder.bezier_curve_to(
+                    map(cubic.control0()),
+                    map(cubic.control1()),
+                    map(cubic.anchor1()),
+                );
+            }
+
+            builder.close();
+        }
+    })
+}
+
+fn to_iced_path(polygon: &RoundedPolygon, size: Size) -> Path {
+    let polygon = polygon.clone().normalized();
+    cubics_to_iced_path(&polygon.cubics, size)
+}
+
+/// The style of the shape.
 #[derive(Debug, Clone, Copy)]
 pub struct Style<'a> {
     pub fill: Fill,
@@ -45,46 +78,19 @@ struct MorphTransition {
 }
 
 impl MorphTransition {
-    pub fn new(spring: Spring, morph: Morph, now: Instant) -> Self {
+    fn new(spring: Spring, morph: Morph, now: Instant) -> Self {
         Self {
             spring: SimulatedSpring::new(spring, now),
             morph,
         }
     }
 
-    pub fn value(&self, size: Size) -> Path {
+    fn value(&self, size: Size) -> Path {
         let cubics = self.morph.as_cubics(self.spring.position);
-        let side = size.width.min(size.height);
-        let offset_x = (size.width - side) * 0.5;
-        let offset_y = (size.height - side) * 0.5;
-
-        let map = |p: polymorpher::geometry::Point| {
-            Point::new(offset_x + p.x * side, offset_y + p.y * side)
-        };
-
-        Path::new(|builder| {
-            if let Some(first) = cubics.first() {
-                builder.move_to(map(first.anchor0()));
-
-                for cubic in &cubics {
-                    builder.bezier_curve_to(
-                        map(cubic.control0()),
-                        map(cubic.control1()),
-                        map(cubic.anchor1()),
-                    );
-                }
-
-                builder.close();
-            }
-        })
+        cubics_to_iced_path(&cubics, size)
     }
 
-    pub fn set_target(
-        &mut self,
-        last_target: RoundedPolygon,
-        target: RoundedPolygon,
-        now: Instant,
-    ) {
+    fn set_target(&mut self, last_target: RoundedPolygon, target: RoundedPolygon, now: Instant) {
         self.morph = Morph::new(last_target, target);
         self.spring.reset(now);
     }
@@ -94,12 +100,36 @@ impl MorphTransition {
     }
 }
 
+/// Adds a margin to the shape canvas so that it doesn't get clipped when the morph transition spring overshoots.
+#[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd)]
+pub enum OvershootMargin {
+    /// Don't add any margin to the shape (this is the default).
+    #[default]
+    None,
+    /// Set a manual margin value.
+    Fixed(f32),
+    /// Automatically detect the margin.
+    Auto,
+}
+
+impl OvershootMargin {
+    fn value(&self, spring: &Spring, size: f32) -> f32 {
+        match self {
+            OvershootMargin::None => 0.0,
+            OvershootMargin::Fixed(value) => *value,
+            OvershootMargin::Auto => spring.overshoot_distance(size),
+        }
+    }
+}
+
+/// Abstract Material shape widget.
 pub struct MaterialShape<'a> {
     polygon: RoundedPolygon,
     style: Style<'a>,
     size: f32,
     cache: Cache,
     spring: Option<Spring>,
+    overshoot_margin: OvershootMargin,
 }
 
 impl<'a> MaterialShape<'a> {
@@ -111,52 +141,39 @@ impl<'a> MaterialShape<'a> {
             size: 100.0,
             cache: Cache::default(),
             spring: None,
+            overshoot_margin: OvershootMargin::default(),
         }
     }
 
+    /// Sets the size of the shape.
     #[must_use]
     pub fn size(mut self, size: f32) -> Self {
         self.size = size;
         self
     }
 
+    /// Sets the transition spring used for shape morphing.
     #[must_use]
     pub fn transition_spring(mut self, spring: Spring) -> Self {
         self.spring = Some(spring);
         self
     }
 
+    /// Sets the transition spring used for shape morphing, if `Some`.
+    ///
+    /// If `None`, the shape won't morph.
     #[must_use]
     pub fn transition_spring_maybe(mut self, spring: Option<Spring>) -> Self {
         self.spring = spring;
         self
     }
-}
 
-pub fn to_iced_path(polygon: &RoundedPolygon, size: Size) -> Path {
-    let polygon = polygon.clone().normalized();
-    let side = size.width.min(size.height);
-    let offset_x = (size.width - side) * 0.5;
-    let offset_y = (size.height - side) * 0.5;
-
-    let map =
-        |p: polymorpher::geometry::Point| Point::new(offset_x + p.x * side, offset_y + p.y * side);
-
-    Path::new(|builder| {
-        if let Some(first) = polygon.cubics.first() {
-            builder.move_to(map(first.anchor0()));
-
-            for cubic in &polygon.cubics {
-                builder.bezier_curve_to(
-                    map(cubic.control0()),
-                    map(cubic.control1()),
-                    map(cubic.anchor1()),
-                );
-            }
-
-            builder.close();
-        }
-    })
+    /// Sets the [overshoot margin](OvershootMargin) of the shape.
+    #[must_use]
+    pub fn overshoot_margin(mut self, margin: OvershootMargin) -> Self {
+        self.overshoot_margin = margin;
+        self
+    }
 }
 
 #[derive(Default)]
@@ -229,20 +246,30 @@ impl<'a, Message, Theme> canvas::Program<Message, Theme, iced::Renderer> for Mat
         bounds: iced::Rectangle,
         _cursor: iced::advanced::mouse::Cursor,
     ) -> Vec<canvas::Geometry<iced::Renderer>> {
+        let padding = self
+            .spring
+            .as_ref()
+            .map(|s| self.overshoot_margin.value(s, self.size))
+            .unwrap_or(0.0);
+        let shape_size = iced::Size::new(
+            (bounds.width - 2.0 * padding).max(0.0),
+            (bounds.height - 2.0 * padding).max(0.0),
+        );
+
         let geometry = self.cache.draw(renderer, bounds.size(), |frame| {
             let path = state
                 .transition
                 .as_ref()
-                .map(|t| t.value(bounds.size()))
-                .unwrap_or(to_iced_path(&self.polygon, bounds.size()));
+                .map(|t| t.value(shape_size))
+                .unwrap_or(to_iced_path(&self.polygon, shape_size));
 
+            frame.translate(iced::Vector::new(padding, padding));
             frame.fill(&path, self.style.fill);
 
             if self.style.stroke.width > 0.0 {
                 frame.stroke(&path, self.style.stroke);
             }
         });
-
         vec![geometry]
     }
 }

@@ -3,14 +3,17 @@ use iced::{
     widget::{column, container, row, text::IntoFragment},
 };
 use iced_m3::{
-    animation::motion::{self, fast_spatial, slow_spatial},
+    animation::motion::{self, fast_spatial},
     spacing::SPACE_150,
     theme::{Accent, ColorScheme, Mode, Theme},
     widget::{
         button, shape,
-        shapes::polymorpher::{
-            RoundedPolygon,
-            shapes::{self, circle},
+        shapes::{
+            OvershootMargin,
+            polymorpher::{
+                RoundedPolygon,
+                shapes::{self, circle},
+            },
         },
     },
 };
@@ -226,6 +229,7 @@ impl State {
                     self.polygon.clone(),
                     iced_m3::widget::shapes::Style::new(&self.theme)
                 )
+                .overshoot_margin(OvershootMargin::Auto)
                 .transition_spring(fast_spatial(motion::Scheme::Expressive))
                 .size(200.0),
                 row(buttons).spacing(SPACE_150).wrap()

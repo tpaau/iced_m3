@@ -92,6 +92,28 @@ impl Spring {
     pub const fn new(damping: f32, stiffness: f32) -> Self {
         Self { damping, stiffness }
     }
+
+    /// Fraction of the start-to-target displacement that the spring
+    /// overshoots on its first peak.
+    pub fn overshoot_ratio(self) -> f32 {
+        let zeta = self.damping;
+
+        if zeta.is_nan() || zeta < 0.0 {
+            return f32::INFINITY;
+        }
+
+        if zeta >= 1.0 {
+            return 0.0;
+        }
+
+        let underdamped = (1.0 - zeta * zeta).sqrt();
+        (-std::f32::consts::PI * zeta / underdamped).exp()
+    }
+
+    /// Maximum first-peak overshoot for a start-to-target displacement.
+    pub fn overshoot_distance(self, displacement: f32) -> f32 {
+        displacement.abs() * self.overshoot_ratio()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
