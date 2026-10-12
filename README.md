@@ -28,6 +28,7 @@
   - [Navigation Bar](#widgets-navbar)
   - [Navigation Rail](#widgets-navrail)
   - [Vertical Menu](#widgets-vertical-menu)
+  - [Shapes](#widgets-shapes)
   - [Switch](#widgets-switch)
   - [Slider](#widgets-slider)
   - [Text Field](#widgets-text-field)
@@ -195,6 +196,17 @@ TODOs:
 TODOs:
 - Nested menus
 - Menu item ripple effect
+
+
+<a name="widgets-shapes"></a>
+## Shapes
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/shapes)
+
+![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/material-shapes-demo.mp4)
+
+> Shapes are expressive elements of Material 3 that echo key visual attributes of M3 typography.
+>
+> [Reference](https://m3.material.io/styles/shape/overview-principles)
 
 
 <a name="widgets-switch"></a>
