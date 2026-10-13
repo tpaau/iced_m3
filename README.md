@@ -140,7 +140,7 @@ TODOs:
 
 
 <a name="widgets-loading-indicator"></a>
-## FAB Menu
+## Loading Indicator
 [![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/loading_indicator)
 
 ![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/loading-indicator.gif)
