@@ -24,9 +24,10 @@
   - [Dialog](#widgets-dialog)
   - [Floating Action Buttons (FABs)](#widgets-fabs)
   - [Floating Action Button Menu (FAB Menu)](#widgets-fab-menu)
-  - [Progress Bar](#widgets-progress-bar)
+  - [Loading Indicator](#widgets-loading-indicator)
   - [Navigation Bar](#widgets-navbar)
   - [Navigation Rail](#widgets-navrail)
+  - [Progress Bar](#widgets-progress-bar)
   - [Vertical Menu](#widgets-vertical-menu)
   - [Shapes](#widgets-shapes)
   - [Switch](#widgets-switch)
@@ -136,6 +137,17 @@ TODOs:
 TODOs:
 - Item animation
 - Item ripple effect
+
+
+<a name="widgets-loading-indicator"></a>
+## FAB Menu
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/loading_indicator)
+
+![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/loading-indicator.gif)
+
+> Loading indicators show the progress of a process for a short wait time
+>
+> [Reference](https://m3.material.io/components/loading-indicator/overview)
 
 
 <a name="widgets-navbar"></a>
