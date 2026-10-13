@@ -14,7 +14,6 @@ const LARGE_LABEL_SIZE: f32 = 16.0;
 const LARGE_BADGE_OFFSET: Vector<f32> = Vector::new(4.0, -2.0);
 const BADGE_CONTENT_PADDING: f32 = 4.0;
 const LABEL_FONT_SIZE: f32 = 11.0;
-const LABEL_MAX_WIDTH: f32 = 34.0;
 
 struct State<P>
 where
@@ -181,7 +180,7 @@ where
                 });
 
                 let width = (paragraph.min_bounds().width + 2.0 * BADGE_CONTENT_PADDING)
-                    .clamp(LARGE_LABEL_SIZE, LABEL_MAX_WIDTH);
+                    .max(LARGE_LABEL_SIZE);
 
                 let node_offset = if self.bounds_mode == BoundsMode::Symmetrical {
                     let offset = width - LARGE_LABEL_SIZE + LARGE_BADGE_OFFSET.x;

@@ -120,20 +120,6 @@ where
     }
 
     #[must_use]
-    pub fn style(mut self, style: Style) -> Self {
-        self.style = style;
-        self
-    }
-
-    #[must_use]
-    pub fn style_maybe(self, maybe_style: Option<Style>) -> Self {
-        match maybe_style {
-            Some(style) => self.style(style),
-            None => self,
-        }
-    }
-
-    #[must_use]
     pub fn interaction(mut self, interaction: Interaction<'a, Message>) -> Self {
         self.interaction = interaction;
         self
