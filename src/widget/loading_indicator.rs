@@ -164,8 +164,8 @@ where
         let elapsed = Instant::now().duration_since(state.start).as_secs_f32();
         let angle = Radians(
             elapsed * std::f32::consts::TAU / constants::LINEAR_ROTATION_CYCLE_SECONDS
-                + PI / 2.0 * state.spring.position
-                + PI / 2.0 * state.last_cycle.as_secs_f32() / constants::MORPH_CYCLE_SECONDS,
+                + PI / 4.0 * state.spring.position
+                + PI / 4.0 * state.last_cycle.as_secs_f32() / constants::MORPH_CYCLE_SECONDS,
         );
 
         frame.translate(Vector::new(offset.x + half, offset.y + half));
