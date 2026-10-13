@@ -1,6 +1,6 @@
 //! Holds utilities related to material's [motion physics](https://m3.material.io/styles/motion/overview) system.
 
-mod constants {
+pub(crate) mod constants {
     use crate::animation::motion::Spring;
 
     pub const FAST_SPATIAL_STANDARD: Spring = Spring::new(0.9, 1400.0);

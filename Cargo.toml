@@ -15,9 +15,12 @@ unicode-segmentation = "1.13.3"
 
 [features]
 default = [ "expressive-defaults", "shapes" ]
+# Non-material widgets used internally that are also useful outside the library
 advanced = []
 pub-internal-const = []
+# Makes the default motion scheme expressive
 expressive-defaults = []
+# Material Shapes - requires a dependency so it's optional
 shapes = [ "dep:polymorpher", "iced/canvas" ]
 
 [workspace]
@@ -32,7 +35,8 @@ members = [
   "demos/switch",
   "demos/card",
   "demos/navbar",
-  "demos/shapes"
+  "demos/shapes",
+  "demos/loading_indicator"
 ]
 
 [package.metadata.docs.rs]

@@ -16,7 +16,7 @@ use crate::{
     theme::ColorScheme,
 };
 
-fn cubics_to_iced_path(cubics: &[polymorpher::Cubic], size: Size) -> Path {
+pub(crate) fn cubics_to_iced_path(cubics: &[polymorpher::Cubic], size: Size) -> Path {
     let side = size.width.min(size.height);
     let offset_x = (size.width - side) * 0.5;
     let offset_y = (size.height - side) * 0.5;
@@ -41,7 +41,7 @@ fn cubics_to_iced_path(cubics: &[polymorpher::Cubic], size: Size) -> Path {
     })
 }
 
-fn to_iced_path(polygon: &RoundedPolygon, size: Size) -> Path {
+pub(crate) fn to_iced_path(polygon: &RoundedPolygon, size: Size) -> Path {
     let polygon = polygon.clone().normalized();
     cubics_to_iced_path(&polygon.cubics, size)
 }
@@ -117,22 +117,32 @@ impl OvershootMargin {
         match self {
             OvershootMargin::None => 0.0,
             OvershootMargin::Fixed(value) => *value,
-            OvershootMargin::Auto => spring.overshoot_distance(size),
+            // TODO: Maybe there's a better way of doing this?
+            // `Spring::overshoot_distance(...)` returns the maximum distance a vertex could
+            // overshoot with if it was displaced from one edge of the canvas to the other. However,
+            // this should never happen with correctly labeled shapes, so we divide the value by 4.
+            OvershootMargin::Auto => spring.overshoot_distance(size) / 4.0,
         }
     }
 }
 
 /// Abstract Material shape widget.
-pub struct MaterialShape<'a> {
+pub struct MaterialShape<'a, Renderer>
+where
+    Renderer: iced_widget::renderer::geometry::Renderer,
+{
     polygon: RoundedPolygon,
     style: Style<'a>,
     size: f32,
-    cache: Cache,
+    cache: Cache<Renderer>,
     spring: Option<Spring>,
     overshoot_margin: OvershootMargin,
 }
 
-impl<'a> MaterialShape<'a> {
+impl<'a, Renderer> MaterialShape<'a, Renderer>
+where
+    Renderer: iced_widget::renderer::geometry::Renderer,
+{
     #[must_use]
     pub fn new(polygon: RoundedPolygon, style: Style<'a>) -> Self {
         Self {
@@ -182,7 +192,11 @@ pub struct State {
     prev_polygon: Option<RoundedPolygon>,
 }
 
-impl<'a, Message, Theme> canvas::Program<Message, Theme, iced::Renderer> for MaterialShape<'a> {
+impl<'a, Message, Theme, Renderer> canvas::Program<Message, Theme, Renderer>
+    for MaterialShape<'a, Renderer>
+where
+    Renderer: iced_widget::renderer::geometry::Renderer,
+{
     type State = State;
 
     fn update(
@@ -241,11 +255,11 @@ impl<'a, Message, Theme> canvas::Program<Message, Theme, iced::Renderer> for Mat
     fn draw(
         &self,
         state: &Self::State,
-        renderer: &iced::Renderer,
+        renderer: &Renderer,
         _theme: &Theme,
         bounds: iced::Rectangle,
         _cursor: iced::advanced::mouse::Cursor,
-    ) -> Vec<canvas::Geometry<iced::Renderer>> {
+    ) -> Vec<canvas::Geometry<Renderer>> {
         let padding = self
             .spring
             .as_ref()
@@ -270,16 +284,19 @@ impl<'a, Message, Theme> canvas::Program<Message, Theme, iced::Renderer> for Mat
                 frame.stroke(&path, self.style.stroke);
             }
         });
+
         vec![geometry]
     }
 }
 
-impl<'a, Message, Theme> From<MaterialShape<'a>> for Element<'a, Message, Theme, iced::Renderer>
+impl<'a, Message, Theme, Renderer> From<MaterialShape<'a, Renderer>>
+    for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a,
     Theme: 'a,
+    Renderer: 'a + iced_widget::renderer::geometry::Renderer,
 {
-    fn from(value: MaterialShape<'a>) -> Self {
+    fn from(value: MaterialShape<'a, Renderer>) -> Self {
         let size = value.size;
         Element::new(Canvas::new(value).width(size).height(size))
     }

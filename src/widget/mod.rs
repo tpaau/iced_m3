@@ -12,6 +12,8 @@ pub mod fab;
 pub mod fab_menu;
 pub mod hybrid_icon;
 pub(crate) mod internal;
+#[cfg(feature = "shapes")]
+pub mod loading_indicator;
 pub mod navbar;
 pub mod navrail;
 pub mod progress_bar;
@@ -30,6 +32,8 @@ use std::ops::RangeInclusive;
 
 use iced::{Color, Element, Font, Pixels};
 
+#[cfg(feature = "shapes")]
+use crate::widget::loading_indicator::LoadingIndicator;
 use crate::{
     theme::ColorScheme,
     widget::{
@@ -201,9 +205,18 @@ pub fn hybrid_icon<'a>(icon: Icon<'a>, size: impl Into<Pixels>, color: Color) ->
 
 #[cfg(feature = "shapes")]
 #[must_use]
-pub fn shape<'a>(
+pub fn shape<'a, Renderer>(
     polygon: polymorpher::RoundedPolygon,
     style: shapes::Style<'a>,
-) -> shapes::MaterialShape<'a> {
+) -> shapes::MaterialShape<'a, Renderer>
+where
+    Renderer: 'a + iced_widget::renderer::geometry::Renderer,
+{
     shapes::MaterialShape::new(polygon, style)
+}
+
+#[cfg(feature = "shapes")]
+#[must_use]
+pub fn loading_indicator(style: loading_indicator::Style) -> LoadingIndicator {
+    LoadingIndicator::new(style)
 }
