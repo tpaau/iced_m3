@@ -5,7 +5,7 @@ use std::time::Instant;
 use iced::{Element, Point, Size};
 use iced_widget::{
     Canvas,
-    canvas::{self, Cache, Fill, LineCap, LineDash, LineJoin, Path, Stroke, fill::Rule},
+    canvas::{self, Cache, Fill, Path, Stroke, fill::Rule},
 };
 
 pub use polymorpher;
@@ -49,24 +49,15 @@ pub(crate) fn to_iced_path(polygon: &RoundedPolygon, size: Size) -> Path {
 /// The style of the shape.
 #[derive(Debug, Clone, Copy)]
 pub struct Style<'a> {
-    pub fill: Fill,
-    pub stroke: Stroke<'a>,
+    pub fill: canvas::Style,
+    pub stroke: Option<Stroke<'a>>,
 }
 
 impl<'a> Style<'a> {
     pub fn new(theme: &(impl ColorScheme + ?Sized)) -> Self {
         Self {
-            fill: Fill {
-                style: canvas::Style::Solid(theme.primary()),
-                rule: Rule::NonZero,
-            },
-            stroke: Stroke {
-                style: canvas::Style::Solid(theme.on_primary()),
-                width: 0.0,
-                line_cap: LineCap::default(),
-                line_join: LineJoin::default(),
-                line_dash: LineDash::default(),
-            },
+            fill: canvas::Style::Solid(theme.primary()),
+            stroke: None,
         }
     }
 }
@@ -278,10 +269,16 @@ where
                 .unwrap_or(to_iced_path(&self.polygon, shape_size));
 
             frame.translate(iced::Vector::new(padding, padding));
-            frame.fill(&path, self.style.fill);
+            frame.fill(
+                &path,
+                Fill {
+                    style: self.style.fill,
+                    rule: Rule::NonZero,
+                },
+            );
 
-            if self.style.stroke.width > 0.0 {
-                frame.stroke(&path, self.style.stroke);
+            if let Some(stroke) = self.style.stroke {
+                frame.stroke(&path, stroke);
             }
         });
 
