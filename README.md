@@ -20,6 +20,7 @@
 - [Widgets](#widgets)
   - [Badges](#widgets-badges)
   - [Common Buttons](#widgets-common-buttons)
+  - [Connected Button Groups](#widgets-connected-button-groups)
   - [Cards](#widgets-cards)
   - [Dialog](#widgets-dialog)
   - [Floating Action Buttons (FABs)](#widgets-fabs)
@@ -79,6 +80,20 @@ Iced releases.
 > Buttons prompt most actions in a UI
 >
 > [Reference](https://m3.material.io/components/buttons/overview)
+
+TODOs:
+- Animated ripple effect
+
+
+<a name="widgets-connected-button-groups"></a>
+## Connected Button Groups
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/button_groups)
+
+![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/connected-button-groups.gif)
+
+> Connected button groups help people select options, switch views, or sort elements in a page.
+>
+> [Reference](https://m3.material.io/components/button-groups/overview)
 
 TODOs:
 - Animated ripple effect
