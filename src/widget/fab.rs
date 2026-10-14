@@ -39,12 +39,12 @@ impl Size {
         }
     }
 
-    pub(crate) fn label_size(&self) -> f32 {
-        match self {
+    pub(crate) fn label_size(&self) -> Pixels {
+        Pixels(match self {
             Size::Regular => 16.0,
             Size::Medium => 22.0,
             Size::Large => 24.0,
-        }
+        })
     }
 
     pub(crate) fn padding(&self) -> f32 {
@@ -55,12 +55,12 @@ impl Size {
         }
     }
 
-    pub(crate) fn icon_size(&self) -> f32 {
-        match self {
+    pub(crate) fn icon_size(&self) -> Pixels {
+        Pixels(match self {
             Size::Regular => 24.0,
             Size::Medium => 28.0,
             Size::Large => 36.0,
-        }
+        })
     }
 
     pub(crate) fn rounding(&self) -> Radius {

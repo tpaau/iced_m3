@@ -283,7 +283,7 @@ where
             limits.resolve(intrinsic_size.width, intrinsic_size.height, intrinsic_size);
 
         let icon_size = size.icon_size();
-        let icon_bounds = Size::new(icon_size, icon_size);
+        let icon_bounds = Size::new(icon_size.0, icon_size.0);
         let icon_node = Node::new(icon_bounds).move_to(Point::new(
             (container_bounds.width - icon_bounds.width) / 2.0,
             (container_bounds.height - icon_bounds.height) / 2.0,

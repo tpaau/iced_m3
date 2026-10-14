@@ -22,15 +22,15 @@ pub use item::Content as Item;
 pub use item::Style as ItemStyle;
 
 const COLLAPSED_ITEM_SPACE: f32 = 4.0;
-const MENU_ICON_SIZE: f32 = 24.0;
+const MENU_ICON_SIZE: Pixels = Pixels(24.0);
 const MENU_BUTTON_PADDING: f32 = 4.0;
 const SECTION_SPACE: f32 = 16.0;
 // Small FAB container size
 const FAB_OFFSET: f32 = (constants::CONTAINER_COLLAPSED_WIDTH - 56.0) / 2.0;
 const MENU_OFFSET: f32 =
-    (constants::CONTAINER_COLLAPSED_WIDTH - MENU_ICON_SIZE - MENU_BUTTON_PADDING * 2.0) / 2.0;
+    (constants::CONTAINER_COLLAPSED_WIDTH - MENU_ICON_SIZE.0 - MENU_BUTTON_PADDING * 2.0) / 2.0;
 
-mod constants {
+pub(crate) mod constants {
     use crate::widget::navrail::item::INDICATOR_SMALL_WIDTH;
 
     pub const CONTAINER_COLLAPSED_WIDTH: f32 = 96.0;
@@ -644,12 +644,12 @@ where
                 button::Content::Icon(Icon::Svg(icon)),
             )
             .size(button::Size {
-                width: Length::Fixed(button_size),
-                height: Length::Fixed(button_size),
+                width: Length::Fixed(button_size.0),
+                height: Length::Fixed(button_size.0),
                 spacing: Pixels::ZERO,
                 padding: Padding::default(),
                 icon_size: MENU_ICON_SIZE,
-                label_size: 0.0,
+                label_size: Pixels(0.0),
                 corner_radius: button::CornerRadius {
                     style: button::CornerStyle::Rounded,
                     shape_morph: false,

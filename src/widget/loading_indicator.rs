@@ -19,7 +19,7 @@ use crate::{
     animation::motion::SimulatedSpring, theme::ColorScheme, widget::shapes::cubics_to_iced_path,
 };
 
-mod constants {
+pub(crate) mod constants {
     use std::sync::LazyLock;
 
     use polymorpher::shapes::{cookie4, cookie9, oval, pentagon, pill, soft_burst, sunny};
@@ -76,6 +76,7 @@ impl Style {
     }
 }
 
+/// Loading indicators show the progress of a process for a short wait time
 pub struct LoadingIndicator {
     style: Style,
 }

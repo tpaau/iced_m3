@@ -10,7 +10,7 @@ use crate::{
 };
 
 pub const MAX_CARD_BETWEEN_PADDING: f32 = 8.0;
-mod constants {
+pub(crate) mod constants {
     pub const DEFAULT_CORNER_RADIUS: f32 = 12.0;
     pub const DEFAULT_PADDING: f32 = 16.0;
     pub const DEFAULT_OUTLINE_WIDTH: f32 = 1.0;

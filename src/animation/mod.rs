@@ -1,6 +1,6 @@
 pub mod motion;
 
-mod constants {
+pub(crate) mod constants {
     pub const EMPHASIZED_ACCELERATE: (f32, f32, f32, f32) = (0.3, 0.0, 0.8, 0.15);
     pub const EMPHASIZED_DECELERATE: (f32, f32, f32, f32) = (0.05, 0.7, 0.1, 1.0);
     pub const STANDARD: (f32, f32, f32, f32) = (0.2, 0.0, 0.0, 1.0);

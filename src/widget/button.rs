@@ -1,3 +1,5 @@
+//! Buttons prompt most actions in a UI
+
 use std::time::Instant;
 
 use iced::{
@@ -24,12 +26,38 @@ use crate::{
     widget::{self, OnPress, hybrid_icon::Icon},
 };
 
-mod constants {
-    pub const BUTTON_HEIGHT_EXTRA_LARGE: f32 = 136.0;
-    pub const BUTTON_HEIGHT_LARGE: f32 = 96.0;
-    pub const BUTTON_HEIGHT_MEDIUM: f32 = 56.0;
-    pub const BUTTON_HEIGHT_SMALL: f32 = 40.0;
-    pub const BUTTON_HEIGHT_EXTRA_SMALL: f32 = 32.0;
+pub(crate) mod constants {
+    use iced::Pixels;
+
+    pub const CONTAINER_HEIGHT_EXTRA_SMALL: f32 = 32.0;
+    pub const CONTAINER_HEIGHT_SMALL: f32 = 40.0;
+    pub const CONTAINER_HEIGHT_MEDIUM: f32 = 56.0;
+    pub const CONTAINER_HEIGHT_LARGE: f32 = 96.0;
+    pub const CONTAINER_HEIGHT_EXTRA_LARGE: f32 = 136.0;
+
+    pub const CONTENT_PADDING_EXTRA_SMALL: f32 = 12.0;
+    pub const CONTENT_PADDING_SMALL: f32 = 16.0;
+    pub const CONTENT_PADDING_MEDIUM: f32 = 24.0;
+    pub const CONTENT_PADDING_LARGE: f32 = 48.0;
+    pub const CONTENT_PADDING_EXTRA_LARGE: f32 = 64.0;
+
+    pub const CONTENT_SPACING_EXTRA_SMALL: Pixels = Pixels(4.0);
+    pub const CONTENT_SPACING_SMALL: Pixels = Pixels(8.0);
+    pub const CONTENT_SPACING_MEDIUM: Pixels = Pixels(8.0);
+    pub const CONTENT_SPACING_LARGE: Pixels = Pixels(12.0);
+    pub const CONTENT_SPACING_EXTRA_LARGE: Pixels = Pixels(16.0);
+
+    pub const ICON_SIZE_EXTRA_SMALL: Pixels = Pixels(20.0);
+    pub const ICON_SIZE_SMALL: Pixels = Pixels(20.0);
+    pub const ICON_SIZE_MEDIUM: Pixels = Pixels(24.0);
+    pub const ICON_SIZE_LARGE: Pixels = Pixels(32.0);
+    pub const ICON_SIZE_EXTRA_LARGE: Pixels = Pixels(40.0);
+
+    pub const LABEL_SIZE_EXTRA_SMALL: Pixels = Pixels(14.0);
+    pub const LABEL_SIZE_SMALL: Pixels = Pixels(14.0);
+    pub const LABEL_SIZE_MEDIUM: Pixels = Pixels(16.0);
+    pub const LABEL_SIZE_LARGE: Pixels = Pixels(24.0);
+    pub const LABEL_SIZE_EXTRA_LARGE: Pixels = Pixels(32.0);
 }
 
 #[cfg(feature = "pub-internal-const")]
@@ -38,6 +66,8 @@ pub use constants::*;
 const DISABLED_CONTAINER_OPACITY: f32 = 0.1;
 const DISABLED_CONTENT_OPACITY: f32 = DISABLED_STATE_LAYER_OPACITY;
 
+/// Clamps the radius values between `0` and `max`. This is crucial when doing animations on fully
+/// rounded corners.
 fn normalize_radius(radius: Radius, max: f32) -> Radius {
     Radius {
         top_left: radius.top_left.clamp(0.0, max),
@@ -47,9 +77,12 @@ fn normalize_radius(radius: Radius, max: f32) -> Radius {
     }
 }
 
+/// The outline of the button container.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Outline {
+    /// The width of the outline.
     pub width: f32,
+    /// The color of the outline.
     pub color: Color,
 }
 
@@ -71,11 +104,16 @@ impl Interpolable for Outline {
     }
 }
 
+/// The style of the button for a specific state.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StateStyle {
+    /// The color of the container.
     pub container: Color,
+    /// The color of the label text.
     pub label: Color,
+    /// The color of the icon.
     pub icon: Color,
+    /// The style of the outline.
     pub outline: Outline,
 }
 
@@ -90,12 +128,18 @@ impl Interpolable for StateStyle {
     }
 }
 
+/// Elevation values for the button container for specific button states.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ElevationStates {
+    /// The color of the elevation shadow.
     pub shadow_color: Color,
+    /// Elevation used when the button is idle.
     pub idle: Elevation,
+    /// Elevation used when the button is disabled.
     pub disabled: Elevation,
+    /// Elevation used when the button is hovered.
     pub hover: Elevation,
+    /// Elevation used when the button is pressed.
     pub press: Elevation,
 }
 
@@ -111,17 +155,28 @@ impl ElevationStates {
     }
 }
 
+/// The style of the button.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Style {
+    /// The style of the button when not selectable.
     pub regular: StateStyle,
+    /// The style of the button when unselected.
     pub unselected: StateStyle,
+    /// The style of the button when selected.
     pub selected: StateStyle,
+    /// The style of the button when not selectable and disabled.
     pub disabled: StateStyle,
+    /// The style of the button when disabled and unselected.
     pub disabled_unselected: StateStyle,
+    /// The style of the button when disabled and selected.
     pub disabled_selected: StateStyle,
+    /// Elevation values for the button container for specific button states.
     pub elevation: ElevationStates,
+    /// The state layer of the button when not selectable.
     pub state_layer: StateLayer,
+    /// The state layer of the button when unselected.
     pub state_layer_unselected: StateLayer,
+    /// The state layer of the button when selected.
     pub state_layer_selected: StateLayer,
 }
 
@@ -368,19 +423,28 @@ impl Style {
     }
 }
 
+/// The style of the corner radius.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum CornerStyle {
+    /// The button will have a rounded shape when resting.
     #[default]
     Rounded,
+    /// The button will have a squared shape when resting.
     Square,
 }
 
+/// The corner radius of the button container.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct CornerRadius {
+    /// The style of the corner radius.
     pub style: CornerStyle,
+    /// Whether the corner radius should change when the button is pressed.
     pub shape_morph: bool,
+    /// The corner radius when the button is rounded.
     pub rounded: Radius,
+    /// The corner radius when the button is square.
     pub square: Radius,
+    /// The corner radius when the button is pressed.
     pub pressed: Radius,
 }
 
@@ -464,14 +528,22 @@ impl CornerRadius {
     }
 }
 
+/// The size of the button.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Size {
+    /// The width of the button container.
     pub width: Length,
+    /// The height of the button container.
     pub height: Length,
+    /// The space between the icon and label inside the button.
     pub spacing: Pixels,
+    /// The padding inside the button.
     pub padding: Padding,
-    pub icon_size: f32,
-    pub label_size: f32,
+    /// The size of the button icon.
+    pub icon_size: Pixels,
+    /// The size of the button label.
+    pub label_size: Pixels,
+    /// The corner radius of the button container.
     pub corner_radius: CornerRadius,
 }
 
@@ -485,11 +557,11 @@ impl Size {
     pub fn extra_small() -> Self {
         Self {
             width: Length::Shrink,
-            height: Length::Fixed(constants::BUTTON_HEIGHT_EXTRA_SMALL),
-            spacing: Pixels(4.0),
-            padding: padding::horizontal(12.0),
-            icon_size: 20.0,
-            label_size: 14.0,
+            height: Length::Fixed(constants::CONTAINER_HEIGHT_EXTRA_SMALL),
+            spacing: constants::CONTENT_SPACING_EXTRA_SMALL,
+            padding: padding::horizontal(constants::CONTENT_PADDING_EXTRA_SMALL),
+            icon_size: constants::ICON_SIZE_EXTRA_SMALL,
+            label_size: constants::LABEL_SIZE_EXTRA_SMALL,
             corner_radius: CornerRadius::extra_small(),
         }
     }
@@ -497,11 +569,11 @@ impl Size {
     pub fn small() -> Self {
         Self {
             width: Length::Shrink,
-            height: Length::Fixed(constants::BUTTON_HEIGHT_SMALL),
-            spacing: Pixels(8.0),
-            padding: padding::horizontal(16.0),
-            icon_size: 20.0,
-            label_size: 14.0,
+            height: Length::Fixed(constants::CONTAINER_HEIGHT_SMALL),
+            spacing: constants::CONTENT_SPACING_SMALL,
+            padding: padding::horizontal(constants::CONTENT_PADDING_SMALL),
+            icon_size: constants::ICON_SIZE_SMALL,
+            label_size: constants::LABEL_SIZE_SMALL,
             corner_radius: CornerRadius::small(),
         }
     }
@@ -509,11 +581,11 @@ impl Size {
     pub fn medium() -> Self {
         Self {
             width: Length::Shrink,
-            height: Length::Fixed(constants::BUTTON_HEIGHT_MEDIUM),
-            spacing: Pixels(8.0),
-            padding: padding::horizontal(24.0),
-            icon_size: 24.0,
-            label_size: 16.0,
+            height: Length::Fixed(constants::CONTAINER_HEIGHT_MEDIUM),
+            spacing: constants::CONTENT_SPACING_MEDIUM,
+            padding: padding::horizontal(constants::CONTENT_PADDING_MEDIUM),
+            icon_size: constants::ICON_SIZE_MEDIUM,
+            label_size: constants::LABEL_SIZE_MEDIUM,
             corner_radius: CornerRadius::medium(),
         }
     }
@@ -521,11 +593,11 @@ impl Size {
     pub fn large() -> Self {
         Self {
             width: Length::Shrink,
-            height: Length::Fixed(constants::BUTTON_HEIGHT_LARGE),
-            spacing: Pixels(12.0),
-            padding: padding::horizontal(48.0),
-            icon_size: 32.0,
-            label_size: 24.0,
+            height: Length::Fixed(constants::CONTAINER_HEIGHT_LARGE),
+            spacing: constants::CONTENT_SPACING_LARGE,
+            padding: padding::horizontal(constants::CONTENT_PADDING_LARGE),
+            icon_size: constants::ICON_SIZE_LARGE,
+            label_size: constants::LABEL_SIZE_LARGE,
             corner_radius: CornerRadius::large(),
         }
     }
@@ -533,11 +605,11 @@ impl Size {
     pub fn extra_large() -> Self {
         Self {
             width: Length::Shrink,
-            height: Length::Fixed(constants::BUTTON_HEIGHT_EXTRA_LARGE),
-            spacing: Pixels(16.0),
-            padding: padding::horizontal(64.0),
-            icon_size: 40.0,
-            label_size: 32.0,
+            height: Length::Fixed(constants::CONTAINER_HEIGHT_EXTRA_LARGE),
+            spacing: constants::CONTENT_SPACING_EXTRA_LARGE,
+            padding: padding::horizontal(constants::CONTENT_PADDING_EXTRA_LARGE),
+            icon_size: constants::ICON_SIZE_EXTRA_LARGE,
+            label_size: constants::LABEL_SIZE_EXTRA_LARGE,
             corner_radius: CornerRadius::extra_large(),
         }
     }
@@ -562,12 +634,12 @@ impl Size {
         self
     }
 
-    pub fn icon_size(mut self, icon_size: f32) -> Self {
+    pub fn icon_size(mut self, icon_size: Pixels) -> Self {
         self.icon_size = icon_size;
         self
     }
 
-    pub fn label_size(mut self, label_size: f32) -> Self {
+    pub fn label_size(mut self, label_size: Pixels) -> Self {
         self.label_size = label_size;
         self
     }
@@ -578,10 +650,14 @@ impl Size {
     }
 }
 
-#[derive(Clone)]
+/// The content of the button.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Content<'a> {
+    /// The button will only contain an icon.
     Icon(Icon<'a>),
+    /// The button will only contain a label text.
     Label(text::Fragment<'a>),
+    /// The button will contain both an icon and a label text.
     Full {
         icon: Icon<'a>,
         label: text::Fragment<'a>,
@@ -648,6 +724,7 @@ impl<'a> Content<'a> {
     }
 }
 
+/// Buttons prompt most actions in a UI
 pub struct Button<'a, Message, Renderer>
 where
     Message: Clone,
@@ -655,7 +732,6 @@ where
 {
     style: Style,
     on_press: Option<OnPress<'a, Message>>,
-    clip: bool,
     content: Content<'a>,
     label_font: Option<iced::Font>,
     size: Size,
@@ -682,7 +758,6 @@ where
         Self {
             style,
             on_press: None,
-            clip: false,
             content,
             label_font: None,
             size: Size::default(),
@@ -744,12 +819,6 @@ where
     #[must_use]
     pub fn on_press_with(mut self, on_press: impl Fn() -> Message + 'a) -> Self {
         self.on_press = Some(OnPress::Closure(Box::new(on_press)));
-        self
-    }
-
-    #[must_use]
-    pub fn clip(mut self, clip: bool) -> Self {
-        self.clip = clip;
         self
     }
 
@@ -888,8 +957,8 @@ where
                     iced::advanced::text::Text {
                         content: &text,
                         bounds: shrinked_limits.max(),
-                        size: Pixels(self.size.icon_size),
-                        line_height: text::LineHeight::Absolute(Pixels(self.size.icon_size)),
+                        size: self.size.icon_size,
+                        line_height: text::LineHeight::Absolute(self.size.icon_size),
                         font: font
                             .map(Renderer::Font::from)
                             .unwrap_or_else(|| renderer.default_font()),
@@ -905,7 +974,7 @@ where
         let contains_icon = matches!(&self.content, Content::Icon(_) | Content::Full { .. });
         let icon_node = contains_icon.then(|| {
             let icon_size = self.size.icon_size;
-            Node::new(iced::Size::new(icon_size, icon_size))
+            Node::new(iced::Size::new(icon_size.0, icon_size.0))
         });
 
         let paragraph = self.content.get_label().map(|label| {
@@ -913,7 +982,7 @@ where
                 iced::advanced::text::Text {
                     content: &label,
                     bounds: shrinked_limits.max(),
-                    size: Pixels(self.size.label_size),
+                    size: self.size.label_size,
                     line_height: text::LineHeight::Relative(1.0),
                     font: self
                         .label_font

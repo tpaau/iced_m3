@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 use iced::{Alignment, Border, Color, Element, Font, Length, Pixels, border::Radius, padding};
 use iced_widget::{button, column, container, row, space, svg, svg::Handle, text};
 
-mod constants {
+pub(crate) mod constants {
     pub const CONTAINER_BORDER_RADIUS: f32 = 16.0;
 }
 

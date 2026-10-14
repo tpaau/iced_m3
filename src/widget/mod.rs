@@ -4,6 +4,7 @@ pub mod advanced;
 pub(crate) mod advanced;
 pub mod badge;
 pub mod button;
+pub mod button_group;
 pub mod card;
 mod common_icons;
 mod common_types;
@@ -38,6 +39,7 @@ use crate::{
     theme::ColorScheme,
     widget::{
         button::Button,
+        button_group::connected::ButtonGroup,
         card::Card,
         dialog::Dialog,
         fab::Fab,
@@ -86,6 +88,7 @@ where
     NavBar::new(style, items)
 }
 
+/// Buttons prompt most actions in a UI
 #[must_use]
 pub fn button<'a, Message, Renderer>(
     style: button::Style,
@@ -215,8 +218,22 @@ where
     shapes::MaterialShape::new(polygon, style)
 }
 
+/// Loading indicators show the progress of a process for a short wait time
 #[cfg(feature = "shapes")]
 #[must_use]
 pub fn loading_indicator(style: loading_indicator::Style) -> LoadingIndicator {
     LoadingIndicator::new(style)
+}
+
+/// Connected button groups help people select options, switch views, or sort elements in a page.
+#[must_use]
+pub fn connected_button_group<'a, Message, Renderer>(
+    style: button::Style,
+    model: Vec<button_group::connected::Button<'a, Message>>,
+) -> ButtonGroup<'a, Message, Renderer>
+where
+    Message: Clone,
+    Renderer: iced::advanced::text::Renderer,
+{
+    ButtonGroup::new(style, model)
 }

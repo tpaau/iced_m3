@@ -25,7 +25,6 @@ struct State {
     accent: Accent,
     icons_filled: bool,
     square: bool,
-    icon: char,
 }
 
 impl Default for State {
@@ -33,7 +32,6 @@ impl Default for State {
         Self {
             theme: Theme::default(Mode::Dark),
             accent: Accent::Primary,
-            icon: *EDIT,
             square: false,
             icons_filled: false,
         }
@@ -62,7 +60,7 @@ impl State {
             ..button::Size::default()
         };
         let icon = Icon::Text {
-            text: self.icon.into_fragment(),
+            text: EDIT.into_fragment(),
             font: Some(match self.icons_filled {
                 true => fonts::icons_filled(),
                 false => fonts::icons_outlined(),

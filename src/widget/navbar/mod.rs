@@ -20,7 +20,7 @@ use crate::theme::ColorScheme;
 pub use item::Content as Item;
 pub use item::Style as ItemStyle;
 
-mod constants {
+pub(crate) mod constants {
     pub const CONTAINER_HEIGHT: f32 = 64.0;
     pub const ITEM_LARGE_SPACING: f32 = 20.0;
 }
@@ -260,10 +260,6 @@ where
 {
     fn size(&self) -> Size<Length> {
         Size::new(Length::Fill, Length::Fixed(constants::CONTAINER_HEIGHT))
-    }
-
-    fn state(&self) -> iced::advanced::widget::tree::State {
-        iced::advanced::widget::tree::State::None
     }
 
     fn diff(&self, tree: &mut iced::advanced::widget::Tree) {
