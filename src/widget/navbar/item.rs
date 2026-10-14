@@ -456,10 +456,10 @@ where
             }
             Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerLifted { .. }) => {
-                state.is_pressed = false;
-                if is_hovered {
+                if is_hovered && state.is_pressed {
                     shell.publish(self.content.on_press.clone());
                 }
+                state.is_pressed = false;
                 shell.request_redraw();
             }
             Event::Touch(touch::Event::FingerLost { .. }) => {
