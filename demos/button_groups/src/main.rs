@@ -7,9 +7,11 @@ use iced::{
 use iced_m3::{
     theme::{Accent, ColorScheme, Mode, Theme},
     widget::{
-        button::{self, Content},
-        button_group, connected_button_group,
+        button::{self, Content, Style},
+        button_group::{self, connected, standard},
+        connected_button_group,
         hybrid_icon::Icon,
+        standard_button_group,
     },
 };
 
@@ -18,6 +20,7 @@ static STARS: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe8d0).unwrap())
 
 #[derive(Clone)]
 enum Message {
+    Noop,
     SelectIndex(usize),
     ToggleButon(usize),
 }
@@ -40,15 +43,15 @@ impl Default for State {
 
 impl State {
     fn view(&self) -> Element<'_, Message> {
-        let single_select = [
-            button_group::connected::Size::extra_small(),
-            button_group::connected::Size::small(),
-            button_group::connected::Size::medium(),
-            button_group::connected::Size::large(),
-            button_group::connected::Size::extra_large(),
-        ]
-        .into_iter()
-        .map(|size| {
+        let sizes = [
+            connected::Size::extra_small(),
+            connected::Size::small(),
+            connected::Size::medium(),
+            connected::Size::large(),
+            connected::Size::extra_large(),
+        ];
+
+        let single_select = sizes.into_iter().map(|size| {
             connected_button_group(
                 button::Style::filled(&self.theme, Accent::Primary),
                 (0..3)
@@ -73,15 +76,7 @@ impl State {
             .into()
         });
 
-        let multi_select = [
-            button_group::connected::Size::extra_small(),
-            button_group::connected::Size::small(),
-            button_group::connected::Size::medium(),
-            button_group::connected::Size::large(),
-            button_group::connected::Size::extra_large(),
-        ]
-        .into_iter()
-        .map(|size| {
+        let multi_select = sizes.into_iter().map(|size| {
             connected_button_group(
                 button::Style::filled(&self.theme, Accent::Primary),
                 self.buttons
@@ -121,13 +116,47 @@ impl State {
         ]
         .spacing(20);
 
+        let sizes = [
+            (button::Size::extra_small(), standard::SPACING_EXTRA_SMALL),
+            (button::Size::small(), standard::SPACING_SMALL),
+            (button::Size::medium(), standard::SPACING_MEDIUM),
+            (button::Size::large(), standard::SPACING_LARGE),
+            (button::Size::extra_large(), standard::SPACING_EXTRA_LARGE),
+        ];
+
+        let button_content = Content::Full {
+            icon: Icon::Text {
+                text: STARS.into_fragment(),
+                font: Some(fonts::icons_filled()),
+            },
+            label: "Label".into(),
+        };
+
+        let standard_button_groups = column![
+            iced::widget::text("Standard"),
+            column(sizes.into_iter().map(|(button_size, spacing)| {
+                let buttons = (0..=2).into_iter().map(|_| {
+                    iced_m3::widget::button(
+                        Style::filled(&self.theme, Accent::Primary),
+                        button_content.clone(),
+                    )
+                    .size(button_size)
+                    .on_press(Message::Noop)
+                });
+                standard_button_group(buttons).spacing(spacing).into()
+            }))
+            .spacing(20)
+        ]
+        .spacing(10);
+
         container(
             column![
                 iced::widget::text(APP_NAME)
                     .font(fonts::text_bold())
                     .size(24.0)
                     .color(self.theme.on_surface()),
-                connected_button_groups
+                connected_button_groups,
+                standard_button_groups
             ]
             .spacing(20),
         )
@@ -142,6 +171,7 @@ impl State {
         match message {
             Message::SelectIndex(index) => self.selected_index = index,
             Message::ToggleButon(index) => self.buttons[index] = !self.buttons[index],
+            Message::Noop => {}
         }
         Task::none()
     }

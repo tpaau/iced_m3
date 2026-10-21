@@ -284,6 +284,7 @@ where
             })
             .collect();
 
+        // TODO: There shouldn't be a widest constraint
         let widest = nodes
             .iter()
             .map(|n| n.bounds())

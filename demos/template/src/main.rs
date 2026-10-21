@@ -7,9 +7,7 @@ use iced_m3::theme::{ColorScheme, Mode, Theme};
 const APP_NAME: &str = "Demo Template";
 
 #[derive(Clone)]
-enum Message {
-    Noop,
-}
+enum Message {}
 
 struct State {
     theme: Theme,
@@ -38,10 +36,8 @@ impl State {
         .into()
     }
 
-    fn update(&mut self, message: Message) -> Task<Message> {
-        match message {
-            Message::Noop => Task::none(),
-        }
+    fn update(&mut self, _message: Message) -> Task<Message> {
+        Task::none()
     }
 }
 

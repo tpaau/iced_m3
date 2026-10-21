@@ -186,7 +186,7 @@ where
     fn children(&self) -> Vec<Tree> {
         match &self.badge {
             Some(badge) => vec![Tree::new(badge.as_widget())],
-            None => vec![],
+            None => Vec::new(),
         }
     }
 

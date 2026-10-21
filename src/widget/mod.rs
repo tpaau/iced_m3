@@ -230,10 +230,23 @@ pub fn loading_indicator(style: loading_indicator::Style) -> LoadingIndicator {
 pub fn connected_button_group<'a, Message, Renderer>(
     style: button::Style,
     model: Vec<button_group::connected::Button<'a, Message>>,
-) -> ButtonGroup<'a, Message, Renderer>
+) -> button_group::connected::ButtonGroup<'a, Message, Renderer>
 where
     Message: Clone,
     Renderer: iced::advanced::text::Renderer,
 {
     ButtonGroup::new(style, model)
+}
+
+/// Standard button groups organize [`Button`] widgets in a row and affect the size of pressed buttons.
+#[must_use]
+pub fn standard_button_group<'a, Message, Theme, Renderer>(
+    buttons: impl IntoIterator<Item = Button<'a, Message, Renderer>>,
+) -> button_group::standard::ButtonGroup<'a, Message, Theme, Renderer>
+where
+    Message: 'a + Clone,
+    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer::Font: From<iced::Font>,
+{
+    button_group::standard::ButtonGroup::new(buttons)
 }

@@ -650,6 +650,7 @@ impl Size {
     }
 }
 
+// TODO: A custom element (should've thought of that one >_<)
 /// The content of the button.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Content<'a> {
@@ -725,7 +726,7 @@ impl<'a> Content<'a> {
 }
 
 /// Buttons prompt most actions in a UI
-pub struct Button<'a, Message, Renderer>
+pub struct Button<'a, Message, Renderer = iced::Renderer>
 where
     Message: Clone,
     Renderer: iced::advanced::text::Renderer,
@@ -734,7 +735,7 @@ where
     on_press: Option<OnPress<'a, Message>>,
     content: Content<'a>,
     label_font: Option<iced::Font>,
-    size: Size,
+    pub(crate) size: Size,
     elevation: Elevation,
     selected: Option<bool>,
     style_spring: Option<Spring>,
@@ -903,10 +904,7 @@ impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
     for Button<'a, Message, Renderer>
 where
     Message: 'a + Clone,
-    Renderer: 'a
-        + iced::advanced::Renderer
-        + iced::advanced::text::Renderer
-        + iced::advanced::svg::Renderer,
+    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     fn tag(&self) -> tree::Tag {
@@ -1158,7 +1156,6 @@ where
             self.selected,
             bounds.width.min(bounds.height) / 2.0,
         );
-        // FIX: Snap if the button size changed
         corner_radius_spring.set_target(corner_radius, now);
 
         if !state.style_spring.is_at_rest()

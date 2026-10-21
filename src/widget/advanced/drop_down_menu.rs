@@ -384,7 +384,7 @@ impl<Message, Theme, Renderer: iced::advanced::Renderer> Widget<Message, Theme, 
             .flatten()
             .collect::<Vec<_>>()
         } else {
-            vec![]
+            Vec::new()
         };
 
         (!children.is_empty()).then(|| overlay::Group::with_children(children).overlay())
