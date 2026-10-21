@@ -26,14 +26,8 @@ pub const SPACING_MEDIUM: Pixels = Pixels(8.0);
 pub const SPACING_LARGE: Pixels = Pixels(8.0);
 /// Extra large spacing between buttons. Recommended for extra large buttons.
 pub const SPACING_EXTRA_LARGE: Pixels = Pixels(8.0);
-
-mod constants {
-    /// The additional width added to pressed buttons, as a multiplier of the original button width.
-    pub const BUTTON_PRESSED_SIZE_GAIN: f32 = 0.15;
-}
-
-#[cfg(feature = "pub-internal-const")]
-pub use constants::*;
+/// The default fraction of the pressed child’s width used to expand it.
+pub const DEFAULT_BUTTON_EXPANDED_RATIO: f32 = 0.15;
 
 /// Standard button groups organize [`Button`] widgets in a row and affect the size of pressed buttons.
 pub struct ButtonGroup<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer>
@@ -42,14 +36,16 @@ where
     Renderer: iced::advanced::text::Renderer,
 {
     buttons: Vec<Element<'a, Message, Theme, Renderer>>,
-    button_widths: Vec<Length>,
     shrink_wrap: bool,
     motion_scheme: motion::Scheme,
     activation_spring: Option<Spring>,
     spacing: Pixels,
+    expanded_ratio: f32,
 
     // Cache
     nodes: Vec<Node>,
+    button_widths: Vec<Length>,
+    buttons_enabled: Vec<bool>,
 }
 
 impl<'a, Message, Theme, Renderer> ButtonGroup<'a, Message, Theme, Renderer>
@@ -63,16 +59,19 @@ where
     pub fn new(buttons: impl IntoIterator<Item = Button<'a, Message, Renderer>>) -> Self {
         let buttons: Vec<_> = buttons.into_iter().collect();
         let button_widths = buttons.iter().map(|b| b.size.width).collect();
+        let buttons_enabled = buttons.iter().map(|b| !b.is_disabled()).collect();
         let is_filling = buttons.iter().any(|b| b.size.width == Length::Fill);
 
         Self {
             buttons: buttons.into_iter().map(|b| b.into()).collect(),
-            button_widths,
             shrink_wrap: !is_filling,
             motion_scheme: motion::Scheme::default(),
             activation_spring: None,
             spacing: SPACING_SMALL,
+            expanded_ratio: DEFAULT_BUTTON_EXPANDED_RATIO,
             nodes: Vec::new(),
+            buttons_enabled,
+            button_widths,
         }
     }
 
@@ -101,6 +100,15 @@ where
     #[must_use]
     pub fn spacing(mut self, spacing: Pixels) -> Self {
         self.spacing = spacing;
+        self
+    }
+
+    /// Sets the expanded button ratio of the group.
+    ///
+    /// The expanded ratio is a fraction of the pressed child’s width used to expand it.
+    #[must_use]
+    pub fn expanded_ratio(mut self, ratio: f32) -> Self {
+        self.expanded_ratio = ratio.max(0.0);
         self
     }
 
@@ -139,7 +147,11 @@ fn scale_node(node: Node, target_width: f32) -> Node {
     Node::with_children(Size::new(target_width, original_size.height), children).move_to(position)
 }
 
-fn resize_buttons(mut nodes: Vec<Node>, springs: &[SpringValue<f32>]) -> Vec<Node> {
+fn resize_buttons(
+    mut nodes: Vec<Node>,
+    springs: &[SpringValue<f32>],
+    expanded_ratio: f32,
+) -> Vec<Node> {
     let len = nodes.len();
     if len <= 1 {
         return nodes;
@@ -150,9 +162,7 @@ fn resize_buttons(mut nodes: Vec<Node>, springs: &[SpringValue<f32>]) -> Vec<Nod
     let gains: Vec<f32> = springs
         .iter()
         .enumerate()
-        .map(|(i, spring)| {
-            original_widths[i] * spring.value() * constants::BUTTON_PRESSED_SIZE_GAIN
-        })
+        .map(|(i, spring)| original_widths[i] * spring.value() * expanded_ratio)
         .collect();
 
     // 2. Calculate net width change (Delta W) for each button
@@ -356,7 +366,6 @@ where
         viewport: &iced::Rectangle,
     ) {
         let state = tree.state.downcast_mut::<State>();
-        // TODO: Better press tracking (when the button isn't hovered)
         match event {
             iced::Event::Window(iced::window::Event::RedrawRequested(at)) => {
                 let mut at_rest = true;
@@ -371,8 +380,11 @@ where
                     shell.request_redraw();
                 }
 
-                self.nodes =
-                    resize_buttons(state.button_nodes.clone(), state.size_springs.as_slice());
+                self.nodes = resize_buttons(
+                    state.button_nodes.clone(),
+                    state.size_springs.as_slice(),
+                    self.expanded_ratio,
+                );
             }
             iced::Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
                 let now = Instant::now();
@@ -396,11 +408,12 @@ where
                         .translate(Vector::new(bounds_position.x, bounds_position.y))
                         .bounds();
 
-                    let is_over = cursor.is_over(bounds);
-                    state.pressed_button = is_over.then_some(index);
-                    spring.set_target(is_over as usize as f32, now);
+                    let active = cursor.is_over(bounds) && self.buttons_enabled[index];
+                    state.pressed_button = active.then_some(index);
+                    spring.set_target(active as usize as f32, now);
+                    shell.request_redraw();
 
-                    if is_over {
+                    if active {
                         break;
                     }
                 }

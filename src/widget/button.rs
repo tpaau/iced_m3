@@ -889,6 +889,10 @@ where
         self.corner_radius_spring
             .unwrap_or(fast_spatial(motion::Scheme::default()))
     }
+
+    pub(crate) fn is_disabled(&self) -> bool {
+        self.on_press.is_none()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -912,9 +916,7 @@ where
     }
 
     fn state(&self) -> tree::State {
-        let style = self
-            .style
-            .state_style(self.on_press.is_none(), self.selected);
+        let style = self.style.state_style(self.is_disabled(), self.selected);
         let now = Instant::now();
         let state = State {
             is_pressed: false,
@@ -1080,28 +1082,23 @@ where
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerPressed { .. }) => {
-                if self.on_press.is_some() {
-                    if self.is_hovered {
-                        state.is_pressed = true;
-
-                        shell.capture_event();
-                    }
+                if !self.is_disabled() && self.is_hovered {
+                    state.is_pressed = true;
+                    shell.capture_event();
                 }
             }
             Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
             | Event::Touch(touch::Event::FingerLifted { .. }) => {
-                if self.on_press.is_some() {
-                    if state.is_pressed {
-                        state.is_pressed = false;
+                if !self.is_disabled() && state.is_pressed {
+                    state.is_pressed = false;
 
-                        if self.is_hovered
-                            && let Some(on_press) = &self.on_press
-                        {
-                            shell.publish(on_press.resolve());
-                        }
-
-                        shell.capture_event();
+                    if self.is_hovered
+                        && let Some(on_press) = &self.on_press
+                    {
+                        shell.publish(on_press.resolve());
                     }
+
+                    shell.capture_event();
                 }
             }
             Event::Touch(touch::Event::FingerLost { .. }) => {
@@ -1127,7 +1124,7 @@ where
         let now = Instant::now();
 
         let state_layer = self.style.state_layer(self.selected);
-        let state_layer_color = if self.on_press.is_none() {
+        let state_layer_color = if self.is_disabled() {
             state_layer.idle
         } else if cursor.is_over(layout.bounds()) {
             if state.is_pressed {
@@ -1140,9 +1137,7 @@ where
         };
         state.state_layer_spring.set_target(state_layer_color, now);
 
-        let style = *self
-            .style
-            .state_style(self.on_press.is_none(), self.selected);
+        let style = *self.style.state_style(self.is_disabled(), self.selected);
         if !self.style_change_checked && state.last_style != self.style {
             state.style_spring.reset(style, now);
             self.style_change_checked = true;
@@ -1184,7 +1179,7 @@ where
         let bounds = layout.bounds();
         let mut children = layout.children();
 
-        let elevation = if self.on_press.is_none() {
+        let elevation = if self.is_disabled() {
             self.style.elevation.disabled
         } else if self.is_hovered {
             if state.is_pressed {
@@ -1258,7 +1253,7 @@ where
     ) -> mouse::Interaction {
         let is_mouse_over = cursor.is_over(layout.bounds());
 
-        if is_mouse_over && self.on_press.is_some() {
+        if is_mouse_over && !self.is_disabled() {
             mouse::Interaction::Pointer
         } else {
             mouse::Interaction::default()
