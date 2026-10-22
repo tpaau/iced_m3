@@ -199,7 +199,11 @@ fn resize_buttons(
 
 impl State {
     fn update_button_count(&mut self, count: usize) {
-        self.pressed_button = None;
+        if let Some(index) = self.pressed_button
+            && index >= count
+        {
+            self.pressed_button = None;
+        }
         let now = Instant::now();
         self.size_springs
             .resize_with(count, || SpringValue::new(0.0, self.spring_model, now));
@@ -387,11 +391,11 @@ where
                 );
             }
             iced::Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
+                state.pressed_button = None;
                 let now = Instant::now();
                 for spring in &mut state.size_springs {
                     spring.set_target(0.0, now);
                 }
-                state.pressed_button = None;
             }
             iced::Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 let now = Instant::now();
@@ -409,16 +413,17 @@ where
                         .bounds();
 
                     let active = cursor.is_over(bounds) && self.buttons_enabled[index];
-                    state.pressed_button = active.then_some(index);
-                    spring.set_target(active as usize as f32, now);
-                    shell.request_redraw();
-
                     if active {
+                        state.pressed_button = Some(index);
+                        spring.set_target(1.0, now);
+                        shell.request_redraw();
                         break;
+                    } else {
+                        spring.set_target(0.0, now);
                     }
                 }
             }
-            iced::Event::Mouse(mouse::Event::CursorMoved { position: _ }) => {
+            iced::Event::Mouse(mouse::Event::CursorMoved { position }) => {
                 if let Some(index) = state.pressed_button {
                     let node = self
                         .nodes
@@ -432,7 +437,7 @@ where
                         .bounds();
 
                     let now = Instant::now();
-                    if cursor.is_over(bounds) {
+                    if bounds.contains(*position) {
                         state.size_springs[index].set_target(1.0, now);
                     } else {
                         state.size_springs[index].set_target(0.0, now);
