@@ -227,13 +227,12 @@ pub fn loading_indicator(style: loading_indicator::Style) -> LoadingIndicator {
 
 /// Connected button groups help people select options, switch views, or sort elements in a page.
 #[must_use]
-pub fn connected_button_group<'a, Message, Renderer>(
+pub fn connected_button_group<'a, Message>(
     style: button::Style,
     model: Vec<button_group::connected::Button<'a, Message>>,
-) -> button_group::connected::ButtonGroup<'a, Message, Renderer>
+) -> button_group::connected::ButtonGroup<'a, Message>
 where
     Message: Clone,
-    Renderer: iced::advanced::text::Renderer,
 {
     ButtonGroup::new(style, model)
 }

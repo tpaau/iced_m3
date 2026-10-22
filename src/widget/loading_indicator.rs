@@ -76,6 +76,7 @@ impl Style {
     }
 }
 
+// TODO: Custom sizes and animation params
 /// Loading indicators show the progress of a process for a short wait time
 pub struct LoadingIndicator {
     style: Style,

@@ -91,6 +91,7 @@ where
     Disabled,
 }
 
+// TODO: Basic animation
 pub struct Card<'a, Message, Theme, Renderer>
 where
     Message: Clone,

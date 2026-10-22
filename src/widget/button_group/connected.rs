@@ -1,15 +1,13 @@
 //! Connected button groups help people select options, switch views, or sort elements in a page.
 
-use iced::{
-    Element, Font, Length, Padding, Pixels, Point,
-    advanced::{Widget, layout::Node, mouse, widget::Tree},
-    border::Radius,
-    padding,
-};
+use iced::{Element, Font, Length, Padding, Pixels, border::Radius, padding};
 
 use crate::{
     animation::motion::{self, Spring},
-    widget::button::{self, Content, CornerRadius, CornerStyle, Style},
+    widget::{
+        button::{self, Content, CornerRadius, CornerStyle, Style},
+        button_group::standard,
+    },
 };
 
 #[derive(Debug, Clone)]
@@ -115,10 +113,9 @@ impl Size {
 }
 
 /// Connected button groups help people select options, switch views, or sort elements in a page.
-pub struct ButtonGroup<'a, Message, Renderer>
+pub struct ButtonGroup<'a, Message>
 where
     Message: Clone,
-    Renderer: iced::advanced::text::Renderer,
 {
     model: Vec<Button<'a, Message>>,
     style: Style,
@@ -128,29 +125,27 @@ where
     style_spring: Option<Spring>,
     state_layer_spring: Option<Spring>,
     corner_radius_spring: Option<Spring>,
-
-    // Cache
-    button_widgets: Vec<button::Button<'a, Message, Renderer>>,
+    button_expansion_spring: Option<Spring>,
+    expanded_ratio: f32,
 }
 
-impl<'a, Message, Renderer> ButtonGroup<'a, Message, Renderer>
+impl<'a, Message> ButtonGroup<'a, Message>
 where
     Message: Clone,
-    Renderer: iced::advanced::text::Renderer,
 {
     #[must_use]
     pub fn new(style: Style, model: Vec<Button<'a, Message>>) -> Self {
-        let button_widgets = Vec::with_capacity(model.len());
         Self {
             model,
             style,
             size: Size::default(),
-            button_widgets,
             label_font: None,
             motion_scheme: None,
             style_spring: None,
             state_layer_spring: None,
             corner_radius_spring: None,
+            button_expansion_spring: None,
+            expanded_ratio: 0.0,
         }
     }
 
@@ -233,176 +228,36 @@ where
         self.corner_radius_spring = spring;
         self
     }
-}
 
-impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-    for ButtonGroup<'a, Message, Renderer>
-where
-    Message: 'a + Clone,
-    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
-    Renderer::Font: From<iced::Font>,
-{
-    fn size(&self) -> iced::Size<Length> {
-        iced::Size::new(Length::Shrink, self.size.container_height.into())
+    #[must_use]
+    pub fn button_expansion_spring(mut self, spring: Spring) -> Self {
+        self.button_expansion_spring = Some(spring);
+        self
     }
 
-    fn children(&self) -> Vec<Tree> {
-        self.button_widgets
-            .iter()
-            .map(|button| Tree::new(button as &dyn Widget<Message, Theme, Renderer>))
-            .collect()
+    #[must_use]
+    pub fn button_expansion_spring_maybe(mut self, spring: Option<Spring>) -> Self {
+        self.button_expansion_spring = spring;
+        self
     }
 
-    fn diff(&self, tree: &mut Tree) {
-        let children: Vec<&dyn Widget<Message, Theme, Renderer>> = self
-            .button_widgets
-            .iter()
-            .map(|button| button as &dyn Widget<Message, Theme, Renderer>)
-            .collect();
-
-        tree.diff_children(&children);
-    }
-
-    fn layout(
-        &mut self,
-        tree: &mut Tree,
-        renderer: &Renderer,
-        limits: &iced::advanced::layout::Limits,
-    ) -> Node {
-        let nodes: Vec<_> = self
-            .button_widgets
-            .iter_mut()
-            .enumerate()
-            .map(|(index, button)| {
-                let node = (button as &mut dyn Widget<Message, Theme, Renderer>).layout(
-                    &mut tree.children[index],
-                    renderer,
-                    limits,
-                );
-
-                node
-            })
-            .collect();
-
-        // TODO: There shouldn't be a widest constraint
-        let widest = nodes
-            .iter()
-            .map(|n| n.bounds())
-            .max_by(|a, b| a.size().width.total_cmp(&b.size().width))
-            .map(|bounds| bounds.width);
-
-        if let Some(width) = widest {
-            let nodes = self
-                .button_widgets
-                .iter()
-                .enumerate()
-                .map(|(i, _)| {
-                    Node::with_children(
-                        iced::Size::new(width, self.size.container_height.0),
-                        nodes[i].children().to_vec(),
-                    )
-                    .move_to(Point::new(
-                        i as f32 * (width + self.size.button_spacing.0),
-                        0.0,
-                    ))
-                })
-                .collect();
-
-            return Node::with_children(
-                iced::Size::new(
-                    self.button_widgets.len() as f32 * (width + self.size.button_spacing.0),
-                    self.size.container_height.0,
-                ),
-                nodes,
-            );
-        }
-
-        Node::new(iced::Size::new(0.0, self.size.container_height.0))
-    }
-
-    fn draw(
-        &self,
-        tree: &Tree,
-        renderer: &mut Renderer,
-        theme: &Theme,
-        style: &iced::advanced::renderer::Style,
-        layout: iced::advanced::Layout<'_>,
-        cursor: mouse::Cursor,
-        viewport: &iced::Rectangle,
-    ) {
-        for (index, button) in self.button_widgets.iter().enumerate() {
-            button.draw(
-                &tree.children[index],
-                renderer,
-                theme,
-                style,
-                layout.child(index),
-                cursor,
-                viewport,
-            );
-        }
-    }
-
-    fn update(
-        &mut self,
-        tree: &mut Tree,
-        event: &iced::Event,
-        layout: iced::advanced::Layout<'_>,
-        cursor: mouse::Cursor,
-        renderer: &Renderer,
-        clipboard: &mut dyn iced::advanced::Clipboard,
-        shell: &mut iced::advanced::Shell<'_, Message>,
-        viewport: &iced::Rectangle,
-    ) {
-        for (index, button) in self.button_widgets.iter_mut().enumerate() {
-            (button as &mut dyn Widget<Message, Theme, Renderer>).update(
-                &mut tree.children[index],
-                event,
-                layout.child(index),
-                cursor,
-                renderer,
-                clipboard,
-                shell,
-                viewport,
-            )
-        }
-    }
-
-    fn mouse_interaction(
-        &self,
-        tree: &Tree,
-        layout: iced::advanced::Layout<'_>,
-        cursor: mouse::Cursor,
-        viewport: &iced::Rectangle,
-        renderer: &Renderer,
-    ) -> mouse::Interaction {
-        for (index, button) in self.button_widgets.iter().enumerate() {
-            let interaction = (button as &dyn Widget<Message, Theme, Renderer>).mouse_interaction(
-                &tree.children[index],
-                layout.child(index),
-                cursor,
-                viewport,
-                renderer,
-            );
-
-            if interaction != mouse::Interaction::None {
-                return interaction;
-            }
-        }
-
-        mouse::Interaction::default()
+    #[must_use]
+    pub fn button_expanded_ratio(mut self, ratio: f32) -> Self {
+        self.expanded_ratio = ratio;
+        self
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<ButtonGroup<'a, Message, Renderer>>
+impl<'a, Message, Theme, Renderer> From<ButtonGroup<'a, Message>>
     for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
+    Theme: 'a,
     Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
     Renderer::Font: From<iced::Font>,
 {
-    fn from(mut value: ButtonGroup<'a, Message, Renderer>) -> Self {
-        value.button_widgets = value
+    fn from(value: ButtonGroup<'a, Message>) -> Self {
+        let buttons = value
             .model
             .clone()
             .into_iter()
@@ -450,8 +305,14 @@ where
                     .state_layer_spring_maybe(value.state_layer_spring)
                     .corner_radius_spring_maybe(value.corner_radius_spring)
                     .size(size)
-            })
-            .collect();
-        Element::new(value)
+            });
+
+        let button_group = standard::ButtonGroup::new(buttons)
+            .motion_scheme_maybe(value.motion_scheme)
+            .button_expansion_spring_maybe(value.button_expansion_spring)
+            .expanded_ratio(value.expanded_ratio)
+            .spacing(value.size.button_spacing);
+
+        Element::new(button_group)
     }
 }

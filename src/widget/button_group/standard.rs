@@ -36,14 +36,14 @@ where
     Renderer: iced::advanced::text::Renderer,
 {
     buttons: Vec<Element<'a, Message, Theme, Renderer>>,
-    shrink_wrap: bool,
-    motion_scheme: motion::Scheme,
-    activation_spring: Option<Spring>,
+    motion_scheme: Option<motion::Scheme>,
+    button_expansion_spring: Option<Spring>,
     spacing: Pixels,
     expanded_ratio: f32,
 
     // Cache
     nodes: Vec<Node>,
+    shrink_wrap: bool,
     button_widths: Vec<Length>,
     buttons_enabled: Vec<bool>,
 }
@@ -65,8 +65,8 @@ where
         Self {
             buttons: buttons.into_iter().map(|b| b.into()).collect(),
             shrink_wrap: !is_filling,
-            motion_scheme: motion::Scheme::default(),
-            activation_spring: None,
+            motion_scheme: None,
+            button_expansion_spring: None,
             spacing: SPACING_SMALL,
             expanded_ratio: DEFAULT_BUTTON_EXPANDED_RATIO,
             nodes: Vec::new(),
@@ -78,21 +78,28 @@ where
     /// Sets the motion scheme for the spring used for animating button sizes.
     #[must_use]
     pub fn motion_scheme(mut self, scheme: motion::Scheme) -> Self {
+        self.motion_scheme = Some(scheme);
+        self
+    }
+
+    /// Sets the motion scheme for the spring used for animating button sizes, if `Some`.
+    #[must_use]
+    pub fn motion_scheme_maybe(mut self, scheme: Option<motion::Scheme>) -> Self {
         self.motion_scheme = scheme;
         self
     }
 
     /// Sets the spring used for animating button sizes.
     #[must_use]
-    pub fn activation_spring(mut self, spring: Spring) -> Self {
-        self.activation_spring = Some(spring);
+    pub fn button_expansion_spring(mut self, spring: Spring) -> Self {
+        self.button_expansion_spring = Some(spring);
         self
     }
 
     /// Sets the spring used for animating button sizes, if `Some`.
     #[must_use]
-    pub fn activation_spring_maybe(mut self, spring: Option<Spring>) -> Self {
-        self.activation_spring = spring;
+    pub fn button_expansion_spring_maybe(mut self, spring: Option<Spring>) -> Self {
+        self.button_expansion_spring = spring;
         self
     }
 
@@ -112,8 +119,8 @@ where
         self
     }
 
-    fn get_activation_spring(&self) -> Spring {
-        self.activation_spring
+    fn get_button_expansion_spring(&self) -> Spring {
+        self.button_expansion_spring
             .unwrap_or(fast_spatial(motion::Scheme::default()))
     }
 }
@@ -238,7 +245,7 @@ where
 
     fn state(&self) -> tree::State {
         let now = Instant::now();
-        let model = self.get_activation_spring();
+        let model = self.get_button_expansion_spring();
 
         let state = State {
             pressed_button: None,
@@ -266,7 +273,7 @@ where
         tree.diff_children(&self.buttons);
 
         let state = tree.state.downcast_mut::<State>();
-        state.update_spring_model(self.get_activation_spring());
+        state.update_spring_model(self.get_button_expansion_spring());
         state.update_button_count(self.buttons.len());
     }
 
