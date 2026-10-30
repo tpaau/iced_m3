@@ -1,25 +1,13 @@
-#[cfg(windows)]
-const BYTES_REGULAR: &[u8] = include_bytes!("..\\resources\\Roboto\\NotoSans-Regular.ttf");
-#[cfg(unix)]
 const BYTES_REGULAR: &[u8] = include_bytes!("../resources/fonts/NotoSans-Regular.ttf");
-#[cfg(windows)]
-const BYTES_BOLD: &[u8] = include_bytes!("..\\resources\\Roboto\\NotoSans-Bold.ttf");
-#[cfg(unix)]
 const BYTES_BOLD: &[u8] = include_bytes!("../resources/fonts/NotoSans-Bold.ttf");
 
-#[cfg(unix)]
 const FILLED_ICONS_FONT_BYTES: &[u8] =
     include_bytes!("../resources/fonts/MaterialSymbolsRounded_Filled-Regular.ttf");
-#[cfg(windows)]
-const FILLED_ICONS_FONT_BYTES: &[u8] =
-    include_bytes!("..\\resources\\fonts\\MaterialSymbolsRounded_Filled-Regular.ttf");
-
-#[cfg(unix)]
 const OUTLINED_ICONS_FONT_BYTES: &[u8] =
     include_bytes!("../resources/fonts/MaterialSymbolsRounded-Regular.ttf");
-#[cfg(windows)]
-const OUTLINED_ICONS_FONT_BYTES: &[u8] =
-    include_bytes!("..\\resources\\fonts\\MaterialSymbolsRounded-Regular.ttf");
+
+const FILLED_ICONS_FONT_NAME: &str = "Material Symbols Rounded Filled";
+const OUTLINED_ICONS_FONT_NAME: &str = "Material Symbols Rounded";
 
 const FILLED_ICONS_FONT_NAME: &str = "Material Symbols Rounded Filled";
 const OUTLINED_ICONS_FONT_NAME: &str = "Material Symbols Rounded";
