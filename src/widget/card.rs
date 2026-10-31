@@ -163,13 +163,13 @@ where
     }
 
     #[must_use]
-    pub fn padding(mut self, padding: Padding) -> Self {
-        self.padding = padding;
+    pub fn padding(mut self, padding: impl Into<Padding>) -> Self {
+        self.padding = padding.into();
         self
     }
 
     #[must_use]
-    pub fn padding_maybe(self, maybe_padding: Option<Padding>) -> Self {
+    pub fn padding_maybe(self, maybe_padding: Option<impl Into<Padding>>) -> Self {
         match maybe_padding {
             Some(padding) => self.padding(padding),
             None => self,
@@ -322,6 +322,7 @@ where
         }
     }
 
+    // TODO: Better press tracking
     fn update(
         &mut self,
         tree: &mut Tree,

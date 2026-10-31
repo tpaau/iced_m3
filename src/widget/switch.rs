@@ -155,6 +155,7 @@ impl<Message> Switch<Message>
 where
     Message: Clone,
 {
+    // TODO: Should take a style instead of a theme
     #[must_use]
     pub fn new(theme: &(impl ColorScheme + ?Sized), selected: bool) -> Self {
         Self {

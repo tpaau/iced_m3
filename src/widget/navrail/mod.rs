@@ -89,7 +89,6 @@ impl Mode {
 pub struct Style {
     pub menu_button_style: button::Style,
     pub item_style: ItemStyle,
-    pub container_color: Color,
     pub badge_style: badge::Style,
 }
 
@@ -115,7 +114,6 @@ impl Style {
                 state_layer_selected: StateLayer::new(theme.on_surface()),
             },
             item_style: ItemStyle::new(theme),
-            container_color: Color::TRANSPARENT,
             badge_style: badge::Style::new(theme),
         }
     }

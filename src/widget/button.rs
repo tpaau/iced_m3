@@ -725,6 +725,10 @@ impl<'a> Content<'a> {
     }
 }
 
+// TODO: Optional animation when the style changes (not the state style). This is useful for buttons
+// that should display theme change animations, which are disabled by default. This works by
+// checking whether the `Style` on the button and its last style in `State` different, in which case
+// the animation is reset. Users should be able to disable this behavior.
 /// Buttons prompt most actions in a UI
 pub struct Button<'a, Message, Renderer = iced::Renderer>
 where
