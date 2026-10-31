@@ -9,9 +9,6 @@ const OUTLINED_ICONS_FONT_BYTES: &[u8] =
 const FILLED_ICONS_FONT_NAME: &str = "Material Symbols Rounded Filled";
 const OUTLINED_ICONS_FONT_NAME: &str = "Material Symbols Rounded";
 
-const FILLED_ICONS_FONT_NAME: &str = "Material Symbols Rounded Filled";
-const OUTLINED_ICONS_FONT_NAME: &str = "Material Symbols Rounded";
-
 pub const ICON_SIZE_SMALLER: u32 = 16;
 pub const ICON_SIZE_SMALL: u32 = 20;
 pub const ICON_SIZE_REGULAR: u32 = 24;
