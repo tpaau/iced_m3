@@ -7,7 +7,7 @@ use iced::{
 use iced_m3::{
     theme::{Accent, ColorScheme, Theme},
     widget::{
-        OnPress,
+        Action,
         fab::{Content, Size, Style},
         hybrid_icon::Icon,
     },
@@ -51,7 +51,7 @@ impl State {
         let content = Content::Reguar { icon: icon.clone() };
         let fabs = row(sizes.into_iter().map(|size| {
             column(styles.into_iter().map(|style| {
-                iced_m3::widget::fab(style, content.clone(), OnPress::Direct(Message::Noop))
+                iced_m3::widget::fab(style, content.clone(), Action::Direct(Message::Noop))
                     .size(size)
                     .into()
             }))
@@ -66,7 +66,7 @@ impl State {
         };
         let extended_fabs = row(sizes.into_iter().map(|size| {
             column(styles.into_iter().map(|style| {
-                iced_m3::widget::fab(style, content.clone(), OnPress::Direct(Message::Noop))
+                iced_m3::widget::fab(style, content.clone(), Action::Direct(Message::Noop))
                     .size(size)
                     .into()
             }))

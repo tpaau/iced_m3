@@ -8,7 +8,7 @@ use iced::{
 use iced_m3::{
     theme::{self, Accent, ColorScheme, Theme},
     widget::{
-        Badge, OnPress, button,
+        Action, Badge, button,
         hybrid_icon::Icon,
         navrail::{self, Fab, Item, ItemAlignment, Mode},
         switch,
@@ -155,7 +155,7 @@ impl State {
             },
             label: "Edit".into_fragment(),
             style: iced_m3::widget::fab::Style::fab_tonal(&self.theme, Accent::Primary),
-            on_press: OnPress::Direct(Message::Noop),
+            on_press: Action::Direct(Message::Noop),
         };
 
         let navrail = iced_m3::widget::navrail(navrail::Style::new(&self.theme), items)

@@ -6,7 +6,7 @@ use iced::{
 };
 use iced_m3::{
     theme::{Accent, ColorScheme, Theme},
-    widget::{OnPress, fab_menu, hybrid_icon::Icon},
+    widget::{Action, fab_menu, hybrid_icon::Icon},
 };
 
 const APP_NAME: &str = "FAB Menu demo";
@@ -44,7 +44,7 @@ impl State {
             fab_menu::Style::new(&self.theme, Accent::default()),
             vec![
                 fab_menu::Item {
-                    on_press: OnPress::Direct(Message::Noop),
+                    on_press: Action::Direct(Message::Noop),
                     label: "Document".into_fragment(),
                     icon: Icon::Text {
                         text: DOCUMENT.into_fragment(),
@@ -52,7 +52,7 @@ impl State {
                     },
                 },
                 fab_menu::Item {
-                    on_press: OnPress::Direct(Message::Noop),
+                    on_press: Action::Direct(Message::Noop),
                     label: "Message".into_fragment(),
                     icon: Icon::Text {
                         text: CHAT.into_fragment(),
@@ -60,7 +60,7 @@ impl State {
                     },
                 },
                 fab_menu::Item {
-                    on_press: OnPress::Direct(Message::Noop),
+                    on_press: Action::Direct(Message::Noop),
                     label: "Folder".into_fragment(),
                     icon: Icon::Text {
                         text: FOLDER_SHARED.into_fragment(),

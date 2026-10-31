@@ -6,7 +6,7 @@ pub const EDGE_SPACING: f32 = 16.0;
 use crate::{
     style::Elevation,
     widget::{
-        OnPress,
+        Action,
         button::{self, CornerStyle},
         hybrid_icon::Icon,
     },
@@ -140,7 +140,7 @@ where
     corner_style: CornerStyle,
     style: Style,
     label_font: Option<Font>,
-    on_press: OnPress<'a, Message>,
+    on_press: Action<'a, Message>,
 }
 
 impl<'a, Message> Fab<'a, Message>
@@ -148,7 +148,7 @@ where
     Message: 'a + Clone,
 {
     #[must_use]
-    pub fn new(style: Style, content: Content<'a>, on_press: OnPress<'a, Message>) -> Self {
+    pub fn new(style: Style, content: Content<'a>, on_press: Action<'a, Message>) -> Self {
         Self {
             content,
             size: Size::default(),
@@ -211,8 +211,8 @@ where
 
         match value.on_press {
             on_press => match on_press {
-                OnPress::Direct(on_press) => button.on_press(on_press),
-                OnPress::Closure(on_press) => button.on_press_with(on_press),
+                Action::Direct(on_press) => button.on_press(on_press),
+                Action::Closure(on_press) => button.on_press_with(on_press),
             },
         }
         .into()

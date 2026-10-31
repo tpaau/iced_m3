@@ -23,7 +23,7 @@ use crate::{
     },
     style::{DISABLED_STATE_LAYER_OPACITY, Elevation, StateLayer, shadow},
     theme::{Accent, ColorScheme},
-    widget::{self, OnPress, hybrid_icon::Icon},
+    widget::{self, Action, hybrid_icon::Icon},
 };
 
 pub(crate) mod constants {
@@ -736,7 +736,7 @@ where
     Renderer: iced::advanced::text::Renderer,
 {
     style: Style,
-    on_press: Option<OnPress<'a, Message>>,
+    on_press: Option<Action<'a, Message>>,
     content: Content<'a>,
     label_font: Option<iced::Font>,
     pub(crate) size: Size,
@@ -811,19 +811,19 @@ where
 
     #[must_use]
     pub fn on_press(mut self, on_press: Message) -> Self {
-        self.on_press = Some(OnPress::Direct(on_press));
+        self.on_press = Some(Action::Direct(on_press));
         self
     }
 
     #[must_use]
     pub fn on_press_maybe(mut self, on_press: Option<Message>) -> Self {
-        self.on_press = on_press.map(OnPress::Direct);
+        self.on_press = on_press.map(Action::Direct);
         self
     }
 
     #[must_use]
     pub fn on_press_with(mut self, on_press: impl Fn() -> Message + 'a) -> Self {
-        self.on_press = Some(OnPress::Closure(Box::new(on_press)));
+        self.on_press = Some(Action::Closure(Box::new(on_press)));
         self
     }
 

@@ -2,7 +2,7 @@ use iced_widget::text;
 
 use crate::widget::hybrid_icon::Icon;
 
-pub enum OnPress<'a, Message>
+pub enum Action<'a, Message>
 where
     Message: Clone,
 {
@@ -10,7 +10,7 @@ where
     Closure(Box<dyn Fn() -> Message + 'a>),
 }
 
-impl<'a, Message> OnPress<'a, Message>
+impl<'a, Message> Action<'a, Message>
 where
     Message: Clone,
 {

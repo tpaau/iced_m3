@@ -6,7 +6,7 @@ use iced::{
 use crate::{
     style::{DISABLED_STATE_LAYER_OPACITY, Elevation, StateLayer, shadow},
     theme::ColorScheme,
-    widget::OnPress,
+    widget::Action,
 };
 
 pub const MAX_CARD_BETWEEN_PADDING: f32 = 8.0;
@@ -87,7 +87,7 @@ where
 {
     #[default]
     NonInteractive,
-    Press(OnPress<'a, Message>),
+    Press(Action<'a, Message>),
     Disabled,
 }
 

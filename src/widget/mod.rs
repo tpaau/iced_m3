@@ -150,7 +150,7 @@ pub fn progress_bar(style: progress_bar::Style) -> ProgressBar {
 pub fn fab<'a, Message>(
     style: fab::Style,
     content: fab::Content<'a>,
-    on_press: OnPress<'a, Message>,
+    on_press: Action<'a, Message>,
 ) -> Fab<'a, Message>
 where
     Message: 'a + Clone,

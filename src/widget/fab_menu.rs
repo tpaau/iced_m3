@@ -23,7 +23,7 @@ use crate::{
     style::StateLayer,
     theme::{Accent, ColorScheme},
     widget::{
-        self, OnPress,
+        self, Action,
         button::{self, CornerStyle},
         common_icons,
         fab::{self},
@@ -85,7 +85,7 @@ pub struct Item<'a, Message>
 where
     Message: Clone,
 {
-    pub on_press: OnPress<'a, Message>,
+    pub on_press: Action<'a, Message>,
     pub label: text::Fragment<'a>,
     pub icon: Icon<'a>,
 }

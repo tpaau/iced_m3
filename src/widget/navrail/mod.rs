@@ -10,7 +10,7 @@ use crate::{
     style::StateLayer,
     theme::ColorScheme,
     widget::{
-        self, OnPress, badge,
+        self, Action, badge,
         button::{self, ElevationStates, Outline},
         common_icons::{self},
         hybrid_icon::Icon,
@@ -58,7 +58,7 @@ where
     pub icon: Icon<'a>,
     pub label: text::Fragment<'a>,
     pub style: crate::widget::fab::Style,
-    pub on_press: OnPress<'a, Message>,
+    pub on_press: Action<'a, Message>,
 }
 
 #[derive(Default, Clone, Copy, PartialEq, PartialOrd)]

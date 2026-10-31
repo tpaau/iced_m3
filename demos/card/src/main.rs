@@ -6,7 +6,7 @@ use iced_m3::{
     style::StateLayer,
     theme::{Accent, ColorScheme, Mode, Theme},
     widget::{
-        OnPress,
+        Action,
         button::{self, Content},
         card::{Interaction, MAX_CARD_BETWEEN_PADDING, Style},
     },
@@ -46,7 +46,7 @@ impl<'a> State<'a> {
                 let interaction = match &self.interaction {
                     Interaction::NonInteractive => Interaction::NonInteractive,
                     Interaction::Press(on_press) => {
-                        Interaction::Press(OnPress::Direct(on_press.resolve()))
+                        Interaction::Press(Action::Direct(on_press.resolve()))
                     }
                     Interaction::Disabled => Interaction::Disabled,
                 };
@@ -134,7 +134,7 @@ impl<'a> State<'a> {
             Message::SetDisabled => self.interaction = Interaction::Disabled,
             Message::SetNonInteractive => self.interaction = Interaction::NonInteractive,
             Message::SetPressable => {
-                self.interaction = Interaction::Press(OnPress::Direct(Message::Noop))
+                self.interaction = Interaction::Press(Action::Direct(Message::Noop))
             }
         }
         Task::none()
