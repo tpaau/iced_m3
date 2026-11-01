@@ -5,7 +5,7 @@ use iced::{
         layout::{self, Limits},
         mouse, overlay,
     },
-    keyboard,
+    keyboard, touch,
 };
 
 /// Describes which edge of `anchor` the menu surface is attached to, and where along that edge it
@@ -168,8 +168,10 @@ pub struct PressProperties {
     pub position: Option<Point>,
     /// The mouse button that was pressed.
     pub button: mouse::Button,
-    /// The bounds of the menu surface during when it was pressed.
+    /// The bounds of the menu surface during the press.
     pub bounds: Rectangle,
+    /// The bounds of the menu anchor during the press.
+    pub anchor_bounds: Rectangle,
     /// Whether the press was captured by the menu surface.
     pub was_captured: bool,
 }
@@ -206,6 +208,7 @@ pub struct MenuOverlay<'a, Message, Theme = iced::Theme, Renderer = iced::Render
     placement: Placement,
     on_press: Option<Box<dyn Fn(PressProperties) -> Option<Message> + 'a>>,
     on_key: Option<Box<dyn Fn(KeyProperties) -> Option<Message> + 'a>>,
+    capture_anchor_presses: bool,
     index: f32,
 }
 
@@ -224,6 +227,7 @@ impl<'a, Message, Theme, Renderer> MenuOverlay<'a, Message, Theme, Renderer> {
             placement: Placement::default(),
             on_press: None,
             on_key: None,
+            capture_anchor_presses: true,
             index: 1.0,
         }
     }
@@ -277,6 +281,16 @@ impl<'a, Message, Theme, Renderer> MenuOverlay<'a, Message, Theme, Renderer> {
     #[must_use]
     pub fn index(mut self, index: f32) -> Self {
         self.index = index;
+        self
+    }
+
+    /// Whether the menu should capture mouse/touch press events inside the anchor bounds.
+    ///
+    /// This may be useful for preventing the menu from reopening instantly when pressing the anchor
+    /// while the menu is open, if the anchor is a button.
+    #[must_use]
+    pub fn capture_anchor_presses(mut self, capture: bool) -> Self {
+        self.capture_anchor_presses = capture;
         self
     }
 }
@@ -394,6 +408,7 @@ where
                 tree,
                 on_press: self.on_press.as_ref().map(|on_press| on_press.as_ref()),
                 on_key: self.on_key.as_ref().map(|on_key| on_key.as_ref()),
+                capture_anchor_presses: self.capture_anchor_presses,
                 index: self.index,
             }))
         })
@@ -419,6 +434,7 @@ struct Overlay<'a, 'b, Message, Theme, Renderer> {
     tree: &'b mut iced::advanced::widget::Tree,
     on_press: Option<&'b (dyn Fn(PressProperties) -> Option<Message> + 'a)>,
     on_key: Option<&'b (dyn Fn(KeyProperties) -> Option<Message> + 'a)>,
+    capture_anchor_presses: bool,
     index: f32,
 }
 
@@ -530,6 +546,7 @@ where
                 let properties = PressProperties {
                     position: cursor.position(),
                     button: *button,
+                    anchor_bounds: self.anchor_bounds,
                     bounds: layout.bounds(),
                     was_captured,
                 };
@@ -557,6 +574,33 @@ where
 
             if let Some(message) = (on_key)(properties) {
                 shell.publish(message)
+            }
+        }
+
+        if self.capture_anchor_presses {
+            match event {
+                Event::Mouse(event) => match event {
+                    mouse::Event::ButtonPressed(_) | mouse::Event::ButtonReleased(_)
+                        if cursor.is_over(self.anchor_bounds) =>
+                    {
+                        shell.capture_event();
+                    }
+                    _ => {}
+                },
+                Event::Touch(event) => match event {
+                    touch::Event::FingerPressed { id: _, position } => {
+                        if self.anchor_bounds.contains(*position) {
+                            shell.capture_event();
+                        }
+                    }
+                    touch::Event::FingerLifted { id, position }
+                        if self.anchor_bounds.contains(*position) =>
+                    {
+                        shell.capture_event();
+                    }
+                    _ => {}
+                },
+                _ => {}
             }
         }
     }
