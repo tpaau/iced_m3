@@ -14,7 +14,7 @@ use crate::{
 
 pub type Style = button::Style;
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Size {
     #[default]
     Regular,
@@ -72,7 +72,7 @@ impl Size {
         .into()
     }
 
-    fn to_button_size(&self, extended: bool, corner_style: CornerStyle) -> button::Size {
+    fn button_size(&self, extended: bool, corner_style: CornerStyle) -> button::Size {
         let (padding, container_width) = match extended {
             true => (self.padding(), Length::Shrink),
             false => (0.0, Length::Fixed(self.container_height())),
@@ -155,7 +155,7 @@ where
             corner_style: CornerStyle::Square,
             style,
             label_font: None,
-            on_press: on_press,
+            on_press,
         }
     }
 
@@ -202,18 +202,12 @@ where
         let is_extended_fab = matches!(value.content, Content::Extended { icon: _, label: _ });
         let button = crate::widget::button(value.style, value.content.into())
             .label_font_maybe(value.label_font)
-            .size(
-                value
-                    .size
-                    .to_button_size(is_extended_fab, value.corner_style),
-            )
+            .size(value.size.button_size(is_extended_fab, value.corner_style))
             .elevation(Elevation::Level3);
 
         match value.on_press {
-            on_press => match on_press {
-                Action::Direct(on_press) => button.on_press(on_press),
-                Action::Closure(on_press) => button.on_press_with(on_press),
-            },
+            Action::Direct(on_press) => button.on_press(on_press),
+            Action::Closure(on_press) => button.on_press_with(on_press),
         }
         .into()
     }

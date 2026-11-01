@@ -81,7 +81,7 @@ impl ProgressBar {
     }
 }
 
-impl<'a, Message> Widget<Message, iced::Theme, iced::Renderer> for ProgressBar {
+impl<Message> Widget<Message, iced::Theme, iced::Renderer> for ProgressBar {
     fn tag(&self) -> iced::advanced::widget::tree::Tag {
         tree::Tag::of::<State>()
     }

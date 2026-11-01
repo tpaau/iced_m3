@@ -318,8 +318,12 @@ where
             + self.fab_element.is_some() as usize;
         let mut children = Vec::with_capacity(capacity);
 
-        self.menu_button.as_ref().map(|menu| children.push(menu));
-        self.fab_element.as_ref().map(|fab| children.push(fab));
+        if let Some(menu) = self.menu_button.as_ref() {
+            children.push(menu)
+        }
+        if let Some(fab) = self.fab_element.as_ref() {
+            children.push(fab)
+        }
         children.extend(self.item_elements.iter());
 
         tree.diff_children(&children);
@@ -331,12 +335,12 @@ where
             + self.fab_element.is_some() as usize;
         let mut children = Vec::with_capacity(capacity);
 
-        self.menu_button
-            .as_ref()
-            .map(|menu| children.push(Tree::new(menu)));
-        self.fab_element
-            .as_ref()
-            .map(|fab| children.push(Tree::new(fab)));
+        if let Some(menu) = &self.menu_button {
+            children.push(Tree::new(menu))
+        }
+        if let Some(fab) = &self.fab_element {
+            children.push(Tree::new(fab))
+        }
         children.extend(self.item_elements.iter().map(Tree::new));
 
         children
@@ -394,8 +398,12 @@ where
             layout
         });
 
-        menu_button_layout.map(|layout| children.push(layout));
-        fab_layout.map(|layout| children.push(layout));
+        if let Some(layout) = menu_button_layout {
+            children.push(layout)
+        }
+        if let Some(layout) = fab_layout {
+            children.push(layout)
+        }
 
         let item_space = match self.mode {
             Mode::Collapsed => COLLAPSED_ITEM_SPACE,

@@ -161,10 +161,7 @@ impl SimulatedSpring {
         let x0 = self.position - Self::TARGET;
         let v0 = self.velocity;
 
-        let x;
-        let v;
-
-        if zeta < 1.0 {
+        let (x, v) = if zeta < 1.0 {
             // Underdamped: produces overshoot.
             let decay = -zeta * omega;
             let frequency = omega * (1.0 - zeta * zeta).sqrt();
@@ -177,15 +174,18 @@ impl SimulatedSpring {
             let sin = angle.sin();
             let cos = angle.cos();
 
-            x = envelope * (a * cos + b * sin);
-            v = envelope * ((decay * a + frequency * b) * cos + (decay * b - frequency * a) * sin);
+            let x = envelope * (a * cos + b * sin);
+            let v =
+                envelope * ((decay * a + frequency * b) * cos + (decay * b - frequency * a) * sin);
+            (x, v)
         } else if zeta == 1.0 {
             // Critically damped: fastest motion without overshoot.
             let envelope = (-omega * delta_time).exp();
             let b = v0 + omega * x0;
 
-            x = envelope * (x0 + b * delta_time);
-            v = envelope * (v0 - omega * b * delta_time);
+            let x = envelope * (x0 + b * delta_time);
+            let v = envelope * (v0 - omega * b * delta_time);
+            (x, v)
         } else {
             // Overdamped: slower motion without overshoot.
             let root = (zeta * zeta - 1.0).sqrt();
@@ -198,9 +198,10 @@ impl SimulatedSpring {
             let e1 = (r1 * delta_time).exp();
             let e2 = (r2 * delta_time).exp();
 
-            x = a * e1 + b * e2;
-            v = a * r1 * e1 + b * r2 * e2;
-        }
+            let x = a * e1 + b * e2;
+            let v = a * r1 * e1 + b * r2 * e2;
+            (x, v)
+        };
 
         self.position = Self::TARGET + x;
         self.velocity = v;

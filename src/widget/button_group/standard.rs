@@ -80,7 +80,7 @@ where
             .map(|b| b.item.as_widget().size().width)
             .collect();
         let items_expandable = items.iter().map(|b| b.expandable).collect();
-        let is_filling = item_widths.iter().any(|width| *width == Length::Fill);
+        let is_filling = item_widths.contains(&Length::Fill);
 
         Self {
             items: items.into_iter().map(|b| b.item).collect(),
@@ -308,14 +308,14 @@ where
         let mut fill_indices = Vec::new();
         let mut total_shrink_width = 0.0;
 
-        for i in 0..len {
+        for (i, button_node) in button_nodes.iter_mut().enumerate() {
             if self.item_widths[i] != Length::Fill {
                 let node =
                     self.items[i]
                         .as_widget_mut()
                         .layout(&mut tree.children[i], renderer, limits);
                 total_shrink_width += node.size().width;
-                button_nodes[i] = node;
+                *button_node = node;
             } else {
                 fill_indices.push(i);
             }
@@ -513,7 +513,7 @@ where
             }
         }
 
-        return mouse::Interaction::None;
+        mouse::Interaction::None
     }
 
     fn overlay<'b>(

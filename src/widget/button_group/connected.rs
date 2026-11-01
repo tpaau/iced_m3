@@ -289,7 +289,7 @@ where
                 let size = button::Size {
                     width: Length::Shrink,
                     height: value.size.container_height.into(),
-                    spacing: value.size.content_spacing.into(),
+                    spacing: value.size.content_spacing,
                     padding: value.size.content_padding,
                     icon_size: value.size.icon_size,
                     label_size: value.size.label_size,

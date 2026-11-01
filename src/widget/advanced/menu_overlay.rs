@@ -286,7 +286,7 @@ impl<'a, Message, Theme, Renderer> MenuOverlay<'a, Message, Theme, Renderer> {
 
     /// Whether the menu should capture mouse/touch press events inside the anchor bounds.
     ///
-    /// This may be useful for preventing the menu from reopening instantly when pressing the anchor
+    /// This is useful for preventing the menu from reopening instantly when pressing the anchor
     /// while the menu is open, if the anchor is a button.
     #[must_use]
     pub fn capture_anchor_presses(mut self, capture: bool) -> Self {

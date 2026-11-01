@@ -693,8 +693,8 @@ impl<'a> Content<'a> {
     pub fn icon(self, icon: Icon<'a>) -> Self {
         match self {
             Content::Icon(_) => Self::Icon(icon),
-            Content::Label(label) => Self::Full { icon: icon, label },
-            Content::Full { icon: _, label } => Self::Full { icon: icon, label },
+            Content::Label(label) => Self::Full { icon, label },
+            Content::Full { icon: _, label } => Self::Full { icon, label },
         }
     }
 
@@ -940,7 +940,7 @@ where
     fn size(&self) -> iced::Size<Length> {
         iced::Size {
             width: self.size.width,
-            height: self.size.height.into(),
+            height: self.size.height,
         }
     }
 
@@ -959,7 +959,7 @@ where
             self.icon_paragraph = Some(
                 <Renderer as iced::advanced::text::Renderer>::Paragraph::with_text(
                     iced::advanced::text::Text {
-                        content: &text,
+                        content: text,
                         bounds: shrinked_limits.max(),
                         size: self.size.icon_size,
                         line_height: text::LineHeight::Absolute(self.size.icon_size),
@@ -984,7 +984,7 @@ where
         let paragraph = self.content.get_label().map(|label| {
             <Renderer as iced::advanced::text::Renderer>::Paragraph::with_text(
                 iced::advanced::text::Text {
-                    content: &label,
+                    content: label,
                     bounds: shrinked_limits.max(),
                     size: self.size.label_size,
                     line_height: text::LineHeight::Relative(1.0),

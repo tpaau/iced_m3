@@ -146,7 +146,7 @@ where
             .map(|group| -> Element<'_, Message> {
                 let mut children: Vec<Element<'a, Message>> = Vec::new();
 
-                group.label.map(|label| {
+                if let Some(label) = group.label {
                     children.push(
                         container(
                             text(label)
@@ -163,7 +163,7 @@ where
                         .width(container_width)
                         .into(),
                     )
-                });
+                }
 
                 for entry in group.entries {
                     match entry {

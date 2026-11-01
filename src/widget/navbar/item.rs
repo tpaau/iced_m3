@@ -211,7 +211,7 @@ where
         };
         if let Icon::Text { text, font } = icon {
             let icon_paragraph = <Renderer as text::Renderer>::Paragraph::with_text(text::Text {
-                content: &text,
+                content: text,
                 bounds: Size::INFINITE,
                 size: Pixels(ICON_SIZE),
                 line_height: text::LineHeight::Absolute(Pixels(ICON_SIZE)),
@@ -278,13 +278,13 @@ where
                 ));
 
                 let mut children = vec![icon_node, label_node];
-                badge_node.map(|node| {
+                if let Some(node) = badge_node {
                     let position = Point::new(
                         icon_position.x,
                         icon_position.y + icon_bounds.height - node.bounds().height,
                     );
                     children.push(node.move_to(position))
-                });
+                }
 
                 Node::with_children(indicator_bounds, children)
             }
@@ -326,13 +326,13 @@ where
                 ));
 
                 let mut children = vec![indicator_node, icon_node, label_node];
-                badge_node.map(|node| {
+                if let Some(node) = badge_node {
                     let position = Point::new(
                         icon_position.x,
                         icon_position.y + icon_bounds.height - node.bounds().height,
                     );
                     children.push(node.move_to(position))
-                });
+                }
 
                 Node::with_children(parent_bounds, children)
             }

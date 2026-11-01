@@ -1,20 +1,15 @@
 use iced::{Color, Shadow, Vector};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum Elevation {
+    #[default]
     Level0 = 0,
     Level1 = 1,
     Level2 = 2,
     Level3 = 3,
     Level4 = 4,
     Level5 = 5,
-}
-
-impl Default for Elevation {
-    fn default() -> Self {
-        Self::Level0
-    }
 }
 
 impl Elevation {

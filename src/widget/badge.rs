@@ -168,7 +168,7 @@ where
                 let state = tree.state.downcast_mut::<State<Renderer::Paragraph>>();
 
                 let paragraph = <Renderer as text::Renderer>::Paragraph::with_text(text::Text {
-                    content: &label,
+                    content: label,
                     bounds: Size::INFINITE,
                     size: Pixels(LABEL_FONT_SIZE),
                     line_height: text::LineHeight::Relative(1.0),
@@ -253,7 +253,7 @@ where
         if self.label.is_some() {
             let state = tree.state.downcast_ref::<State<Renderer::Paragraph>>();
             let paragraph = state.paragraph.as_ref().unwrap();
-            let badge_bounds = state.badge_bounds.clone().unwrap();
+            let badge_bounds = state.badge_bounds.unwrap();
 
             renderer.with_layer(bounds, |renderer| {
                 renderer.fill_quad(
@@ -271,7 +271,7 @@ where
                 );
 
                 renderer.fill_paragraph(
-                    &paragraph,
+                    paragraph,
                     bounds.position()
                         + Vector {
                             x: badge_bounds.x + BADGE_CONTENT_PADDING,

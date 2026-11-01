@@ -210,7 +210,7 @@ impl State {
             Shape::Heart,
         ];
 
-        let buttons = options.into_iter().map(|shape| {
+        let buttons = options.iter().map(|shape| {
             button(
                 button::Style::filled(&self.theme, Accent::Primary),
                 button::Content::Label(shape_to_str(shape).into_fragment()),

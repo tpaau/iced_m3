@@ -300,10 +300,7 @@ where
             .state_layer(self.selected)
             .hovered
             .scale_alpha(0.0);
-        let style = self
-            .style
-            .state(self.selected, self.on_toggle.is_some())
-            .clone();
+        let style = *self.style.state(self.selected, self.on_toggle.is_some());
         let now = Instant::now();
         let effects_spring = self
             .effects_spring
@@ -481,7 +478,7 @@ where
             self.style_checked = true;
             shell.request_redraw();
         } else {
-            state.style_spring.set_target(style.clone(), now);
+            state.style_spring.set_target(style, now);
         }
 
         state
@@ -537,10 +534,8 @@ where
                 if state.is_pressed =>
             {
                 shell.capture_event();
-                if is_over {
-                    if let Some(on_toggle) = self.on_toggle.clone() {
-                        shell.publish(on_toggle);
-                    }
+                if is_over && let Some(on_toggle) = self.on_toggle.clone() {
+                    shell.publish(on_toggle);
                 }
                 state.is_pressed = false;
             }

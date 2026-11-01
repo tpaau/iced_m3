@@ -364,10 +364,8 @@ where
                 if state.is_pressed =>
             {
                 shell.capture_event();
-                if is_over {
-                    if let Interaction::Press(on_press) = &self.interaction {
-                        shell.publish(on_press.resolve());
-                    }
+                if is_over && let Interaction::Press(on_press) = &self.interaction {
+                    shell.publish(on_press.resolve());
                 }
                 state.is_pressed = false;
                 shell.invalidate_layout();

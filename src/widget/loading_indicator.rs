@@ -28,7 +28,7 @@ pub(crate) mod constants {
     pub const INDICATOR_SIZE: f32 = 38.0;
     pub const LINEAR_ROTATION_CYCLE_SECONDS: f32 = 4.666;
     pub const MORPH_CYCLE_SECONDS: f32 = 0.650;
-    pub const INDICATOR_SCALING_FACTOR: LazyLock<f32> = LazyLock::new(|| {
+    pub static INDICATOR_SCALING_FACTOR: LazyLock<f32> = LazyLock::new(|| {
         let polygons = [
             soft_burst(),
             cookie9(),
@@ -120,7 +120,7 @@ impl Default for State {
     }
 }
 
-impl<'a, Message, Theme, Renderer> canvas::Program<Message, Theme, Renderer> for LoadingIndicator
+impl<Message, Theme, Renderer> canvas::Program<Message, Theme, Renderer> for LoadingIndicator
 where
     Renderer: iced_widget::renderer::geometry::Renderer,
 {

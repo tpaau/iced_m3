@@ -43,3 +43,6 @@ members = [
 [package.metadata.docs.rs]
 rustdoc-args = [ "--cfg", "docsrs" ]
 all-features = true
+
+[lints.clippy]
+too_many_arguments = "allow"

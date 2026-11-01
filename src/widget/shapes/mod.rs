@@ -215,10 +215,10 @@ where
         }
 
         if let Some(transition) = &mut state.transition {
-            if let Some(spring) = self.spring {
-                if transition.spring.model != spring {
-                    transition.spring.model = spring;
-                }
+            if let Some(spring) = self.spring
+                && transition.spring.model != spring
+            {
+                transition.spring.model = spring;
             }
 
             let now = Instant::now();
