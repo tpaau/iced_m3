@@ -1,5 +1,5 @@
 use iced::{
-    Element, Event, Length, Point, Rectangle, Size, Vector,
+    Element, Event, Length, Pixels, Point, Rectangle, Size, Vector,
     advanced::{
         Layout, Widget,
         layout::{self, Limits},
@@ -18,89 +18,139 @@ use iced::{
 /// For example, [`TopLeft`](Placement::TopLeft) means the menu is attached to the top edge of
 /// `anchor` and aligned to the left. [`LeftTop`](Placement::LeftTop) means it is attached to the
 /// left edge and aligned to the top.
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum Placement {
-    TopLeft,
-    TopCenter,
-    TopRight,
-    RightTop,
-    RightCenter,
-    RightBottom,
-    BottomRight,
-    BottomCenter,
-    #[default]
-    BottomLeft,
-    LeftBottom,
-    LeftCenter,
-    LeftTop,
+    TopLeft {
+        /// Padding between the menu surface and the anchor.
+        padding: Pixels,
+    },
+    TopCenter {
+        /// Padding between the menu surface and the anchor.
+        padding: Pixels,
+    },
+    TopRight {
+        /// Padding between the menu surface and the anchor.
+        padding: Pixels,
+    },
+    RightTop {
+        /// Padding between the menu surface and the anchor.
+        padding: Pixels,
+    },
+    RightCenter {
+        /// Padding between the menu surface and the anchor.
+        padding: Pixels,
+    },
+    RightBottom {
+        /// Padding between the menu surface and the anchor.
+        padding: Pixels,
+    },
+    BottomRight {
+        /// Padding between the menu surface and the anchor.
+        padding: Pixels,
+    },
+    BottomCenter {
+        /// Padding between the menu surface and the anchor.
+        padding: Pixels,
+    },
+    BottomLeft {
+        /// Padding between the menu surface and the anchor.
+        padding: Pixels,
+    },
+    LeftBottom {
+        /// Padding between the menu surface and the anchor.
+        padding: Pixels,
+    },
+    LeftCenter {
+        /// Padding between the menu surface and the anchor.
+        padding: Pixels,
+    },
+    LeftTop {
+        /// Padding between the menu surface and the anchor.
+        padding: Pixels,
+    },
+}
+
+impl Default for Placement {
+    fn default() -> Self {
+        Self::BottomLeft {
+            padding: Pixels(0.0),
+        }
+    }
 }
 
 impl Placement {
     #[must_use]
     fn flip_x(self) -> Self {
         match self {
-            Self::TopLeft => Self::TopRight,
-            Self::TopRight => Self::TopLeft,
-            Self::RightTop => Self::LeftTop,
-            Self::RightCenter => Self::LeftCenter,
-            Self::RightBottom => Self::LeftBottom,
-            Self::BottomRight => Self::BottomLeft,
-            Self::BottomLeft => Self::BottomRight,
-            Self::LeftBottom => Self::RightBottom,
-            Self::LeftCenter => Self::RightCenter,
-            Self::LeftTop => Self::RightTop,
-            Self::TopCenter | Self::BottomCenter => self,
+            Self::TopLeft { padding } => Self::TopRight { padding },
+            Self::TopRight { padding } => Self::TopLeft { padding },
+            Self::RightTop { padding } => Self::LeftTop { padding },
+            Self::RightCenter { padding } => Self::LeftCenter { padding },
+            Self::RightBottom { padding } => Self::LeftBottom { padding },
+            Self::BottomRight { padding } => Self::BottomLeft { padding },
+            Self::BottomLeft { padding } => Self::BottomRight { padding },
+            Self::LeftBottom { padding } => Self::RightBottom { padding },
+            Self::LeftCenter { padding } => Self::RightCenter { padding },
+            Self::LeftTop { padding } => Self::RightTop { padding },
+            Self::TopCenter { padding: _ } | Self::BottomCenter { padding: _ } => self,
         }
     }
 
     #[must_use]
     fn flip_y(self) -> Self {
         match self {
-            Self::TopLeft => Self::BottomLeft,
-            Self::TopCenter => Self::BottomCenter,
-            Self::TopRight => Self::BottomRight,
-            Self::RightTop => Self::RightBottom,
-            Self::RightBottom => Self::RightTop,
-            Self::BottomRight => Self::TopRight,
-            Self::BottomCenter => Self::TopCenter,
-            Self::BottomLeft => Self::TopLeft,
-            Self::LeftBottom => Self::LeftTop,
-            Self::LeftTop => Self::LeftBottom,
-            Self::LeftCenter | Self::RightCenter => self,
+            Self::TopLeft { padding } => Self::BottomLeft { padding },
+            Self::TopCenter { padding } => Self::BottomCenter { padding },
+            Self::TopRight { padding } => Self::BottomRight { padding },
+            Self::RightTop { padding } => Self::RightBottom { padding },
+            Self::RightBottom { padding } => Self::RightTop { padding },
+            Self::BottomRight { padding } => Self::TopRight { padding },
+            Self::BottomCenter { padding } => Self::TopCenter { padding },
+            Self::BottomLeft { padding } => Self::TopLeft { padding },
+            Self::LeftBottom { padding } => Self::LeftTop { padding },
+            Self::LeftTop { padding } => Self::LeftBottom { padding },
+            Self::LeftCenter { padding: _ } | Self::RightCenter { padding: _ } => self,
         }
     }
 
     fn offset(&self, bounds: &Rectangle, overlay_bounds: &Rectangle) -> Vector {
         match self {
-            Placement::TopLeft => {
-                Vector::new(-overlay_bounds.width + bounds.width, -overlay_bounds.height)
-            }
-            Placement::TopCenter => Vector::new(
-                (-overlay_bounds.width + bounds.width) / 2.0,
-                -overlay_bounds.height,
+            Placement::TopLeft { padding } => Vector::new(
+                -overlay_bounds.width + bounds.width,
+                -overlay_bounds.height - padding.0,
             ),
-            Placement::TopRight => Vector::new(0.0, -overlay_bounds.height),
-            Placement::RightCenter => {
-                Vector::new(bounds.width, (-overlay_bounds.height + bounds.height) / 2.0)
-            }
-            Placement::RightTop => {
-                Vector::new(bounds.width, -overlay_bounds.height + bounds.height)
-            }
-            Placement::RightBottom => Vector::new(bounds.width, 0.0),
-            Placement::BottomRight => Vector::new(0.0, bounds.height),
-            Placement::BottomCenter => {
-                Vector::new((-overlay_bounds.width + bounds.width) / 2.0, bounds.height)
-            }
-            Placement::BottomLeft => {
-                Vector::new(-overlay_bounds.width + bounds.width, bounds.height)
-            }
-            Placement::LeftBottom => Vector::new(-overlay_bounds.width, 0.0),
-            Placement::LeftCenter => Vector::new(
-                -overlay_bounds.width,
+            Placement::TopCenter { padding } => Vector::new(
+                (-overlay_bounds.width + bounds.width) / 2.0,
+                -overlay_bounds.height - padding.0,
+            ),
+            Placement::TopRight { padding } => Vector::new(0.0, -overlay_bounds.height - padding.0),
+            Placement::RightCenter { padding } => Vector::new(
+                bounds.width + padding.0,
                 (-overlay_bounds.height + bounds.height) / 2.0,
             ),
-            Placement::LeftTop => Vector::new(
-                -overlay_bounds.width,
+            Placement::RightTop { padding } => Vector::new(
+                bounds.width + padding.0,
+                -overlay_bounds.height + bounds.height,
+            ),
+            Placement::RightBottom { padding } => Vector::new(bounds.width + padding.0, 0.0),
+            Placement::BottomRight { padding } => Vector::new(0.0, bounds.height + padding.0),
+            Placement::BottomCenter { padding } => Vector::new(
+                (-overlay_bounds.width + bounds.width) / 2.0,
+                bounds.height + padding.0,
+            ),
+            Placement::BottomLeft { padding } => Vector::new(
+                -overlay_bounds.width + bounds.width,
+                bounds.height + padding.0,
+            ),
+            Placement::LeftBottom { padding } => {
+                Vector::new(-overlay_bounds.width - padding.0, 0.0)
+            }
+            Placement::LeftCenter { padding } => Vector::new(
+                -overlay_bounds.width - padding.0,
+                (-overlay_bounds.height + bounds.height) / 2.0,
+            ),
+            Placement::LeftTop { padding } => Vector::new(
+                -overlay_bounds.width - padding.0,
                 -overlay_bounds.height + bounds.height,
             ),
         }
@@ -342,8 +392,8 @@ where
                 anchor_bounds: bounds,
                 placement: self.placement,
                 tree,
-                on_press: self.on_press.as_ref(),
-                on_key: self.on_key.as_ref(),
+                on_press: self.on_press.as_ref().map(|on_press| on_press.as_ref()),
+                on_key: self.on_key.as_ref().map(|on_key| on_key.as_ref()),
                 index: self.index,
             }))
         })
@@ -367,8 +417,8 @@ struct Overlay<'a, 'b, Message, Theme, Renderer> {
     anchor_bounds: Rectangle,
     placement: Placement,
     tree: &'b mut iced::advanced::widget::Tree,
-    on_press: Option<&'b Box<dyn Fn(PressProperties) -> Option<Message> + 'a>>,
-    on_key: Option<&'b Box<dyn Fn(KeyProperties) -> Option<Message> + 'a>>,
+    on_press: Option<&'b (dyn Fn(PressProperties) -> Option<Message> + 'a)>,
+    on_key: Option<&'b (dyn Fn(KeyProperties) -> Option<Message> + 'a)>,
     index: f32,
 }
 
@@ -484,7 +534,9 @@ where
                     was_captured,
                 };
 
-                (on_press)(properties).map(|message| shell.publish(message));
+                if let Some(message) = (on_press)(properties) {
+                    shell.publish(message)
+                }
             }
         } else if let Event::Keyboard(keyboard::Event::KeyPressed {
             key,
@@ -495,15 +547,16 @@ where
             text: _,
             repeat: _,
         }) = event
+            && let Some(on_key) = self.on_key
         {
-            if let Some(on_key) = self.on_key {
-                let properties = KeyProperties {
-                    key: key.clone(),
-                    modified_key: modified_key.clone(),
-                    modifiers: *modifiers,
-                };
+            let properties = KeyProperties {
+                key: key.clone(),
+                modified_key: modified_key.clone(),
+                modifiers: *modifiers,
+            };
 
-                (on_key)(properties).map(|message| shell.publish(message));
+            if let Some(message) = (on_key)(properties) {
+                shell.publish(message)
             }
         }
     }
