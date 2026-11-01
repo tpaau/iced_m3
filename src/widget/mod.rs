@@ -240,7 +240,7 @@ where
 /// Standard button groups organize [`Button`] widgets in a row and affect the size of pressed buttons.
 #[must_use]
 pub fn standard_button_group<'a, Message, Theme, Renderer>(
-    buttons: impl IntoIterator<Item = Button<'a, Message, Renderer>>,
+    buttons: impl IntoIterator<Item = button_group::standard::GroupItem<'a, Message, Theme, Renderer>>,
 ) -> button_group::standard::ButtonGroup<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,

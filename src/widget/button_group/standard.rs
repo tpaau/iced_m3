@@ -1,4 +1,4 @@
-//! Standard button groups organize [`Button`] widgets in a row and affect the size of pressed buttons.
+//! Standard button groups organize [`Button`](crate::widget::button::Button) widgets in a row and affect the size of pressed buttons.
 use std::time::Instant;
 
 use iced::{
@@ -6,15 +6,12 @@ use iced::{
     advanced::{
         Layout, Widget,
         layout::Node,
-        mouse,
+        mouse, overlay,
         widget::{Tree, tree},
     },
 };
 
-use crate::{
-    animation::motion::{self, Spring, SpringValue, fast_spatial},
-    widget::button::Button,
-};
+use crate::animation::motion::{self, Spring, SpringValue, fast_spatial};
 
 /// Extra small spacing between buttons. Recommended for extra small buttons.
 pub const SPACING_EXTRA_SMALL: Pixels = Pixels(18.0);
@@ -29,23 +26,43 @@ pub const SPACING_EXTRA_LARGE: Pixels = Pixels(8.0);
 /// The default fraction of the pressed child’s width used to expand it.
 pub const DEFAULT_BUTTON_EXPANDED_RATIO: f32 = 0.15;
 
-/// Standard button groups organize [`Button`] widgets in a row and affect the size of pressed buttons.
+/// Standard button groups organize [`Button`](crate::widget::button::Button) widgets in a row and affect the size of pressed buttons.
 pub struct ButtonGroup<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer>
 where
     Message: Clone,
     Renderer: iced::advanced::text::Renderer,
 {
-    buttons: Vec<Element<'a, Message, Theme, Renderer>>,
+    items: Vec<Element<'a, Message, Theme, Renderer>>,
     motion_scheme: Option<motion::Scheme>,
-    button_expansion_spring: Option<Spring>,
+    expansion_spring: Option<Spring>,
     spacing: Pixels,
     expanded_ratio: f32,
 
     // Cache
     nodes: Vec<Node>,
     shrink_wrap: bool,
-    button_widths: Vec<Length>,
-    buttons_enabled: Vec<bool>,
+    item_widths: Vec<Length>,
+    items_expandable: Vec<bool>,
+}
+
+/// An item in the menu group.
+pub struct GroupItem<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer> {
+    item: Element<'a, Message, Theme, Renderer>,
+    expandable: bool,
+}
+
+impl<'a, Message, Theme, Renderer> GroupItem<'a, Message, Theme, Renderer> {
+    /// Creates a new [`GroupItem`] given the [`Element`] and the `disabled` flag.
+    ///
+    /// If the item is flagged as disabled, mouse presses inside its bounds will not cause it to
+    /// expand like with active items.
+    #[must_use]
+    pub fn new(item: impl Into<Element<'a, Message, Theme, Renderer>>, expandable: bool) -> Self {
+        Self {
+            item: item.into(),
+            expandable,
+        }
+    }
 }
 
 impl<'a, Message, Theme, Renderer> ButtonGroup<'a, Message, Theme, Renderer>
@@ -56,22 +73,25 @@ where
 {
     /// Creates a new [`ButtonGroup`] widget.
     #[must_use]
-    pub fn new(buttons: impl IntoIterator<Item = Button<'a, Message, Renderer>>) -> Self {
-        let buttons: Vec<_> = buttons.into_iter().collect();
-        let button_widths = buttons.iter().map(|b| b.size.width).collect();
-        let buttons_enabled = buttons.iter().map(|b| !b.is_disabled()).collect();
-        let is_filling = buttons.iter().any(|b| b.size.width == Length::Fill);
+    pub fn new(items: impl IntoIterator<Item = GroupItem<'a, Message, Theme, Renderer>>) -> Self {
+        let items: Vec<_> = items.into_iter().collect();
+        let item_widths: Vec<_> = items
+            .iter()
+            .map(|b| b.item.as_widget().size().width)
+            .collect();
+        let items_expandable = items.iter().map(|b| b.expandable).collect();
+        let is_filling = item_widths.iter().any(|width| *width == Length::Fill);
 
         Self {
-            buttons: buttons.into_iter().map(|b| b.into()).collect(),
+            items: items.into_iter().map(|b| b.item).collect(),
             shrink_wrap: !is_filling,
             motion_scheme: None,
-            button_expansion_spring: None,
+            expansion_spring: None,
             spacing: SPACING_SMALL,
             expanded_ratio: DEFAULT_BUTTON_EXPANDED_RATIO,
             nodes: Vec::new(),
-            buttons_enabled,
-            button_widths,
+            items_expandable,
+            item_widths,
         }
     }
 
@@ -91,15 +111,15 @@ where
 
     /// Sets the spring used for animating button sizes.
     #[must_use]
-    pub fn button_expansion_spring(mut self, spring: Spring) -> Self {
-        self.button_expansion_spring = Some(spring);
+    pub fn expansion_spring(mut self, spring: Spring) -> Self {
+        self.expansion_spring = Some(spring);
         self
     }
 
     /// Sets the spring used for animating button sizes, if `Some`.
     #[must_use]
-    pub fn button_expansion_spring_maybe(mut self, spring: Option<Spring>) -> Self {
-        self.button_expansion_spring = spring;
+    pub fn expansion_spring_maybe(mut self, spring: Option<Spring>) -> Self {
+        self.expansion_spring = spring;
         self
     }
 
@@ -119,8 +139,8 @@ where
         self
     }
 
-    fn get_button_expansion_spring(&self) -> Spring {
-        self.button_expansion_spring
+    fn get_expansion_spring(&self) -> Spring {
+        self.expansion_spring
             .unwrap_or(fast_spatial(motion::Scheme::default()))
     }
 }
@@ -245,13 +265,13 @@ where
 
     fn state(&self) -> tree::State {
         let now = Instant::now();
-        let model = self.get_button_expansion_spring();
+        let model = self.get_expansion_spring();
 
         let state = State {
             pressed_button: None,
             spring_model: model,
             size_springs: self
-                .buttons
+                .items
                 .iter()
                 .map(|_| SpringValue::new(0.0, model, now))
                 .collect(),
@@ -266,15 +286,15 @@ where
     }
 
     fn children(&self) -> Vec<Tree> {
-        self.buttons.iter().map(Tree::new).collect()
+        self.items.iter().map(Tree::new).collect()
     }
 
     fn diff(&self, tree: &mut Tree) {
-        tree.diff_children(&self.buttons);
+        tree.diff_children(&self.items);
 
         let state = tree.state.downcast_mut::<State>();
-        state.update_spring_model(self.get_button_expansion_spring());
-        state.update_button_count(self.buttons.len());
+        state.update_spring_model(self.get_expansion_spring());
+        state.update_button_count(self.items.len());
     }
 
     fn layout(
@@ -283,15 +303,15 @@ where
         renderer: &Renderer,
         limits: &iced::advanced::layout::Limits,
     ) -> Node {
-        let len = self.buttons.len();
+        let len = self.items.len();
         let mut button_nodes = vec![Node::new(Size::ZERO); len];
         let mut fill_indices = Vec::new();
         let mut total_shrink_width = 0.0;
 
         for i in 0..len {
-            if self.button_widths[i] != Length::Fill {
+            if self.item_widths[i] != Length::Fill {
                 let node =
-                    self.buttons[i]
+                    self.items[i]
                         .as_widget_mut()
                         .layout(&mut tree.children[i], renderer, limits);
                 total_shrink_width += node.size().width;
@@ -312,7 +332,7 @@ where
 
             for &i in &fill_indices {
                 let fill_limits = limits.width(Length::Fixed(fill_width));
-                let node = self.buttons[i].as_widget_mut().layout(
+                let node = self.items[i].as_widget_mut().layout(
                     &mut tree.children[i],
                     renderer,
                     &fill_limits,
@@ -350,7 +370,7 @@ where
         cursor: mouse::Cursor,
         viewport: &iced::Rectangle,
     ) {
-        for (i, button) in self.buttons.iter().enumerate() {
+        for (i, button) in self.items.iter().enumerate() {
             let mut child = self.nodes[i].clone();
             let layout = normalize_node(&mut child, layout);
             button.as_widget().draw(
@@ -419,7 +439,7 @@ where
                         .translate(Vector::new(bounds_position.x, bounds_position.y))
                         .bounds();
 
-                    let active = cursor.is_over(bounds) && self.buttons_enabled[index];
+                    let active = cursor.is_over(bounds) && self.items_expandable[index];
                     if active {
                         state.pressed_button = Some(index);
                         spring.set_target(1.0, now);
@@ -454,7 +474,7 @@ where
             _ => {}
         }
 
-        for (i, button) in self.buttons.iter_mut().enumerate() {
+        for (i, button) in self.items.iter_mut().enumerate() {
             let mut child = self.nodes[i].clone();
             let layout = normalize_node(&mut child, layout);
             button.as_widget_mut().update(
@@ -478,7 +498,7 @@ where
         viewport: &iced::Rectangle,
         renderer: &Renderer,
     ) -> mouse::Interaction {
-        for (i, button) in self.buttons.iter().enumerate() {
+        for (i, button) in self.items.iter().enumerate() {
             let mut child = self.nodes[i].clone();
             let layout = normalize_node(&mut child, layout);
             let interaction = button.as_widget().mouse_interaction(
@@ -494,6 +514,36 @@ where
         }
 
         return mouse::Interaction::None;
+    }
+
+    fn overlay<'b>(
+        &'b mut self,
+        tree: &'b mut iced::advanced::widget::Tree,
+        layout: Layout<'b>,
+        renderer: &Renderer,
+        viewport: &iced::Rectangle,
+        translation: Vector,
+    ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
+        let mut children = Vec::new();
+
+        for ((item, tree), node) in self
+            .items
+            .iter_mut()
+            .zip(tree.children.iter_mut())
+            .zip(&self.nodes)
+        {
+            let pos = node.bounds().position();
+            let translation = Vector::new(pos.x + translation.x, pos.y + translation.y);
+
+            if let Some(item) =
+                item.as_widget_mut()
+                    .overlay(tree, layout, renderer, viewport, translation)
+            {
+                children.push(item);
+            }
+        }
+
+        (!children.is_empty()).then(|| overlay::Group::with_children(children).overlay())
     }
 }
 

@@ -6,7 +6,7 @@ use crate::{
     animation::motion::{self, Spring},
     widget::{
         button::{self, Content, CornerRadius, CornerStyle, Style},
-        button_group::standard,
+        button_group::standard::{self, GroupItem},
     },
 };
 
@@ -307,9 +307,13 @@ where
                     .size(size)
             });
 
-        let button_group = standard::ButtonGroup::new(buttons)
+        let items = buttons.into_iter().map(|b| {
+            let is_disabled = b.is_disabled();
+            GroupItem::new(b, is_disabled)
+        });
+        let button_group = standard::ButtonGroup::new(items)
             .motion_scheme_maybe(value.motion_scheme)
-            .button_expansion_spring_maybe(value.button_expansion_spring)
+            .expansion_spring_maybe(value.button_expansion_spring)
             .expanded_ratio(value.expanded_ratio)
             .spacing(value.size.button_spacing);
 

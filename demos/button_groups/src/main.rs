@@ -8,7 +8,10 @@ use iced_m3::{
     theme::{Accent, ColorScheme, Mode, Theme},
     widget::{
         button::{self, Content, Style},
-        button_group::{self, connected, standard},
+        button_group::{
+            self, connected,
+            standard::{self, GroupItem},
+        },
         connected_button_group,
         hybrid_icon::Icon,
         standard_button_group,
@@ -143,7 +146,10 @@ impl State {
                     .size(button_size)
                     .on_press(Message::Noop)
                 });
-                standard_button_group(buttons).spacing(spacing).into()
+                let items = buttons
+                    .into_iter()
+                    .map(|button| GroupItem::new(button, true));
+                standard_button_group(items).spacing(spacing).into()
             }))
             .spacing(20)
         ]
