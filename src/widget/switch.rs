@@ -25,12 +25,22 @@ const TRACK_SIZE: Size<f32> = Size {
     width: 52.0,
     height: 32.0,
 };
+
+const HANDLE_CENTER_MIN: f32 = TRACK_SIZE.height / 2.0;
+const HANDLE_CENTER_MAX: f32 = TRACK_SIZE.width - TRACK_SIZE.height / 2.0;
+
+/// Returns `true` when the layout squeezes the switch below `TRACK_SIZE`
+fn is_squeezed(bounds: Rectangle) -> bool {
+    bounds.width < TRACK_SIZE.width || bounds.height < TRACK_SIZE.height
+}
+
 const TRACK_DISABLED_OUTLINE_WIDTH: f32 = 2.0;
 const HANDLE_SIZE_NO_ICON: f32 = 16.0;
 const HANDLE_SIZE_WITH_ICON: f32 = 24.0;
 const HANDLE_SIZE_PRESSED: f32 = 28.0;
 const STATE_LAYER_SIZE: f32 = 40.0;
 const ICON_SIZE: f32 = 16.0;
+const DRAG_START_THRESHOLD: f32 = 2.0;
 
 const HANDLE_DISABLED_SELECTED_OPACITY: f32 = 1.0;
 const HANDLE_DISABLED_UNSELECTED_OPACITY: f32 = 0.38;
@@ -225,13 +235,17 @@ where
         self
     }
 
-    fn icon_rotation(&self) -> Radians {
-        if self.selected {
+    fn icon_rotation_for(&self, selected: bool) -> Radians {
+        if selected {
             Radians(0.0)
         } else {
             // The close icon is symmetrical so it doesn't matter it's not a 360 rotation
             -1.0 * Radians::PI
         }
+    }
+
+    fn icon_rotation(&self) -> Radians {
+        self.icon_rotation_for(self.selected)
     }
 
     fn handle_size(&self, is_pressed: bool) -> f32 {
@@ -243,19 +257,14 @@ where
             HANDLE_SIZE_NO_ICON
         }
     }
-
-    fn handle_position(&self) -> f32 {
-        if self.selected {
-            TRACK_SIZE.width - TRACK_SIZE.height / 2.0
-        } else {
-            TRACK_SIZE.height / 2.0
-        }
-    }
 }
 
 struct State {
     is_hovered: bool,
-    is_pressed: bool,
+    is_dragging: bool,
+    press_x: Option<f32>,
+    drag_position: Option<f32>,
+    awaiting_toggle: Option<bool>,
     check_icon: Handle,
     close_icon: Handle,
     last_effects_spring: Spring,
@@ -310,7 +319,11 @@ where
         let spatial_spring = self
             .spatial_spring
             .unwrap_or(fast_spatial(motion::Scheme::default()));
-        let handle_position = self.handle_position();
+        let handle_position = if self.selected {
+            HANDLE_CENTER_MAX
+        } else {
+            HANDLE_CENTER_MIN
+        };
         let handle_size = self.handle_size(false);
         let icon_opacity = if self.icon_mode == IconMode::Always {
             0.5
@@ -322,7 +335,10 @@ where
 
         let state = State {
             is_hovered: false,
-            is_pressed: false,
+            is_dragging: false,
+            press_x: None,
+            drag_position: None,
+            awaiting_toggle: None,
             check_icon: Handle::from_memory(common_icons::CHECK),
             close_icon: Handle::from_memory(common_icons::CLOSE),
             last_effects_spring: effects_spring,
@@ -342,7 +358,7 @@ where
     fn size(&self) -> Size<Length> {
         Size {
             width: Length::Fixed(TRACK_SIZE.width),
-            height: Length::Fixed(TRACK_SIZE.width),
+            height: Length::Fixed(TRACK_SIZE.height),
         }
     }
 
@@ -369,77 +385,92 @@ where
         let style = state.style_spring.value();
         let bounds = layout.bounds();
 
-        renderer.fill_quad(
-            Quad {
-                bounds,
-                border: Border::default()
-                    .rounded(f32::MAX)
-                    .color(style.outline_color)
-                    .width(style.outline_width),
-                ..Default::default()
-            },
-            style.track_color,
-        );
+        let draw_switch = |renderer: &mut Renderer| {
+            renderer.fill_quad(
+                Quad {
+                    bounds,
+                    border: Border::default()
+                        .rounded(f32::MAX)
+                        .color(style.outline_color)
+                        .width(style.outline_width),
+                    ..Default::default()
+                },
+                style.track_color,
+            );
 
-        let handle_size = state.handle_size_spring.value();
-        let handle_center = state.handle_position_spring.value();
-        let handle_bounds = Rectangle {
-            x: bounds.x + handle_center - handle_size / 2.0,
-            y: bounds.y + (TRACK_SIZE.height - handle_size) / 2.0,
-            width: handle_size,
-            height: handle_size,
+            let handle_size = state.handle_size_spring.value();
+            let handle_center = state.handle_position_spring.value();
+            let handle_bounds = Rectangle {
+                x: bounds.x + handle_center - handle_size / 2.0,
+                y: bounds.y + (bounds.height - handle_size) / 2.0,
+                width: handle_size,
+                height: handle_size,
+            };
+
+            renderer.fill_quad(
+                Quad {
+                    bounds: handle_bounds,
+                    border: Border::default().rounded(f32::MAX),
+                    ..Default::default()
+                },
+                style.handle_color,
+            );
+
+            let opacity = if self.icon_mode == IconMode::Always {
+                midpoint_distance(state.icon_opacity_spring.value())
+            } else if self.icon_mode == IconMode::WhenSelected {
+                state.icon_opacity_spring.value()
+            } else {
+                0.0
+            } * style.icon_color.a;
+            (opacity > 0.0).then(|| {
+                let icon = Svg::new(if state.icon_opacity_spring.value() < 0.5 {
+                    state.close_icon.clone()
+                } else {
+                    state.check_icon.clone()
+                })
+                .rotation(state.icon_rotation_spring.value());
+                let color = Color {
+                    r: style.icon_color.r,
+                    g: style.icon_color.g,
+                    b: style.icon_color.b,
+                    a: 1.0,
+                };
+                let icon_bounds = Rectangle {
+                    x: handle_bounds.x + (handle_size - ICON_SIZE) / 2.0,
+                    y: handle_bounds.y + (handle_size - ICON_SIZE) / 2.0,
+                    width: ICON_SIZE,
+                    height: ICON_SIZE,
+                };
+                renderer.draw_svg(icon.color(color).opacity(opacity), icon_bounds, icon_bounds)
+            });
         };
 
-        renderer.fill_quad(
-            Quad {
-                bounds: handle_bounds,
-                border: Border::default().rounded(f32::MAX),
-                ..Default::default()
-            },
-            style.handle_color,
-        );
-
-        let opacity = if self.icon_mode == IconMode::Always {
-            midpoint_distance(state.icon_opacity_spring.value())
-        } else if self.icon_mode == IconMode::WhenSelected {
-            state.icon_opacity_spring.value()
+        // When the layout squeezes the switch below `TRACK_SIZE`, clip the
+        // handle to the track instead of letting it stick out
+        if is_squeezed(bounds) {
+            renderer.with_layer(bounds, draw_switch);
         } else {
-            0.0
-        } * style.icon_color.a;
-        (opacity > 0.0).then(|| {
-            let icon = Svg::new(if state.icon_opacity_spring.value() < 0.5 {
-                state.close_icon.clone()
-            } else {
-                state.check_icon.clone()
-            })
-            .rotation(state.icon_rotation_spring.value());
-            let color = Color {
-                r: style.icon_color.r,
-                g: style.icon_color.g,
-                b: style.icon_color.b,
-                a: 1.0,
-            };
-            let icon_bounds = Rectangle {
-                x: handle_bounds.x + (handle_size - ICON_SIZE) / 2.0,
-                y: handle_bounds.y + (handle_size - ICON_SIZE) / 2.0,
-                width: ICON_SIZE,
-                height: ICON_SIZE,
-            };
-            renderer.draw_svg(icon.color(color).opacity(opacity), icon_bounds, icon_bounds)
-        });
+            draw_switch(renderer);
+        }
     }
 
     fn mouse_interaction(
         &self,
-        _tree: &iced::advanced::widget::Tree,
+        tree: &iced::advanced::widget::Tree,
         layout: iced::advanced::Layout<'_>,
         cursor: mouse::Cursor,
         _viewport: &iced::Rectangle,
         _renderer: &Renderer,
     ) -> mouse::Interaction {
-        let is_mouse_over = cursor.is_over(layout.bounds());
+        if self.on_toggle.is_none() {
+            return mouse::Interaction::default();
+        }
 
-        if is_mouse_over && self.on_toggle.is_some() {
+        let state = tree.state.downcast_ref::<State>();
+        if state.press_x.is_some() {
+            mouse::Interaction::Grabbing
+        } else if cursor.is_over(layout.bounds()) {
             mouse::Interaction::Pointer
         } else {
             mouse::Interaction::default()
@@ -458,7 +489,25 @@ where
         _viewport: &iced::Rectangle,
     ) {
         let state = tree.state.downcast_mut::<State>();
-        let is_over = cursor.is_over(layout.bounds());
+        let bounds = layout.bounds();
+        let is_over = cursor.is_over(bounds);
+        let handle_size = self.handle_size(state.press_x.is_some());
+        let handle_half = handle_size / 2.0;
+        // The same margin the handle keeps at the nominal size: half of the
+        // track height the handle doesn't occupy, scaled to the actual size
+        let margin = ((bounds.height - handle_size) / 2.0).max(0.0);
+        let handle_center_min = (handle_half + margin).min(bounds.width / 2.0);
+        let handle_center_max = (bounds.width - handle_half - margin).max(handle_center_min);
+        // A track squeezed to a single point must not produce a NaN progress
+        let handle_travel = (handle_center_max - handle_center_min).max(f32::EPSILON);
+        let track_midpoint = bounds.width / 2.0;
+        let rest_position = |selected: bool| {
+            if selected {
+                handle_center_max
+            } else {
+                handle_center_min
+            }
+        };
 
         let now = Instant::now();
 
@@ -473,7 +522,21 @@ where
             state.set_spatial_spring(spatial_spring);
         }
 
-        let style = *self.style.state(self.selected, self.on_toggle.is_some());
+        let drag_progress = state.drag_position.map(|drag_position| {
+            ((drag_position - handle_center_min) / handle_travel).clamp(0.0, 1.0)
+        });
+        let visual_selected = match drag_progress {
+            Some(progress) => progress >= 0.5,
+            None => self.selected,
+        };
+
+        let style = match drag_progress {
+            Some(progress) => self
+                .style
+                .state(false, self.on_toggle.is_some())
+                .interpolate(*self.style.state(true, self.on_toggle.is_some()), progress),
+            None => *self.style.state(visual_selected, self.on_toggle.is_some()),
+        };
         if !self.style_checked && self.style != state.last_style {
             state.style_spring.reset(style, now);
             state.last_style = self.style;
@@ -485,27 +548,39 @@ where
 
         state
             .handle_size_spring
-            .set_target(self.handle_size(state.is_pressed), now);
-        state
-            .handle_position_spring
-            .set_target(self.handle_position(), now);
+            .set_target(self.handle_size(state.press_x.is_some()), now);
+        if let Some(drag_position) = state.drag_position {
+            state.handle_position_spring.reset(drag_position, now);
+        } else {
+            state
+                .handle_position_spring
+                .set_target(rest_position(self.selected), now);
+        }
+        let icon_rotation_target = match drag_progress {
+            Some(progress) => self
+                .icon_rotation_for(false)
+                .interpolate(self.icon_rotation_for(true), progress),
+            None => self.icon_rotation_for(visual_selected),
+        };
         state
             .icon_rotation_spring
-            .set_target(self.icon_rotation(), now);
-        state
-            .icon_opacity_spring
-            .set_target(self.selected as usize as f32, now);
+            .set_target(icon_rotation_target, now);
+        state.icon_opacity_spring.set_target(
+            drag_progress.unwrap_or(visual_selected as usize as f32),
+            now,
+        );
 
+        let state_layer = match drag_progress {
+            Some(progress) => (*self.style.state_layer(false))
+                .interpolate(*self.style.state_layer(true), progress),
+            None => *self.style.state_layer(visual_selected),
+        };
         let state_layer_color = match state.is_hovered {
-            true => match state.is_pressed {
-                true => self.style.state_layer(self.selected).pressed,
-                false => self.style.state_layer(self.selected).hovered,
+            true => match state.press_x.is_some() {
+                true => state_layer.pressed,
+                false => state_layer.hovered,
             },
-            false => self
-                .style
-                .state_layer(self.selected)
-                .hovered
-                .scale_alpha(0.0),
+            false => state_layer.hovered.scale_alpha(0.0),
         };
         state.state_layer_color.set_target(state_layer_color, now);
         if !state.handle_position_spring.is_at_rest()
@@ -526,22 +601,88 @@ where
         state.handle_position_spring.step(now);
         state.style_spring.step(now);
 
+        if state
+            .awaiting_toggle
+            .is_some_and(|selected_at_release| selected_at_release != self.selected)
+        {
+            state.awaiting_toggle = None;
+            state.drag_position = None;
+        }
+
         match event {
             iced::Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) if is_over => {
+                let press_x = cursor.position().map_or(0.0, |point| point.x);
                 shell.capture_event();
-                state.is_pressed = true;
+                state.press_x = Some(press_x);
+                state.is_dragging = false;
+                state.awaiting_toggle = None;
+                state.drag_position = None;
+
+                if self.on_toggle.is_some() {
+                    let drag_position =
+                        (press_x - bounds.x).clamp(handle_center_min, handle_center_max);
+
+                    state.drag_position = Some(drag_position);
+                    state.handle_position_spring.reset(drag_position, now);
+                    shell.request_redraw();
+                }
+            }
+
+            iced::Event::Mouse(mouse::Event::CursorMoved { .. }) if state.press_x.is_some() => {
+                if let Some(position) = cursor.position() {
+                    if !state.is_dragging
+                        && (position.x - state.press_x.unwrap_or(0.0)).abs() > DRAG_START_THRESHOLD
+                    {
+                        state.is_dragging = true;
+                    }
+
+                    if self.on_toggle.is_some() {
+                        let drag_position =
+                            (position.x - bounds.x).clamp(handle_center_min, handle_center_max);
+
+                        state.drag_position = Some(drag_position);
+                        state.handle_position_spring.reset(drag_position, now);
+                        shell.capture_event();
+                        shell.request_redraw();
+                    }
+                }
             }
 
             iced::Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
-                if state.is_pressed =>
+                if state.press_x.is_some() =>
             {
                 shell.capture_event();
-                if is_over {
+                let toggled = if self.on_toggle.is_some() {
+                    match state.is_dragging {
+                        true => {
+                            let drag_position =
+                                state.drag_position.unwrap_or(rest_position(self.selected));
+                            let target_selected = drag_position >= track_midpoint;
+                            target_selected != self.selected
+                        }
+                        // A tap always toggles regardless of where the thumb was
+                        // moved by the press
+                        false => is_over,
+                    }
+                } else {
+                    false
+                };
+
+                if toggled {
                     if let Some(on_toggle) = self.on_toggle.clone() {
                         shell.publish(on_toggle);
                     }
+                    // Keep the thumb where the pointer left it until the parent
+                    // applies the new `selected` value
+                    state.awaiting_toggle = Some(self.selected);
+                } else {
+                    state.drag_position = None;
+                    state
+                        .handle_position_spring
+                        .set_target(rest_position(self.selected), now);
                 }
-                state.is_pressed = false;
+                state.press_x = None;
+                state.is_dragging = false;
             }
 
             _ => {}
@@ -549,10 +690,6 @@ where
 
         if state.is_hovered != is_over {
             state.is_hovered = is_over;
-
-            if !is_over {
-                state.is_pressed = false;
-            }
         }
     }
 
@@ -572,7 +709,7 @@ where
             let handle_center = state.handle_position_spring.value();
             let handle_bounds = Rectangle {
                 x: bounds.x + handle_center - handle_size / 2.0,
-                y: bounds.y + (TRACK_SIZE.height - handle_size) / 2.0,
+                y: bounds.y + (bounds.height - handle_size) / 2.0,
                 width: handle_size,
                 height: handle_size,
             };
@@ -584,7 +721,11 @@ where
                 height: STATE_LAYER_SIZE,
             };
 
-            let overlay = StateLayerOverlay { color, bounds };
+            let overlay = StateLayerOverlay {
+                color,
+                bounds,
+                clip_bounds: is_squeezed(bounds).then_some(bounds),
+            };
             overlay::Element::new(Box::new(overlay))
         })
     }
@@ -593,6 +734,7 @@ where
 struct StateLayerOverlay {
     color: Color,
     bounds: Rectangle,
+    clip_bounds: Option<Rectangle>,
 }
 
 impl<Message, Theme, Renderer> Overlay<Message, Theme, Renderer> for StateLayerOverlay
@@ -615,14 +757,21 @@ where
         layout: iced::advanced::Layout<'_>,
         _cursor: mouse::Cursor,
     ) {
-        renderer.fill_quad(
-            Quad {
-                bounds: layout.bounds(),
-                border: Border::default().rounded(f32::MAX),
-                ..Default::default()
-            },
-            self.color,
-        );
+        let draw_state_layer = |renderer: &mut Renderer| {
+            renderer.fill_quad(
+                Quad {
+                    bounds: layout.bounds(),
+                    border: Border::default().rounded(f32::MAX),
+                    ..Default::default()
+                },
+                self.color,
+            );
+        };
+
+        match self.clip_bounds {
+            Some(clip_bounds) => renderer.with_layer(clip_bounds, draw_state_layer),
+            None => draw_state_layer(renderer),
+        }
     }
 }
 
