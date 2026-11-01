@@ -1044,8 +1044,15 @@ where
         let content_area_width = size.width - padding.left - padding.right;
         let content_area_height = size.height - padding.top - padding.bottom;
 
-        let group_x = padding.left + (content_area_width - content_width) / 2.0;
         let group_y = padding.top + (content_area_height - content_height) / 2.0;
+        // When the button is squeezed below its content size, the icon holds
+        // its ground while the label absorbs the deficit and is clipped at
+        // the button bounds by the draw-side clip
+        let group_x = if content_width > content_area_width {
+            padding.left
+        } else {
+            padding.left + (content_area_width - content_width) / 2.0
+        };
 
         let mut children = Vec::with_capacity(2);
         let mut offset = 0.0;
@@ -1207,31 +1214,35 @@ where
             style.container,
         );
 
-        if let Some(icon) = &self.icon_paragraph
-            && let Some(layout) = children.next()
-        {
-            let bounds = layout.bounds();
-            renderer.fill_paragraph(icon, bounds.position(), style.icon, bounds);
-        } else if let Some(Icon::Svg(handle)) = self.content.get_icon()
-            && let Some(layout) = children.next()
-        {
-            renderer.draw_svg(
-                iced::advanced::svg::Svg {
-                    handle: handle.clone(),
-                    color: Some(style.icon),
-                    rotation: Radians(0.0),
-                    opacity: style.icon.a,
-                },
-                layout.bounds(),
-                bounds,
-            );
-        }
+        // Clip the icon and label to the button bounds so they don't stick
+        // out when the layout squeezes the button below its content size
+        renderer.with_layer(bounds, |renderer| {
+            if let Some(icon) = &self.icon_paragraph
+                && let Some(layout) = children.next()
+            {
+                let bounds = layout.bounds();
+                renderer.fill_paragraph(icon, bounds.position(), style.icon, bounds);
+            } else if let Some(Icon::Svg(handle)) = self.content.get_icon()
+                && let Some(layout) = children.next()
+            {
+                renderer.draw_svg(
+                    iced::advanced::svg::Svg {
+                        handle: handle.clone(),
+                        color: Some(style.icon),
+                        rotation: Radians(0.0),
+                        opacity: style.icon.a,
+                    },
+                    layout.bounds(),
+                    bounds,
+                );
+            }
 
-        if let Some(label) = &self.label_paragraph
-            && let Some(layout) = children.next()
-        {
-            renderer.fill_paragraph(label, layout.bounds().position(), style.label, bounds);
-        }
+            if let Some(label) = &self.label_paragraph
+                && let Some(layout) = children.next()
+            {
+                renderer.fill_paragraph(label, layout.bounds().position(), style.label, bounds);
+            }
+        });
 
         renderer.fill_quad(
             renderer::Quad {
