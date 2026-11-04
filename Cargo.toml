@@ -37,7 +37,8 @@ members = [
   "demos/navbar",
   "demos/shapes",
   "demos/loading_indicator",
-  "demos/button_groups"
+  "demos/button_groups",
+  "demos/menu",
 ]
 
 [package.metadata.docs.rs]

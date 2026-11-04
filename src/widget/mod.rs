@@ -15,6 +15,7 @@ pub mod hybrid_icon;
 pub(crate) mod internal;
 #[cfg(feature = "shapes")]
 pub mod loading_indicator;
+pub mod menu;
 pub mod navbar;
 pub mod navrail;
 pub mod progress_bar;
@@ -45,6 +46,7 @@ use crate::{
         fab::Fab,
         fab_menu::FABMenu,
         hybrid_icon::{HybridIcon, Icon},
+        menu::Menu,
         navbar::NavBar,
         navrail::NavRail,
         progress_bar::ProgressBar,
@@ -52,15 +54,6 @@ use crate::{
         text_input::TextInput,
     },
 };
-
-#[must_use]
-pub fn menu<'a, Message>(
-    sections: Vec<vertical_menu::Group<'a, Message>>,
-    style: vertical_menu::Style,
-    font: Font,
-) -> vertical_menu::Menu<'a, Message> {
-    vertical_menu::Menu::new(sections, style, font)
-}
 
 #[must_use]
 pub fn text_input<'a, Message, Renderer>(
@@ -248,4 +241,17 @@ where
     Renderer::Font: From<iced::Font>,
 {
     button_group::standard::ButtonGroup::new(buttons)
+}
+
+/// Creates a new [`Menu`](menu::Menu) widget.
+#[must_use]
+pub fn menu<'a, Message, Theme, Renderer>(
+    style: menu::Style,
+    groups: impl IntoIterator<Item = menu::Group<'a, Message, Theme, Renderer>>,
+) -> Menu<'a, Message, Theme, Renderer>
+where
+    Message: Clone,
+    Renderer: iced::advanced::text::Renderer,
+{
+    Menu::new(style, groups)
 }

@@ -13,15 +13,15 @@ use iced::{
 
 use crate::animation::motion::{self, Spring, SpringValue, fast_spatial};
 
-/// Extra small spacing between buttons. Recommended for extra small buttons.
+/// Inter-button spacing recommended for extra small buttons.
 pub const SPACING_EXTRA_SMALL: Pixels = Pixels(18.0);
-/// Small spacing between buttons. Recommended for small buttons.
+/// Inter-button spacing recommended for small buttons.
 pub const SPACING_SMALL: Pixels = Pixels(12.0);
-/// Medium spacing between buttons. Recommended for medium buttons.
+/// Inter-button spacing recommended for medium buttons.
 pub const SPACING_MEDIUM: Pixels = Pixels(8.0);
-/// Large spacing between buttons. Recommended for large buttons.
+/// Inter-button spacing recommended for large buttons.
 pub const SPACING_LARGE: Pixels = Pixels(8.0);
-/// Extra large spacing between buttons. Recommended for extra large buttons.
+/// Inter-button spacing recommended for extra large buttons.
 pub const SPACING_EXTRA_LARGE: Pixels = Pixels(8.0);
 /// The default fraction of the pressed child’s width used to expand it.
 pub const DEFAULT_BUTTON_EXPANDED_RATIO: f32 = 0.15;

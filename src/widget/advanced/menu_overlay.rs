@@ -4,8 +4,9 @@ use iced::{
         Layout, Widget,
         layout::{self, Limits},
         mouse, overlay,
+        widget::Tree,
     },
-    keyboard, touch,
+    touch::{self, Finger},
 };
 
 /// Describes which edge of `anchor` the menu surface is attached to, and where along that edge it
@@ -72,7 +73,7 @@ pub enum Placement {
 
 impl Default for Placement {
     fn default() -> Self {
-        Self::BottomLeft {
+        Self::BottomRight {
             padding: Pixels(0.0),
         }
     }
@@ -157,38 +158,29 @@ impl Placement {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PressEvent {
+    Mouse(mouse::Button),
+    Touch(Finger),
+}
+
 /// Properties regarding the menu press.
 ///
-/// This struct is created when the menu surface overlay captures a mouse press, either inside or
-/// outside the surface overlay's bounds. It's then passed to the `on_press` closure, which may emit
-/// a `Message` to perform certain actions (eg. close the menu).
+/// This struct is created when the menu surface overlay captures a pointer event (mouse button
+/// press/release, finger press/lift). It's then passed to the `on_press` closure, which
+/// may emit a `Message` to perform certain actions (eg. close the menu).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PressProperties {
-    /// The position of the mouse click.
+    /// The event captured by the menu.
+    pub event: PressEvent,
+    /// The position of the cursor or finger.
     pub position: Option<Point>,
-    /// The mouse button that was pressed.
-    pub button: mouse::Button,
     /// The bounds of the menu surface during the press.
     pub bounds: Rectangle,
     /// The bounds of the menu anchor during the press.
     pub anchor_bounds: Rectangle,
     /// Whether the press was captured by the menu surface.
     pub was_captured: bool,
-}
-
-/// Properties regarding a keyboard key press.
-///
-/// This struct is created when the menu surface overlay captures a keyboard key press. It's then
-/// passed to the `on_key` closure, which may emit a `Message` to perform certain actions (eg. close
-/// the menu).
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct KeyProperties {
-    /// The key pressed.
-    pub key: keyboard::Key,
-    /// The key pressed with all keyboard modifiers applied, except Ctrl.
-    pub modified_key: keyboard::Key,
-    /// The state of the modifier keys.
-    pub modifiers: keyboard::Modifiers,
 }
 
 /// Helper widget for creating robust menu surface overlays.
@@ -207,9 +199,11 @@ pub struct MenuOverlay<'a, Message, Theme = iced::Theme, Renderer = iced::Render
     opened: bool,
     placement: Placement,
     on_press: Option<Box<dyn Fn(PressProperties) -> Option<Message> + 'a>>,
-    on_key: Option<Box<dyn Fn(KeyProperties) -> Option<Message> + 'a>>,
     capture_anchor_presses: bool,
     index: f32,
+
+    // Cache
+    surface_element: Option<Element<'a, Message, Theme, Renderer>>,
 }
 
 impl<'a, Message, Theme, Renderer> MenuOverlay<'a, Message, Theme, Renderer> {
@@ -226,9 +220,9 @@ impl<'a, Message, Theme, Renderer> MenuOverlay<'a, Message, Theme, Renderer> {
             opened,
             placement: Placement::default(),
             on_press: None,
-            on_key: None,
             capture_anchor_presses: true,
             index: 1.0,
+            surface_element: None,
         }
     }
 
@@ -257,24 +251,6 @@ impl<'a, Message, Theme, Renderer> MenuOverlay<'a, Message, Theme, Renderer> {
         self
     }
 
-    /// Sets the action to be called when a keyboard key is pressed while the surface is open.
-    #[must_use]
-    pub fn on_key(mut self, on_key: impl Fn(KeyProperties) -> Option<Message> + 'a) -> Self {
-        self.on_key = Some(Box::new(on_key));
-        self
-    }
-
-    /// Sets the action to be called when a keyboard key is pressed while the surface is open, if `Some`.
-    #[must_use]
-    pub fn on_key_maybe(
-        mut self,
-        on_key: Option<impl Fn(KeyProperties) -> Option<Message> + 'a>,
-    ) -> Self {
-        self.on_key =
-            on_key.map(|f| Box::new(f) as Box<dyn Fn(KeyProperties) -> Option<Message> + 'a>);
-        self
-    }
-
     /// Sets the [`index`](overlay::Overlay::index) of the menu surface overlay.
     ///
     /// The default index is `1.0`.
@@ -295,25 +271,31 @@ impl<'a, Message, Theme, Renderer> MenuOverlay<'a, Message, Theme, Renderer> {
     }
 }
 
+struct State {
+    surface_tree: Option<Tree>,
+}
+
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
     for MenuOverlay<'a, Message, Theme, Renderer>
 where
     Renderer: iced::advanced::Renderer,
 {
     fn tag(&self) -> iced::advanced::widget::tree::Tag {
-        self.anchor.as_widget().tag()
+        iced::advanced::widget::tree::Tag::of::<State>()
     }
 
     fn state(&self) -> iced::advanced::widget::tree::State {
-        self.anchor.as_widget().state()
+        let state = State { surface_tree: None };
+
+        iced::advanced::widget::tree::State::new(state)
     }
 
-    fn children(&self) -> Vec<iced::advanced::widget::Tree> {
-        self.anchor.as_widget().children()
+    fn children(&self) -> Vec<Tree> {
+        vec![Tree::new(self.anchor.as_widget())]
     }
 
-    fn diff(&self, tree: &mut iced::advanced::widget::Tree) {
-        self.anchor.as_widget().diff(tree);
+    fn diff(&self, tree: &mut Tree) {
+        tree.diff_children(&[self.anchor.as_widget()]);
     }
 
     fn size_hint(&self) -> Size<Length> {
@@ -326,16 +308,18 @@ where
 
     fn layout(
         &mut self,
-        tree: &mut iced::advanced::widget::Tree,
+        tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
-        self.anchor.as_widget_mut().layout(tree, renderer, limits)
+        self.anchor
+            .as_widget_mut()
+            .layout(&mut tree.children[0], renderer, limits)
     }
 
     fn draw(
         &self,
-        tree: &iced::advanced::widget::Tree,
+        tree: &Tree,
         renderer: &mut Renderer,
         theme: &Theme,
         style: &iced::advanced::renderer::Style,
@@ -343,26 +327,32 @@ where
         cursor: mouse::Cursor,
         viewport: &Rectangle,
     ) {
-        self.anchor
-            .as_widget()
-            .draw(tree, renderer, theme, style, layout, cursor, viewport);
+        self.anchor.as_widget().draw(
+            &tree.children[0],
+            renderer,
+            theme,
+            style,
+            layout,
+            cursor,
+            viewport,
+        );
     }
 
     fn operate(
         &mut self,
-        tree: &mut iced::advanced::widget::Tree,
+        tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
         operation: &mut dyn iced::advanced::widget::Operation,
     ) {
         self.anchor
             .as_widget_mut()
-            .operate(tree, layout, renderer, operation);
+            .operate(&mut tree.children[0], layout, renderer, operation);
     }
 
     fn update(
         &mut self,
-        tree: &mut iced::advanced::widget::Tree,
+        tree: &mut Tree,
         event: &iced::Event,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
@@ -372,26 +362,37 @@ where
         viewport: &Rectangle,
     ) {
         self.anchor.as_widget_mut().update(
-            tree, event, layout, cursor, renderer, clipboard, shell, viewport,
+            &mut tree.children[0],
+            event,
+            layout,
+            cursor,
+            renderer,
+            clipboard,
+            shell,
+            viewport,
         );
     }
 
     fn mouse_interaction(
         &self,
-        tree: &iced::advanced::widget::Tree,
+        tree: &Tree,
         layout: Layout<'_>,
         cursor: mouse::Cursor,
         viewport: &Rectangle,
         renderer: &Renderer,
     ) -> mouse::Interaction {
-        self.anchor
-            .as_widget()
-            .mouse_interaction(tree, layout, cursor, viewport, renderer)
+        self.anchor.as_widget().mouse_interaction(
+            &tree.children[0],
+            layout,
+            cursor,
+            viewport,
+            renderer,
+        )
     }
 
     fn overlay<'b>(
         &'b mut self,
-        tree: &'b mut iced::advanced::widget::Tree,
+        tree: &'b mut Tree,
         layout: Layout<'b>,
         _renderer: &Renderer,
         _viewport: &Rectangle,
@@ -401,13 +402,22 @@ where
             let mut bounds = layout.bounds();
             bounds.x += translation.x;
             bounds.y += translation.y;
+
+            // TODO: Will this update then the surface closure changes?
+            if self.surface_element.is_none() {
+                self.surface_element = Some((self.surface)());
+            }
+            let state = tree.state.downcast_mut::<State>();
+            let surface = self.surface_element.as_mut().unwrap();
+            if state.surface_tree.is_none() {
+                state.surface_tree = Some(Tree::new(surface.as_widget()));
+            }
             overlay::Element::new(Box::new(Overlay {
-                surface: (self.surface)(),
+                surface,
                 anchor_bounds: bounds,
                 placement: self.placement,
-                tree,
+                tree: state.surface_tree.as_mut().unwrap(),
                 on_press: self.on_press.as_ref().map(|on_press| on_press.as_ref()),
-                on_key: self.on_key.as_ref().map(|on_key| on_key.as_ref()),
                 capture_anchor_presses: self.capture_anchor_presses,
                 index: self.index,
             }))
@@ -428,12 +438,11 @@ where
 }
 
 struct Overlay<'a, 'b, Message, Theme, Renderer> {
-    surface: Element<'a, Message, Theme, Renderer>,
+    surface: &'b mut Element<'a, Message, Theme, Renderer>,
     anchor_bounds: Rectangle,
     placement: Placement,
-    tree: &'b mut iced::advanced::widget::Tree,
+    tree: &'b mut Tree,
     on_press: Option<&'b (dyn Fn(PressProperties) -> Option<Message> + 'a)>,
-    on_key: Option<&'b (dyn Fn(KeyProperties) -> Option<Message> + 'a)>,
     capture_anchor_presses: bool,
     index: f32,
 }
@@ -484,6 +493,7 @@ where
             self.placement = placement_flipped;
         }
 
+        // TODO: I think we can avoid laying this out twice?
         self.surface
             .as_widget_mut()
             .layout(self.tree, renderer, &Limits::new(Size::ZERO, bounds))
@@ -540,44 +550,39 @@ where
             &layout.bounds(),
         );
 
-        let was_captured = shell.is_event_captured();
-        if let Event::Mouse(mouse::Event::ButtonPressed(button)) = event {
-            if let Some(on_press) = self.on_press {
-                let properties = PressProperties {
-                    position: cursor.position(),
-                    button: *button,
-                    anchor_bounds: self.anchor_bounds,
-                    bounds: layout.bounds(),
-                    was_captured,
-                };
+        if let Some(on_pointer) = self.on_press {
+            match event {
+                Event::Mouse(mouse::Event::ButtonPressed(button)) => {
+                    let properties = PressProperties {
+                        event: PressEvent::Mouse(*button),
+                        position: cursor.position(),
+                        anchor_bounds: self.anchor_bounds,
+                        bounds: layout.bounds(),
+                        was_captured: shell.is_event_captured(),
+                    };
 
-                if let Some(message) = (on_press)(properties) {
-                    shell.publish(message)
+                    if let Some(message) = (on_pointer)(properties) {
+                        shell.publish(message)
+                    }
                 }
-            }
-        } else if let Event::Keyboard(keyboard::Event::KeyPressed {
-            key,
-            modified_key,
-            physical_key: _,
-            location: _,
-            modifiers,
-            text: _,
-            repeat: _,
-        }) = event
-            && let Some(on_key) = self.on_key
-        {
-            let properties = KeyProperties {
-                key: key.clone(),
-                modified_key: modified_key.clone(),
-                modifiers: *modifiers,
-            };
+                Event::Touch(touch::Event::FingerPressed { id, position }) => {
+                    let properties = PressProperties {
+                        event: PressEvent::Touch(*id),
+                        position: Some(*position),
+                        anchor_bounds: self.anchor_bounds,
+                        bounds: layout.bounds(),
+                        was_captured: shell.is_event_captured(),
+                    };
 
-            if let Some(message) = (on_key)(properties) {
-                shell.publish(message)
+                    if let Some(message) = (on_pointer)(properties) {
+                        shell.publish(message)
+                    }
+                }
+                _ => {}
             }
         }
 
-        if self.capture_anchor_presses {
+        if self.capture_anchor_presses && !shell.is_event_captured() {
             match event {
                 Event::Mouse(event) => match event {
                     mouse::Event::ButtonPressed(_) | mouse::Event::ButtonReleased(_)
