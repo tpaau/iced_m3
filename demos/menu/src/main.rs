@@ -97,15 +97,29 @@ impl State {
                 ]),
                 menu::Group {
                     label: Some("Label text".into()),
-                    items: vec![menu::Item::Button(menu::button::Button {
-                        icon: None,
-                        label: "Item 4".into(),
-                        supporting_text: Some("Supporting text".into()),
-                        action: MenuAction::Message {
-                            is_selected: false,
-                            action: Some(Action::Direct(Message::Noop)),
-                        },
-                    })],
+                    items: vec![
+                        menu::Item::Button(menu::button::Button {
+                            icon: None,
+                            label: "Item 5".into(),
+                            supporting_text: Some("Supporting text".into()),
+                            action: MenuAction::Message {
+                                is_selected: false,
+                                action: Some(Action::Direct(Message::Noop)),
+                            },
+                        }),
+                        menu::Item::Button(menu::button::Button {
+                            icon: Some(Icon::Text {
+                                text: EDIT.into_fragment(),
+                                font: Some(fonts::icons_outlined()),
+                            }),
+                            label: "Item 6".into(),
+                            supporting_text: Some("Supporting text".into()),
+                            action: MenuAction::Message {
+                                is_selected: false,
+                                action: None,
+                            },
+                        }),
+                    ],
                 },
             ];
 

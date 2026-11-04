@@ -39,6 +39,7 @@ pub(crate) mod constants {
     pub const ITEM_SUPPORTING_TEXT_SIZE: Pixels = Pixels(12.0);
     pub const ITEM_SUPPORTING_TEXT_LINE_HEIGHT: Pixels = Pixels(16.0);
     pub const ITEM_LABEL_SUPPORTING_TEXT_SPACING: Pixels = Pixels(0.0);
+    pub const ITEM_CONTENT_DISABLED_OPACITY: f32 = 0.38;
 }
 
 #[cfg(feature = "pub-internal-const")]

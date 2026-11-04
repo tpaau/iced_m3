@@ -313,6 +313,10 @@ where
         _viewport: &iced::Rectangle,
     ) {
         let state = tree.state.downcast_ref::<State>();
+        let content_opacity = match self.is_enabled() {
+            true => 1.0,
+            false => menu::constants::ITEM_CONTENT_DISABLED_OPACITY,
+        };
 
         let container_bounds = layout.bounds();
         renderer.fill_quad(
@@ -330,7 +334,7 @@ where
             renderer.fill_paragraph(
                 text,
                 layout.position(),
-                self.style.icon_color,
+                self.style.icon_color.scale_alpha(content_opacity),
                 layout.bounds(),
             )
         }
@@ -339,7 +343,7 @@ where
         renderer.fill_paragraph(
             self.label_paragraph.as_ref().unwrap(),
             label_layout.position(),
-            self.style.label_color,
+            self.style.label_color.scale_alpha(content_opacity),
             label_layout.bounds(),
         );
 
@@ -348,26 +352,31 @@ where
             renderer.fill_paragraph(
                 text,
                 layout.position(),
-                self.style.supporting_text_color,
+                self.style
+                    .supporting_text_color
+                    .scale_alpha(content_opacity),
                 layout.bounds(),
             );
         }
 
-        let state_layer_color = if state.is_pressed && self.is_hovered {
-            self.style.state_layer.pressed
-        } else if self.is_hovered {
-            self.style.state_layer.hovered
-        } else {
-            self.style.state_layer.idle
-        };
-        renderer.fill_quad(
-            Quad {
-                bounds: container_bounds,
-                border: Border::default().rounded(menu::constants::ITEM_CORNER_RADIUS.0),
-                ..Default::default()
-            },
-            state_layer_color,
-        );
+        if self.is_enabled() {
+            let state_layer_color = if state.is_pressed && self.is_hovered {
+                self.style.state_layer.pressed
+            } else if self.is_hovered {
+                self.style.state_layer.hovered
+            } else {
+                self.style.state_layer.idle
+            };
+
+            renderer.fill_quad(
+                Quad {
+                    bounds: container_bounds,
+                    border: Border::default().rounded(menu::constants::ITEM_CORNER_RADIUS.0),
+                    ..Default::default()
+                },
+                state_layer_color,
+            );
+        }
     }
 
     fn update(
