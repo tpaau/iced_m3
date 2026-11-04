@@ -3,6 +3,7 @@ use std::{ops::Not, sync::LazyLock};
 use fonts::icons_filled;
 use iced::{
     Element, Font, Length, Task,
+    advanced::svg,
     widget::{column, container, row, text::IntoFragment},
 };
 use iced_m3::{
@@ -19,6 +20,10 @@ static VISIBILITY: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe8f4).unwr
 static EDIT: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe3c9).unwrap());
 static STARS: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe8d0).unwrap());
 static MORE_HORIZ: LazyLock<char> = LazyLock::new(|| char::from_u32(0xe5d3).unwrap());
+
+const CHECK_CIRCLE_BYTES: &[u8] = include_bytes!("../assets/check_circle.svg");
+static CHECK_CIRCLE_HANDLE: LazyLock<svg::Handle> =
+    LazyLock::new(|| svg::Handle::from_memory(CHECK_CIRCLE_BYTES));
 
 #[derive(Clone)]
 enum Message {
@@ -117,6 +122,15 @@ impl State {
                             action: MenuAction::Message {
                                 is_selected: false,
                                 action: None,
+                            },
+                        }),
+                        menu::Item::Button(menu::button::Button {
+                            icon: Some(Icon::Svg(CHECK_CIRCLE_HANDLE.clone())),
+                            label: "SVG icons!".into(),
+                            supporting_text: None,
+                            action: MenuAction::Message {
+                                is_selected: false,
+                                action: Some(Action::Direct(Message::Noop)),
                             },
                         }),
                     ],

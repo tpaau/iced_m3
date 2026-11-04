@@ -1,7 +1,7 @@
 use std::sync::LazyLock;
 
 use iced::{Alignment, Border, Color, Element, Font, Length, Pixels, border::Radius, padding};
-use iced_widget::{button, column, container, row, space, svg, svg::Handle, text};
+use iced_widget::{button, column, container, row, space, svg, text};
 
 pub(crate) mod constants {
     pub const CONTAINER_BORDER_RADIUS: f32 = 16.0;
@@ -134,7 +134,7 @@ where
     Message: 'a + Clone,
 {
     fn from(menu: Menu<'a, Message>) -> Self {
-        let trailing_icon = LazyLock::new(|| Handle::from_memory(ARROW_RIGHT));
+        let trailing_icon = ARROW_RIGHT.clone();
         let container_width = match menu.width {
             Some(pixels) => Length::Fixed(pixels),
             None => Length::Shrink,

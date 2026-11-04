@@ -2,7 +2,7 @@ mod item;
 
 use iced::{
     Color, Element, Font, Length, Padding, Pixels, Size, Vector,
-    advanced::{Widget, layout::Node, mouse, svg, text, widget::Tree},
+    advanced::{Widget, layout::Node, mouse, text, widget::Tree},
 };
 
 use crate::{
@@ -641,8 +641,8 @@ where
     fn from(mut value: NavRail<'a, Message, Theme, Renderer>) -> Self {
         value.menu_button = value.on_menu_pressed.as_ref().map(|on_press| {
             let icon = match value.mode {
-                Mode::Collapsed => svg::Handle::from_memory(common_icons::MENU),
-                Mode::Expanded { width: _ } => svg::Handle::from_memory(common_icons::MENU_OPEN),
+                Mode::Collapsed => common_icons::MENU.clone(),
+                Mode::Expanded { width: _ } => common_icons::MENU_OPEN.clone(),
             };
             let button_size = MENU_ICON_SIZE + MENU_BUTTON_PADDING * 2.0;
             crate::widget::button(

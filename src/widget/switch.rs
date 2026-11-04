@@ -9,7 +9,7 @@ use iced::{
         renderer::Quad,
     },
 };
-use iced_widget::core::{Svg, svg::Handle};
+use iced_widget::core::Svg;
 
 use crate::{
     animation::{
@@ -257,8 +257,6 @@ where
 struct State {
     is_hovered: bool,
     is_pressed: bool,
-    check_icon: Handle,
-    close_icon: Handle,
     last_effects_spring: Spring,
     last_spatial_spring: Spring,
     last_style: Style,
@@ -321,8 +319,6 @@ where
         let state = State {
             is_hovered: false,
             is_pressed: false,
-            check_icon: Handle::from_memory(common_icons::CHECK),
-            close_icon: Handle::from_memory(common_icons::CLOSE),
             last_effects_spring: effects_spring,
             last_spatial_spring: spatial_spring,
             state_layer_color: SpringValue::new(state_layer_color, effects_spring, now),
@@ -406,9 +402,9 @@ where
         } * style.icon_color.a;
         (opacity > 0.0).then(|| {
             let icon = Svg::new(if state.icon_opacity_spring.value() < 0.5 {
-                state.close_icon.clone()
+                common_icons::CLOSE.clone()
             } else {
-                state.check_icon.clone()
+                common_icons::CHECK.clone()
             })
             .rotation(state.icon_rotation_spring.value());
             let color = Color {

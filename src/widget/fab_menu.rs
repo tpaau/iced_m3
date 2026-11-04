@@ -208,7 +208,6 @@ struct State {
     icon_rotation_spring: SpringValue<Radians>,
     corner_radius_spring: SpringValue<Radius>,
     state_layer_spring: SpringValue<Color>,
-    icon_handle: svg::Handle,
     last_style: Style,
 }
 
@@ -246,7 +245,6 @@ where
                 effects_spring,
                 now,
             ),
-            icon_handle: svg::Handle::from_memory(common_icons::ADD),
             last_style: self.style,
         };
 
@@ -318,7 +316,7 @@ where
 
         let bounds = layout.child(0).bounds();
         renderer.draw_svg(
-            svg::Svg::new(state.icon_handle.clone())
+            svg::Svg::new(common_icons::ADD.clone())
                 .rotation(state.icon_rotation_spring.value())
                 .color(style.icon_color),
             bounds,

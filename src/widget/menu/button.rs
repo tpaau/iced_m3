@@ -1,5 +1,5 @@
 use iced::{
-    Border, Color, Element, Event, Font, Length, Point, Size,
+    Border, Color, Element, Event, Font, Length, Point, Radians, Size,
     advanced::{
         Widget,
         layout::Node,
@@ -17,6 +17,7 @@ use crate::{
     theme::ColorScheme,
     widget::{
         Action,
+        common_icons::ARROW_RIGHT,
         hybrid_icon::Icon,
         menu::{self, Group},
     },
@@ -127,7 +128,7 @@ impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
     for ButtonWidget<'a, Message, Renderer>
 where
     Message: Clone,
-    Renderer: iced::advanced::text::Renderer<Font = iced::Font>,
+    Renderer: iced::advanced::text::Renderer<Font = iced::Font> + iced::advanced::svg::Renderer,
 {
     fn size(&self) -> Size<Length> {
         Size::new(Length::Fill, menu::constants::ITEM_HEIGHT.into())
@@ -337,6 +338,18 @@ where
                 self.style.icon_color.scale_alpha(content_opacity),
                 layout.bounds(),
             )
+        } else if let Some(Icon::Svg(handle)) = self.data.icon.as_ref() {
+            let bounds = children.next().unwrap().bounds();
+            renderer.draw_svg(
+                iced_widget::core::Svg {
+                    handle: handle.clone(),
+                    color: Some(self.style.icon_color),
+                    rotation: Radians(0.0),
+                    opacity: content_opacity,
+                },
+                bounds,
+                bounds,
+            );
         }
 
         let label_layout = children.next().unwrap();
@@ -356,6 +369,21 @@ where
                     .supporting_text_color
                     .scale_alpha(content_opacity),
                 layout.bounds(),
+            );
+        }
+
+        // Trailing icon for submenu buttons
+        if let Some(layout) = children.next() {
+            let bounds = layout.bounds();
+            renderer.draw_svg(
+                iced_widget::core::Svg {
+                    handle: ARROW_RIGHT.clone(),
+                    color: Some(self.style.icon_color),
+                    rotation: Radians(0.0),
+                    opacity: content_opacity,
+                },
+                bounds,
+                bounds,
             );
         }
 
@@ -457,7 +485,8 @@ impl<'a, Message, Theme, Renderer> From<ButtonWidget<'a, Message, Renderer>>
 where
     Message: 'a + Clone,
     Theme: 'a,
-    Renderer: 'a + iced::advanced::text::Renderer<Font = iced::Font>,
+    Renderer:
+        'a + iced::advanced::text::Renderer<Font = iced::Font> + iced::advanced::svg::Renderer,
 {
     fn from(value: ButtonWidget<'a, Message, Renderer>) -> Self {
         Element::new(value)
