@@ -11,7 +11,7 @@ use iced_m3::{
     widget::{
         Action, advanced, button,
         hybrid_icon::Icon,
-        menu::{self, button::MenuAction},
+        menu::{self, Menu, button::MenuAction},
     },
 };
 
@@ -29,11 +29,15 @@ static CHECK_CIRCLE_HANDLE: LazyLock<svg::Handle> =
 enum Message {
     Noop,
     ToggleDropDownMenu,
+    ToggleSubMenu1,
+    ToggleSubMenu2,
 }
 
 struct State {
     theme: Theme,
     drop_down_menu_opened: bool,
+    sub_menu_1_opened: bool,
+    sub_menu_2_opened: bool,
 }
 
 impl Default for State {
@@ -41,13 +45,35 @@ impl Default for State {
         Self {
             theme: Theme::default(Mode::Dark),
             drop_down_menu_opened: false,
+            sub_menu_1_opened: false,
+            sub_menu_2_opened: false,
         }
     }
 }
 
 impl State {
     fn view(&self) -> Element<'_, Message> {
-        let surface = || -> Element<'_, Message, iced::Theme, iced::Renderer> {
+        let surface = |submenu_opened: bool, submenu_toggle: Message| -> Element<'_, Message> {
+            let style = menu::Style::new(&self.theme, false);
+            let submenu = move || -> Menu<'_, Message> {
+                let groups = vec![menu::Group {
+                    label: Some("Submenus!".into()),
+                    items: vec![menu::Item::Button(menu::button::Button {
+                        icon: Some(Icon::Text {
+                            text: EDIT.into_fragment(),
+                            font: Some(fonts::icons_outlined()),
+                        }),
+                        label: "Sub item!!".into(),
+                        supporting_text: None,
+                        action: MenuAction::Message {
+                            is_selected: false,
+                            on_press: Some(Action::Direct(Message::Noop)),
+                        },
+                    })],
+                }];
+                iced_m3::widget::menu(style, groups)
+            };
+
             let groups = vec![
                 menu::Group::new(vec![
                     menu::Item::Button(menu::button::Button {
@@ -59,7 +85,7 @@ impl State {
                         supporting_text: None,
                         action: MenuAction::Message {
                             is_selected: false,
-                            action: Some(Action::Direct(Message::Noop)),
+                            on_press: Some(Action::Direct(Message::Noop)),
                         },
                     }),
                     menu::Item::Button(menu::button::Button {
@@ -71,7 +97,7 @@ impl State {
                         supporting_text: None,
                         action: MenuAction::Message {
                             is_selected: false,
-                            action: Some(Action::Direct(Message::Noop)),
+                            on_press: Some(Action::Direct(Message::Noop)),
                         },
                     }),
                     menu::Item::Button(menu::button::Button {
@@ -81,9 +107,10 @@ impl State {
                         }),
                         label: "Item 3".into(),
                         supporting_text: None,
-                        action: MenuAction::Message {
-                            is_selected: false,
-                            action: Some(Action::Direct(Message::Noop)),
+                        action: MenuAction::SubMenu {
+                            is_opened: submenu_opened,
+                            surface: Box::new(submenu),
+                            on_press: Action::Direct(submenu_toggle),
                         },
                     }),
                     menu::Item::Separator,
@@ -96,7 +123,7 @@ impl State {
                         supporting_text: None,
                         action: MenuAction::Message {
                             is_selected: true,
-                            action: Some(Action::Direct(Message::Noop)),
+                            on_press: Some(Action::Direct(Message::Noop)),
                         },
                     }),
                 ]),
@@ -109,7 +136,7 @@ impl State {
                             supporting_text: Some("Supporting text".into()),
                             action: MenuAction::Message {
                                 is_selected: false,
-                                action: Some(Action::Direct(Message::Noop)),
+                                on_press: Some(Action::Direct(Message::Noop)),
                             },
                         }),
                         menu::Item::Button(menu::button::Button {
@@ -121,7 +148,7 @@ impl State {
                             supporting_text: Some("Supporting text".into()),
                             action: MenuAction::Message {
                                 is_selected: false,
-                                action: None,
+                                on_press: None,
                             },
                         }),
                         menu::Item::Button(menu::button::Button {
@@ -130,14 +157,14 @@ impl State {
                             supporting_text: None,
                             action: MenuAction::Message {
                                 is_selected: false,
-                                action: Some(Action::Direct(Message::Noop)),
+                                on_press: Some(Action::Direct(Message::Noop)),
                             },
                         }),
                     ],
                 },
             ];
 
-            iced_m3::widget::menu(menu::Style::new(&self.theme, false), groups).into()
+            iced_m3::widget::menu(style, groups).into()
         };
 
         let drop_down = advanced::menu_overlay(
@@ -150,7 +177,7 @@ impl State {
             )
             .selected(self.drop_down_menu_opened)
             .on_press(Message::ToggleDropDownMenu),
-            surface,
+            move || surface(self.sub_menu_2_opened, Message::ToggleSubMenu2),
             self.drop_down_menu_opened,
         )
         .on_press(|properties| {
@@ -171,7 +198,11 @@ impl State {
                     .font(fonts::text_bold())
                     .size(24.0)
                     .color(self.theme.on_surface()),
-                row![surface(), drop_down].spacing(40),
+                row![
+                    surface(self.sub_menu_1_opened, Message::ToggleSubMenu1),
+                    drop_down
+                ]
+                .spacing(40),
             ]
             .spacing(20),
         )
@@ -184,8 +215,18 @@ impl State {
 
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::Noop => self.drop_down_menu_opened = false,
-            Message::ToggleDropDownMenu => self.drop_down_menu_opened = !self.drop_down_menu_opened,
+            Message::Noop => {
+                self.sub_menu_1_opened = false;
+                self.sub_menu_2_opened = false;
+                self.drop_down_menu_opened = false
+            }
+            Message::ToggleDropDownMenu => {
+                self.sub_menu_1_opened = false;
+                self.sub_menu_2_opened = false;
+                self.drop_down_menu_opened = !self.drop_down_menu_opened
+            }
+            Message::ToggleSubMenu1 => self.sub_menu_1_opened = !self.sub_menu_1_opened,
+            Message::ToggleSubMenu2 => self.sub_menu_2_opened = !self.sub_menu_2_opened,
         }
         Task::none()
     }

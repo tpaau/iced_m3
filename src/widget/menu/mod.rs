@@ -55,12 +55,14 @@ use crate::{
 };
 
 /// Single item in a [menu group](Group).
+#[allow(clippy::large_enum_variant)] // The separators are rarely used
 pub enum Item<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer>
 where
     Message: Clone,
+    Renderer: iced::advanced::text::Renderer,
 {
     /// Standard menu button.
-    Button(Button<'a, Message>),
+    Button(Button<'a, Message, Theme, Renderer>),
     /// Custom widget.
     Element(Element<'a, Message, Theme, Renderer>),
     /// Horizontal rule adding visual separation between adjacent items.
@@ -71,6 +73,7 @@ where
 pub struct Group<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer>
 where
     Message: Clone,
+    Renderer: iced::advanced::text::Renderer,
 {
     /// Optional label text for the group.
     pub label: Option<text::Fragment<'a>>,
@@ -81,6 +84,7 @@ where
 impl<'a, Message, Theme, Renderer> Group<'a, Message, Theme, Renderer>
 where
     Message: Clone,
+    Renderer: iced::advanced::text::Renderer,
 {
     /// Creates a new group with the given [items](Item) and no label text.
     pub fn new(items: Vec<Item<'a, Message, Theme, Renderer>>) -> Self {
@@ -375,10 +379,14 @@ where
                         .map(|item| match item {
                             Item::Button(data) => {
                                 let style = match data.action {
-                                    MenuAction::SubMenu(_) => value.style.item,
+                                    MenuAction::SubMenu {
+                                        is_opened: _,
+                                        surface: _,
+                                        on_press: _,
+                                    } => value.style.item,
                                     MenuAction::Message {
                                         is_selected,
-                                        action: _,
+                                        on_press: _,
                                     } => match is_selected {
                                         true => value.style.item_selected,
                                         false => value.style.item,

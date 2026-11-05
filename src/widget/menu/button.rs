@@ -1,11 +1,12 @@
 use iced::{
-    Border, Color, Element, Event, Font, Length, Point, Radians, Size,
+    Border, Color, Element, Event, Font, Length, Point, Radians, Rectangle, Size, Vector,
     advanced::{
         Widget,
-        layout::Node,
-        mouse,
+        layout::{Limits, Node},
+        mouse, overlay,
         renderer::Quad,
         text::{self, Paragraph},
+        widget::Tree,
     },
     touch,
 };
@@ -19,7 +20,7 @@ use crate::{
         Action,
         common_icons::ARROW_RIGHT,
         hybrid_icon::Icon,
-        menu::{self, Group},
+        menu::{self, Menu},
     },
 };
 
@@ -54,33 +55,52 @@ impl Style {
     }
 }
 
-pub enum MenuAction<'a, Message>
-where
-    Message: Clone,
-{
-    SubMenu(Vec<Group<'a, Message>>),
-    Message {
-        is_selected: bool,
-        action: Option<Action<'a, Message>>,
-    },
-}
-
-pub struct Button<'a, Message>
-where
-    Message: Clone,
-{
-    pub icon: Option<Icon<'a>>,
-    pub label: text::Fragment<'a>,
-    pub supporting_text: Option<text::Fragment<'a>>,
-    pub action: MenuAction<'a, Message>,
-}
-
-pub(crate) struct ButtonWidget<'a, Message, Renderer = iced::Renderer>
+/// Action to be performed when the button is pressed.
+pub enum MenuAction<'a, Message, Theme, Renderer>
 where
     Message: Clone,
     Renderer: iced::advanced::text::Renderer,
 {
-    data: Button<'a, Message>,
+    /// Open a submenu.
+    SubMenu {
+        /// Whether the submenu is opened.
+        is_opened: bool,
+        /// The closure from which the menu surface is produced.
+        surface: Box<dyn Fn() -> Menu<'a, Message, Theme, Renderer> + 'a>,
+        /// The action that toggles the submenu.
+        on_press: Action<'a, Message>,
+    },
+    /// Emit a message.
+    Message {
+        /// Whether the button is selected or not.
+        ///
+        /// This is purely visual - it will make the button appear in standard style for vibrant
+        /// menus and in vibrant style for standard menus.
+        is_selected: bool,
+        /// The action to perform when the button is pressed.
+        ///
+        /// If this is `None`, the button is disabled.
+        on_press: Option<Action<'a, Message>>,
+    },
+}
+
+pub struct Button<'a, Message, Theme, Renderer>
+where
+    Message: Clone,
+    Renderer: iced::advanced::text::Renderer,
+{
+    pub icon: Option<Icon<'a>>,
+    pub label: text::Fragment<'a>,
+    pub supporting_text: Option<text::Fragment<'a>>,
+    pub action: MenuAction<'a, Message, Theme, Renderer>,
+}
+
+pub(crate) struct ButtonWidget<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer>
+where
+    Message: Clone,
+    Renderer: iced::advanced::text::Renderer,
+{
+    data: Button<'a, Message, Theme, Renderer>,
     style: Style,
     label_font: Option<Font>,
 
@@ -89,15 +109,20 @@ where
     label_paragraph: Option<Renderer::Paragraph>,
     supporting_text_paragraph: Option<Renderer::Paragraph>,
     leading_icon_paragraph: Option<Renderer::Paragraph>,
+    surface_element: Option<Element<'a, Message, Theme, Renderer>>,
 }
 
-impl<'a, Message, Renderer> ButtonWidget<'a, Message, Renderer>
+impl<'a, Message, Theme, Renderer> ButtonWidget<'a, Message, Theme, Renderer>
 where
     Message: Clone,
     Renderer: iced::advanced::text::Renderer,
 {
     #[must_use]
-    pub fn new(data: Button<'a, Message>, style: Style, label_font: Option<Font>) -> Self {
+    pub fn new(
+        data: Button<'a, Message, Theme, Renderer>,
+        style: Style,
+        label_font: Option<Font>,
+    ) -> Self {
         Self {
             data,
             style,
@@ -106,29 +131,37 @@ where
             label_paragraph: None,
             supporting_text_paragraph: None,
             leading_icon_paragraph: None,
+            surface_element: None,
         }
     }
 
     fn is_enabled(&self) -> bool {
         match &self.data.action {
-            MenuAction::SubMenu(_) => true,
+            MenuAction::SubMenu {
+                is_opened: _,
+                surface: _,
+                on_press: _,
+            } => true,
             MenuAction::Message {
                 is_selected: _,
-                action,
-            } => action.is_some(),
+                on_press,
+            } => on_press.is_some(),
         }
     }
 }
 
 struct State {
     is_pressed: bool,
+    surface_tree: Option<Tree>,
 }
 
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-    for ButtonWidget<'a, Message, Renderer>
+    for ButtonWidget<'a, Message, Theme, Renderer>
 where
-    Message: Clone,
-    Renderer: iced::advanced::text::Renderer<Font = iced::Font> + iced::advanced::svg::Renderer,
+    Message: 'a + Clone,
+    Theme: 'a,
+    Renderer:
+        'a + iced::advanced::text::Renderer<Font = iced::Font> + iced::advanced::svg::Renderer,
 {
     fn size(&self) -> Size<Length> {
         Size::new(Length::Fill, menu::constants::ITEM_HEIGHT.into())
@@ -139,16 +172,14 @@ where
     }
 
     fn state(&self) -> iced::advanced::widget::tree::State {
-        let state = State { is_pressed: false };
+        let state = State {
+            is_pressed: false,
+            surface_tree: None,
+        };
         iced::advanced::widget::tree::State::new(state)
     }
 
-    fn layout(
-        &mut self,
-        _tree: &mut iced::advanced::widget::Tree,
-        renderer: &Renderer,
-        limits: &iced::advanced::layout::Limits,
-    ) -> Node {
+    fn layout(&mut self, _tree: &mut Tree, renderer: &Renderer, limits: &Limits) -> Node {
         let intrinsic = Size::new(limits.max().width, menu::constants::ITEM_HEIGHT.0);
 
         let container_size = limits.resolve(
@@ -187,16 +218,21 @@ where
             ))
         });
 
-        let trailing_icon_node = matches!(self.data.action, MenuAction::SubMenu(_)).then_some({
+        let trailing_icon_node = matches!(
+            self.data.action,
+            MenuAction::SubMenu {
+                is_opened: _,
+                surface: _,
+                on_press: _
+            }
+        )
+        .then_some({
             let bounds = Size::new(
                 menu::constants::ITEM_ICON_SIZE.0,
                 menu::constants::ITEM_ICON_SIZE.0,
             );
 
-            Node::new(bounds).move_to(Point::new(
-                menu::constants::ITEM_CONTENT_PADDING.0,
-                ICON_OFFSET,
-            ))
+            Node::new(bounds)
         });
 
         let max_center_width = container_size.width
@@ -234,6 +270,21 @@ where
             self.supporting_text_paragraph = Some(paragraph);
 
             bounds
+        });
+
+        let trailing_icon_node = trailing_icon_node.map(|n| {
+            let width = n.bounds().width;
+            n.move_to(Point::new(
+                menu::constants::ITEM_CONTENT_PADDING.0
+                    + leading_icon_node
+                        .as_ref()
+                        .map(|n| n.bounds().width + menu::constants::ITEM_CONTENT_SPACING.0)
+                        .unwrap_or_default()
+                    + max_center_width
+                    + menu::constants::ITEM_CONTENT_SPACING.0
+                    - width,
+                ICON_OFFSET,
+            ))
         });
 
         let label_bounds = Size::new(
@@ -305,13 +356,13 @@ where
 
     fn draw(
         &self,
-        tree: &iced::advanced::widget::Tree,
+        tree: &Tree,
         renderer: &mut Renderer,
         _theme: &Theme,
         _style: &iced::advanced::renderer::Style,
         layout: iced::advanced::Layout<'_>,
         _cursor: mouse::Cursor,
-        _viewport: &iced::Rectangle,
+        _viewport: &Rectangle,
     ) {
         let state = tree.state.downcast_ref::<State>();
         let content_opacity = match self.is_enabled() {
@@ -409,14 +460,14 @@ where
 
     fn update(
         &mut self,
-        tree: &mut iced::advanced::widget::Tree,
+        tree: &mut Tree,
         event: &iced::Event,
         layout: iced::advanced::Layout<'_>,
         cursor: mouse::Cursor,
         _renderer: &Renderer,
         _clipboard: &mut dyn iced::advanced::Clipboard,
         shell: &mut iced::advanced::Shell<'_, Message>,
-        _viewport: &iced::Rectangle,
+        _viewport: &Rectangle,
     ) {
         let state = tree.state.downcast_mut::<State>();
         let is_hovered = cursor.is_over(layout.bounds());
@@ -440,12 +491,16 @@ where
 
                     if self.is_hovered {
                         match &self.data.action {
-                            MenuAction::SubMenu(_) => todo!("Submenus"),
+                            MenuAction::SubMenu {
+                                is_opened: _,
+                                surface: _,
+                                on_press,
+                            } => shell.publish(on_press.resolve()),
                             MenuAction::Message {
                                 is_selected: _,
-                                action,
+                                on_press,
                             } => {
-                                if let Some(on_press) = action {
+                                if let Some(on_press) = on_press {
                                     shell.publish(on_press.resolve());
                                 }
                             }
@@ -466,10 +521,10 @@ where
 
     fn mouse_interaction(
         &self,
-        _tree: &iced::advanced::widget::Tree,
+        _tree: &Tree,
         _layout: iced::advanced::Layout<'_>,
         _cursor: mouse::Cursor,
-        _viewport: &iced::Rectangle,
+        _viewport: &Rectangle,
         _renderer: &Renderer,
     ) -> mouse::Interaction {
         if self.is_hovered && self.is_enabled() {
@@ -478,9 +533,43 @@ where
             mouse::Interaction::None
         }
     }
+
+    fn overlay<'b>(
+        &'b mut self,
+        tree: &'b mut Tree,
+        layout: iced::advanced::Layout<'b>,
+        _renderer: &Renderer,
+        _viewport: &Rectangle,
+        _translation: iced::Vector,
+    ) -> Option<iced::advanced::overlay::Element<'b, Message, Theme, Renderer>> {
+        if let MenuAction::SubMenu {
+            is_opened,
+            surface,
+            on_press: _,
+        } = &self.data.action
+            && *is_opened
+        {
+            // TODO: Will this update then the surface closure changes?
+            if self.surface_element.is_none() {
+                self.surface_element = Some((surface)().into());
+            }
+            let state = tree.state.downcast_mut::<State>();
+            let surface = self.surface_element.as_mut().unwrap();
+            if state.surface_tree.is_none() {
+                state.surface_tree = Some(Tree::new(surface.as_widget()));
+            }
+            Some(overlay::Element::new(Box::new(Overlay {
+                surface,
+                anchor_bounds: layout.bounds(),
+                tree: state.surface_tree.as_mut().unwrap(),
+            })))
+        } else {
+            None
+        }
+    }
 }
 
-impl<'a, Message, Theme, Renderer> From<ButtonWidget<'a, Message, Renderer>>
+impl<'a, Message, Theme, Renderer> From<ButtonWidget<'a, Message, Theme, Renderer>>
     for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
@@ -488,7 +577,137 @@ where
     Renderer:
         'a + iced::advanced::text::Renderer<Font = iced::Font> + iced::advanced::svg::Renderer,
 {
-    fn from(value: ButtonWidget<'a, Message, Renderer>) -> Self {
+    fn from(value: ButtonWidget<'a, Message, Theme, Renderer>) -> Self {
         Element::new(value)
+    }
+}
+
+struct Overlay<'a, 'b, Message, Theme, Renderer>
+where
+    Message: Clone,
+    Renderer: iced::advanced::text::Renderer,
+{
+    tree: &'b mut Tree,
+    surface: &'b mut Element<'a, Message, Theme, Renderer>,
+    anchor_bounds: Rectangle,
+}
+
+impl<'a, 'b, Message, Theme, Renderer> iced::advanced::Overlay<Message, Theme, Renderer>
+    for Overlay<'a, 'b, Message, Theme, Renderer>
+where
+    Message: Clone,
+    Renderer: iced::advanced::text::Renderer,
+{
+    fn layout(&mut self, renderer: &Renderer, bounds: Size) -> Node {
+        let anchor_pos = self.anchor_bounds.position();
+
+        let overlay_layout = self.surface.as_widget_mut().layout(
+            self.tree,
+            renderer,
+            &Limits::new(Size::ZERO, bounds),
+        );
+        let overlay_bounds = overlay_layout.bounds();
+
+        let mut target_pos = Point::new(anchor_pos.x + overlay_bounds.width, anchor_pos.y);
+
+        let over_right = overlay_bounds.width + overlay_bounds.x + target_pos.x > bounds.width;
+        if over_right {
+            let flipped_x = anchor_pos.x - overlay_bounds.width;
+            let flipped_fits_left = flipped_x > 0.0;
+            if flipped_fits_left {
+                target_pos.x = flipped_x;
+            }
+        }
+
+        let over_bottom = overlay_bounds.height + overlay_bounds.y + target_pos.y > bounds.height;
+        if over_bottom {
+            let flipped_y = anchor_pos.y - overlay_bounds.height + self.anchor_bounds.height;
+            let flipped_fits_top = flipped_y > 0.0;
+            if flipped_fits_top {
+                target_pos.y = flipped_y;
+            }
+        }
+
+        overlay_layout.move_to(target_pos)
+    }
+
+    fn draw(
+        &self,
+        renderer: &mut Renderer,
+        theme: &Theme,
+        style: &iced::advanced::renderer::Style,
+        layout: iced::advanced::Layout<'_>,
+        cursor: mouse::Cursor,
+    ) {
+        self.surface.as_widget().draw(
+            self.tree,
+            renderer,
+            theme,
+            style,
+            layout,
+            cursor,
+            &layout.bounds(),
+        );
+    }
+
+    fn update(
+        &mut self,
+        event: &Event,
+        layout: iced::advanced::Layout<'_>,
+        cursor: mouse::Cursor,
+        renderer: &Renderer,
+        clipboard: &mut dyn iced::advanced::Clipboard,
+        shell: &mut iced::advanced::Shell<'_, Message>,
+    ) {
+        self.surface.as_widget_mut().update(
+            self.tree,
+            event,
+            layout,
+            cursor,
+            renderer,
+            clipboard,
+            shell,
+            &layout.bounds(),
+        );
+    }
+
+    fn mouse_interaction(
+        &self,
+        layout: iced::advanced::Layout<'_>,
+        cursor: mouse::Cursor,
+        renderer: &Renderer,
+    ) -> mouse::Interaction {
+        self.surface.as_widget().mouse_interaction(
+            self.tree,
+            layout,
+            cursor,
+            &layout.bounds(),
+            renderer,
+        )
+    }
+
+    fn operate(
+        &mut self,
+        layout: iced::advanced::Layout<'_>,
+        renderer: &Renderer,
+        operation: &mut dyn iced_widget::core::widget::Operation,
+    ) {
+        self.surface
+            .as_widget_mut()
+            .operate(self.tree, layout, renderer, operation);
+    }
+
+    fn overlay<'c>(
+        &'c mut self,
+        layout: iced::advanced::Layout<'c>,
+        renderer: &Renderer,
+    ) -> Option<iced::advanced::overlay::Element<'c, Message, Theme, Renderer>> {
+        self.surface.as_widget_mut().overlay(
+            self.tree,
+            layout,
+            renderer,
+            &layout.bounds(),
+            Vector::ZERO,
+        )
     }
 }
