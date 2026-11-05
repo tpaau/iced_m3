@@ -13,15 +13,15 @@ use iced::{
 pub(crate) mod constants {
     use iced::Pixels;
 
-    /// Default width of a [`Menu`] widget.
+    /// Default width of a [`Menu`](super::Menu) widget.
     pub const DEFAULT_WIDTH: Pixels = Pixels(192.0);
-    /// Container border radius of a [`Menu`] widget.
+    /// Container border radius of a [`Menu`](super::Menu) widget.
     pub const CONTAINER_BORDER_RADIUS: Pixels = Pixels(16.0);
-    /// Spacing between groups in a [`Menu`] widget.
+    /// Spacing between groups in a [`Menu`](super::Menu) widget.
     pub const MENU_GROUP_BETWEEN_SPACING: Pixels = Pixels(2.0);
-    /// Padding of a group in a [`Menu`] widget.
+    /// Padding of a group in a [`Menu`](super::Menu) widget.
     pub const MENU_GROUP_PADDING: Pixels = Pixels(4.0);
-    /// Spacing between items of a group in a [`Menu`] widget.
+    /// Spacing between items of a group in a [`Menu`](super::Menu) widget.
     pub const MENU_ITEM_SPACING: Pixels = Pixels(2.0);
     /// Height of the items spacer.
     pub const SPACER_HEIGHT: Pixels = Pixels(1.0);

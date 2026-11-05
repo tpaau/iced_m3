@@ -243,7 +243,7 @@ where
     button_group::standard::ButtonGroup::new(buttons)
 }
 
-/// Creates a new [`Menu`](menu::Menu) widget.
+/// Creates a new [`Menu`] widget.
 #[must_use]
 pub fn menu<'a, Message, Theme, Renderer>(
     style: menu::Style,
