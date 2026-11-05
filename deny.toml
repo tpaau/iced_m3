@@ -70,12 +70,13 @@ feature-depth = 1
 # A list of advisory IDs to ignore. Note that ignored advisories will still
 # output a note when they are encountered.
 ignore = [
-    { id = "RUSTSEC-2024-0436", reason = "iced dependency" },
-    { id = "RUSTSEC-2026-0192", reason = "iced dependency" },
-    { id = "RUSTSEC-2026-0206", reason = "iced dependency" },
-    { id = "RUSTSEC-2026-0370", reason = "iced dependency" },
-    { id = "RUSTSEC-2026-0371", reason = "iced dependency" },
-    { id = "RUSTSEC-2026-0372", reason = "iced dependency" },
+    { id = "RUSTSEC-2024-0436", reason = "Iced dependency" },
+    { id = "RUSTSEC-2026-0192", reason = "Iced dependency" },
+    { id = "RUSTSEC-2026-0206", reason = "Iced dependency" },
+    { id = "RUSTSEC-2026-0370", reason = "Iced dependency" },
+    { id = "RUSTSEC-2026-0371", reason = "Iced dependency" },
+    { id = "RUSTSEC-2026-0372", reason = "Iced dependency" },
+    { id = "RUSTSEC-2026-0441", reason = "Archived repository, Iced dependency" }
 ]
 # If this is true, then cargo deny will use the git executable to fetch advisory database.
 # If this is false, then it uses a built-in git library.
