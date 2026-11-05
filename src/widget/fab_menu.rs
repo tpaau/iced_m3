@@ -31,8 +31,6 @@ use crate::{
     },
 };
 
-pub use crate::widget::advanced::drop_down_menu::Placement;
-
 const BUTTON_SIZE: fab::Size = fab::Size::Regular;
 const BUTTON_TRIGGER_BETWEEN_SPACE: f32 = 8.0;
 const BUTTON_SPACING: f32 = 4.0;

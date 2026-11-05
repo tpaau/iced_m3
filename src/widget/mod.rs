@@ -24,7 +24,6 @@ pub mod shapes;
 pub mod slider;
 pub mod switch;
 pub mod text_input;
-pub mod vertical_menu;
 mod wrappers;
 
 pub use common_types::*;
