@@ -26,13 +26,14 @@ use iced::{
         text::{self, Paragraph},
         widget::Tree,
     },
+    border::Radius,
     touch,
 };
 use iced_widget::{core::Svg, space};
 
 use crate::{
     animation::motion::{self, Spring, SpringValue, default_effects, fast_effects},
-    widget::{self, hybrid_icon::Icon},
+    widget::{self, hybrid_icon::Icon, ripple::Ripple},
 };
 
 pub use crate::widget::internal::navigation_common::NavigationItemContent as Content;
@@ -42,7 +43,9 @@ pub use crate::widget::internal::navigation_common::{Colors, State};
 pub struct Item<'a, Message, Theme, Renderer>
 where
     Message: Clone,
-    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     expanded: bool,
@@ -63,7 +66,10 @@ impl<'a, Message, Theme, Renderer> Item<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
     Theme: 'a,
-    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     #[must_use]
@@ -122,7 +128,9 @@ impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
     for Item<'a, Message, Theme, Renderer>
 where
     Message: Clone,
-    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     fn size(&self) -> Size<Length> {
@@ -150,12 +158,11 @@ where
             false => self.style.content_inactive,
         };
         let colors = Colors {
-            state_layer: self.style.state_layer.idle,
             content: content_color,
         };
         let state = State {
             is_pressed: false,
-            is_hovered: false,
+            ripple: Ripple::new(),
             active_transition_spring: SpringValue::new(
                 self.active as usize as f32,
                 self.active_transition_spring
@@ -410,13 +417,12 @@ where
             );
         }
 
-        renderer.fill_quad(
-            Quad {
-                bounds: indicator_bounds,
-                border: Border::default().rounded(f32::MAX),
-                ..Default::default()
-            },
-            state.color_spring.value().state_layer,
+        state.ripple.draw(
+            renderer,
+            indicator_bounds,
+            Radius::from(f32::MAX),
+            self.style.state_layer,
+            true,
         );
     }
 
@@ -437,6 +443,9 @@ where
             false => layout.child(0).bounds(),
         };
         let is_hovered = cursor.is_over(indicator_bounds);
+        state
+            .ripple
+            .handle(event, indicator_bounds, cursor, true, shell);
 
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
@@ -461,11 +470,6 @@ where
             _ => {}
         }
 
-        if state.is_hovered != is_hovered {
-            state.is_hovered = is_hovered;
-            shell.request_redraw();
-        }
-
         if let Some(spring) = self.active_transition_spring
             && state.active_transition_spring.spring.model != spring
         {
@@ -478,19 +482,11 @@ where
         }
 
         let now = Instant::now();
-        let state_layer_color = match is_hovered {
-            true => match state.is_pressed {
-                true => self.style.state_layer.pressed,
-                false => self.style.state_layer.hovered,
-            },
-            false => self.style.state_layer.idle,
-        };
         let content_color = match self.active {
             true => self.style.content_active,
             false => self.style.content_inactive,
         };
         let colors = Colors {
-            state_layer: state_layer_color,
             content: content_color,
         };
         state.color_spring.set_target(colors, now);
@@ -530,7 +526,10 @@ impl<'a, Message, Theme, Renderer> From<Item<'a, Message, Theme, Renderer>>
 where
     Message: 'a + Clone,
     Theme: 'a,
-    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     fn from(value: Item<'a, Message, Theme, Renderer>) -> Self {

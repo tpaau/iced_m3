@@ -1,12 +1,13 @@
 use iced::{
     Border, Color, Element, Length, Padding, Point, Size,
     advanced::{Widget, layout::Node, mouse, widget::Tree},
+    touch,
 };
 
 use crate::{
     style::{DISABLED_STATE_LAYER_OPACITY, Elevation, StateLayer, shadow},
     theme::ColorScheme,
-    widget::Action,
+    widget::{Action, ripple::Ripple},
 };
 
 pub const MAX_CARD_BETWEEN_PADDING: f32 = 8.0;
@@ -21,8 +22,8 @@ pub use constants::*;
 
 #[derive(Default)]
 struct State {
-    is_hovered: bool,
     is_pressed: bool,
+    ripple: Ripple,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -181,7 +182,7 @@ impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
     for Card<'a, Message, Theme, Renderer>
 where
     Message: Clone,
-    Renderer: iced::advanced::Renderer,
+    Renderer: iced_widget::renderer::geometry::Renderer,
 {
     fn tag(&self) -> iced::advanced::widget::tree::Tag {
         iced::advanced::widget::tree::Tag::of::<State>()
@@ -259,30 +260,14 @@ where
             },
         );
 
-        let state_layer_color = match self.interaction {
-            Interaction::Press(_) => {
-                let state = tree.state.downcast_ref::<State>();
-                if state.is_pressed {
-                    self.style.state_layer.pressed
-                } else if state.is_hovered {
-                    self.style.state_layer.hovered
-                } else {
-                    self.style.state_layer.idle
-                }
-            }
-            _ => self.style.state_layer.idle,
-        };
-
-        if state_layer_color != Color::TRANSPARENT {
-            renderer.fill_quad(
-                iced::advanced::renderer::Quad {
-                    bounds: layout.bounds(),
-                    border: self.style.border.width(0.0),
-                    ..Default::default()
-                },
-                state_layer_color,
-            );
-        }
+        let enabled = matches!(self.interaction, Interaction::Press(_));
+        tree.state.downcast_ref::<State>().ripple.draw(
+            renderer,
+            layout.bounds(),
+            self.style.border.radius,
+            self.style.state_layer,
+            enabled,
+        );
 
         self.content.as_widget().draw(
             &tree.children[0],
@@ -345,18 +330,30 @@ where
             viewport,
         );
 
-        if shell.is_event_captured() || !matches!(self.interaction, Interaction::Press(_)) {
+        let is_interactive = matches!(self.interaction, Interaction::Press(_));
+        let bounds = layout.bounds();
+        let state = tree.state.downcast_mut::<State>();
+        state
+            .ripple
+            .handle(event, bounds, cursor, is_interactive, shell);
+
+        if shell.is_event_captured() || !is_interactive {
             return;
         }
 
-        let state = tree.state.downcast_mut::<State>();
-        let is_over = cursor.is_over(layout.bounds());
+        let is_over = cursor.is_over(bounds);
 
         match event {
             iced::Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) if is_over => {
                 shell.capture_event();
                 state.is_pressed = true;
-                shell.invalidate_layout();
+                shell.request_redraw();
+            }
+            iced::Event::Touch(touch::Event::FingerPressed { position, .. })
+                if bounds.contains(*position) =>
+            {
+                shell.capture_event();
+                state.is_pressed = true;
                 shell.request_redraw();
             }
 
@@ -368,22 +365,27 @@ where
                     shell.publish(on_press.resolve());
                 }
                 state.is_pressed = false;
-                shell.invalidate_layout();
                 shell.request_redraw();
+            }
+            iced::Event::Touch(touch::Event::FingerLifted { position, .. }) if state.is_pressed => {
+                shell.capture_event();
+                if bounds.contains(*position)
+                    && let Interaction::Press(on_press) = &self.interaction
+                {
+                    shell.publish(on_press.resolve());
+                }
+                state.is_pressed = false;
+                shell.request_redraw();
+            }
+            iced::Event::Touch(touch::Event::FingerLost { .. }) => {
+                state.is_pressed = false;
             }
 
             _ => {}
         }
 
-        if state.is_hovered != is_over {
-            state.is_hovered = is_over;
-
-            if !is_over {
-                state.is_pressed = false;
-            }
-
-            shell.invalidate_layout();
-            shell.request_redraw();
+        if !is_over && !matches!(event, iced::Event::Touch(_)) {
+            state.is_pressed = false;
         }
     }
 }
@@ -393,7 +395,7 @@ impl<'a, Message, Theme, Renderer> From<Card<'a, Message, Theme, Renderer>>
 where
     Message: 'a + Clone,
     Theme: 'a,
-    Renderer: 'a + iced::advanced::Renderer,
+    Renderer: 'a + iced_widget::renderer::geometry::Renderer,
 {
     fn from(value: Card<'a, Message, Theme, Renderer>) -> Self {
         Element::new(value)
