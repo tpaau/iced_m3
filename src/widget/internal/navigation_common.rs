@@ -4,7 +4,7 @@ use crate::{
     animation::{Interpolable, motion::SpringValue},
     style::StateLayer,
     theme::ColorScheme,
-    widget::{self, Badge, hybrid_icon::Icon},
+    widget::{self, Badge, hybrid_icon::Icon, ripple::Ripple},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -42,14 +42,12 @@ where
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct Colors {
-    pub state_layer: Color,
     pub content: Color,
 }
 
 impl Interpolable for Colors {
     fn interpolate(self, other: Self, t: f32) -> Self {
         Self {
-            state_layer: self.state_layer.interpolate(other.state_layer, t),
             content: self.content.interpolate(other.content, t),
         }
     }
@@ -57,7 +55,7 @@ impl Interpolable for Colors {
 
 pub struct State {
     pub is_pressed: bool,
-    pub is_hovered: bool,
+    pub ripple: Ripple,
     pub active_transition_spring: SpringValue<f32>,
     pub color_spring: SpringValue<Colors>,
 }

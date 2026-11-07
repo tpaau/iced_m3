@@ -19,6 +19,7 @@ pub mod menu;
 pub mod navbar;
 pub mod navrail;
 pub mod progress_bar;
+pub mod ripple;
 #[cfg(feature = "shapes")]
 pub mod shapes;
 pub mod slider;
@@ -75,7 +76,10 @@ pub fn navbar<'a, Message, Theme, Renderer>(
 where
     Message: 'a + Clone,
     Theme: 'a,
-    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     NavBar::new(style, items)
@@ -103,7 +107,10 @@ pub fn fab_menu<'a, I, Message, Theme, Renderer>(
 where
     Message: 'a + Clone,
     I: IntoIterator<Item = fab_menu::Item<'a, Message>>,
-    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     FABMenu::new(style, items, label_font)
@@ -169,7 +176,9 @@ pub fn navrail<'a, Message, Theme, Renderer>(
 ) -> NavRail<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
-    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     NavRail::new(style, items)
@@ -237,7 +246,10 @@ pub fn standard_button_group<'a, Message, Theme, Renderer>(
 ) -> button_group::standard::ButtonGroup<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
-    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     button_group::standard::ButtonGroup::new(buttons)

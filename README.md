@@ -81,10 +81,6 @@ Iced releases.
 >
 > [Reference](https://m3.material.io/components/buttons/overview)
 
-TODOs:
-- Animated ripple effect
-
-
 <a name="widgets-connected-button-groups"></a>
 ## Connected Button Groups
 [![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/button_groups)
@@ -94,10 +90,6 @@ TODOs:
 > Connected button groups help people select options, switch views, or sort elements in a page.
 >
 > [Reference](https://m3.material.io/components/button-groups/overview)
-
-TODOs:
-- Animated ripple effect
-
 
 <a name="widgets-cards"></a>
 ## Cards
@@ -110,7 +102,6 @@ TODOs:
 > [Reference](https://m3.material.io/components/cards/overview)
 
 TODOs:
-- Animated ripple affect
 - Drag-and-drop
 
 
@@ -135,10 +126,6 @@ TODOs:
 >
 > Reference: [FABs](https://m3.material.io/components/floating-action-button/overview), [Extended FABs](https://m3.material.io/components/extended-fab/overview) (yes, adding a label makes it a separate widget somehow)
 
-TODOs:
-- Animated ripple affect
-
-
 <a name="widgets-fab-menu"></a>
 ## FAB Menu
 [![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/fab_menu)
@@ -151,7 +138,6 @@ TODOs:
 
 TODOs:
 - Item animation
-- Item ripple effect
 
 
 <a name="widgets-loading-indicator"></a>
@@ -175,10 +161,6 @@ TODOs:
 >
 > [Reference](https://m3.material.io/components/navigation-bar/overview)
 
-TODOs:
-- Item ripple effect
-
-
 <a name="widgets-navrail"></a>
 ## Navigation Rail
 [![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/navrail)
@@ -191,7 +173,6 @@ TODOs:
 
 TODOs:
 - Expand/Contract animation
-- Item ripple effect
 
 
 <a name="widgets-progress-bar"></a>
@@ -222,7 +203,6 @@ TODOs:
 
 TODOs:
 - Nested menus
-- Menu item ripple effect
 
 
 <a name="widgets-shapes"></a>
@@ -245,10 +225,6 @@ TODOs:
 > Switches toggle the selection of an item on and off
 >
 > [Reference](https://m3.material.io/components/switch/overview)
-
-TODOs:
-- State layer ripple effect
-
 
 <a name="widgets-slider"></a>
 ## Slider

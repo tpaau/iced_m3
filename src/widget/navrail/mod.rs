@@ -122,7 +122,9 @@ impl Style {
 pub struct NavRail<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
-    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     style: Style,
@@ -146,7 +148,9 @@ where
 impl<'a, Message, Theme, Renderer> NavRail<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
-    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     #[must_use]
@@ -299,7 +303,9 @@ impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
     for NavRail<'a, Message, Theme, Renderer>
 where
     Message: Clone,
-    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     fn tag(&self) -> iced::advanced::widget::tree::Tag {
@@ -635,7 +641,10 @@ impl<'a, Message, Theme, Renderer> From<NavRail<'a, Message, Theme, Renderer>>
 where
     Message: Clone,
     Theme: 'a,
-    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     fn from(mut value: NavRail<'a, Message, Theme, Renderer>) -> Self {
