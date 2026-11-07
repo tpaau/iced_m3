@@ -8,6 +8,7 @@ use iced::{
         mouse, overlay,
         renderer::Quad,
     },
+    border::Radius,
 };
 use iced_widget::core::Svg;
 
@@ -18,7 +19,7 @@ use crate::{
     },
     style::StateLayer,
     theme::ColorScheme,
-    widget::common_icons,
+    widget::{common_icons, ripple::Ripple},
 };
 
 const TRACK_SIZE: Size<f32> = Size {
@@ -260,7 +261,7 @@ struct State {
     last_effects_spring: Spring,
     last_spatial_spring: Spring,
     last_style: Style,
-    state_layer_color: SpringValue<Color>,
+    ripple: Ripple,
     icon_rotation_spring: SpringValue<Radians>,
     icon_opacity_spring: SpringValue<f32>,
     style_spring: SpringValue<StateStyle>,
@@ -276,7 +277,6 @@ impl State {
     }
 
     fn set_effects_spring(&mut self, effects: Spring) {
-        self.state_layer_color.spring.model = effects;
         self.icon_opacity_spring.spring.model = effects;
         self.style_spring.spring.model = effects;
     }
@@ -285,7 +285,9 @@ impl State {
 impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Switch<Message>
 where
     Message: Clone,
-    Renderer: iced::advanced::Renderer + iced::advanced::svg::Renderer,
+    Renderer: iced::advanced::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
 {
     fn tag(&self) -> iced::advanced::widget::tree::Tag {
         iced::advanced::widget::tree::Tag::of::<State>()
@@ -293,11 +295,6 @@ where
 
     fn state(&self) -> iced::advanced::widget::tree::State {
         let icon_rotation = self.icon_rotation();
-        let state_layer_color = self
-            .style
-            .state_layer(self.selected)
-            .hovered
-            .scale_alpha(0.0);
         let style = *self.style.state(self.selected, self.on_toggle.is_some());
         let now = Instant::now();
         let effects_spring = self
@@ -321,7 +318,7 @@ where
             is_pressed: false,
             last_effects_spring: effects_spring,
             last_spatial_spring: spatial_spring,
-            state_layer_color: SpringValue::new(state_layer_color, effects_spring, now),
+            ripple: Ripple::new(),
             icon_rotation_spring: SpringValue::new(icon_rotation, spatial_spring, now),
             icon_opacity_spring: SpringValue::new(icon_opacity, effects_spring, now),
             style_spring: SpringValue::new(style, effects_spring, now),
@@ -456,6 +453,20 @@ where
 
         let now = Instant::now();
 
+        let ripple_bounds = state_layer_bounds(
+            layout.bounds(),
+            state.handle_size_spring.value(),
+            state.handle_position_spring.value(),
+        );
+        state.ripple.handle_in(
+            event,
+            layout.bounds(),
+            ripple_bounds,
+            cursor,
+            self.on_toggle.is_some(),
+            shell,
+        );
+
         if let Some(effects_spring) = self.effects_spring
             && effects_spring != state.last_effects_spring
         {
@@ -490,30 +501,16 @@ where
             .icon_opacity_spring
             .set_target(self.selected as usize as f32, now);
 
-        let state_layer_color = match state.is_hovered {
-            true => match state.is_pressed {
-                true => self.style.state_layer(self.selected).pressed,
-                false => self.style.state_layer(self.selected).hovered,
-            },
-            false => self
-                .style
-                .state_layer(self.selected)
-                .hovered
-                .scale_alpha(0.0),
-        };
-        state.state_layer_color.set_target(state_layer_color, now);
         if !state.handle_position_spring.is_at_rest()
             || !state.handle_size_spring.is_at_rest()
             || !state.style_spring.is_at_rest()
             || !state.icon_opacity_spring.is_at_rest()
             || !state.icon_rotation_spring.is_at_rest()
-            || !state.state_layer_color.is_at_rest()
         {
             shell.request_redraw();
         }
 
         // Those DO need to be updated every frame, otherwise wacky things happen
-        state.state_layer_color.step(now);
         state.icon_rotation_spring.step(now);
         state.icon_opacity_spring.step(now);
         state.handle_size_spring.step(now);
@@ -557,39 +554,50 @@ where
         _translation: iced::Vector,
     ) -> Option<iced::advanced::overlay::Element<'b, Message, Theme, Renderer>> {
         let state = tree.state.downcast_ref::<State>();
-        let color = state.state_layer_color.value();
-        (self.on_toggle.is_some() && color.a > 0.0).then_some({
-            let bounds = layout.bounds();
-            let handle_size = state.handle_size_spring.value();
-            let handle_center = state.handle_position_spring.value();
-            let handle_bounds = Rectangle {
-                x: bounds.x + handle_center - handle_size / 2.0,
-                y: bounds.y + (TRACK_SIZE.height - handle_size) / 2.0,
-                width: handle_size,
-                height: handle_size,
+        let bounds = layout.bounds();
+        let ripple_bounds = state_layer_bounds(
+            bounds,
+            state.handle_size_spring.value(),
+            state.handle_position_spring.value(),
+        );
+        let enabled = self.on_toggle.is_some();
+        (enabled && state.ripple.is_visible(ripple_bounds.size(), enabled)).then(|| {
+            let overlay = StateLayerOverlay {
+                ripple: state.ripple,
+                layer: *self.style.state_layer(self.selected),
+                bounds: ripple_bounds,
             };
-
-            let bounds = Rectangle {
-                x: handle_bounds.x + (handle_bounds.width - STATE_LAYER_SIZE) / 2.0,
-                y: handle_bounds.y + (handle_bounds.height - STATE_LAYER_SIZE) / 2.0,
-                width: STATE_LAYER_SIZE,
-                height: STATE_LAYER_SIZE,
-            };
-
-            let overlay = StateLayerOverlay { color, bounds };
             overlay::Element::new(Box::new(overlay))
         })
     }
 }
 
+/// The circle behind the handle that hosts the ripple.
+fn state_layer_bounds(bounds: Rectangle, handle_size: f32, handle_center: f32) -> Rectangle {
+    let handle_bounds = Rectangle {
+        x: bounds.x + handle_center - handle_size / 2.0,
+        y: bounds.y + (TRACK_SIZE.height - handle_size) / 2.0,
+        width: handle_size,
+        height: handle_size,
+    };
+
+    Rectangle {
+        x: handle_bounds.x + (handle_bounds.width - STATE_LAYER_SIZE) / 2.0,
+        y: handle_bounds.y + (handle_bounds.height - STATE_LAYER_SIZE) / 2.0,
+        width: STATE_LAYER_SIZE,
+        height: STATE_LAYER_SIZE,
+    }
+}
+
 struct StateLayerOverlay {
-    color: Color,
+    ripple: Ripple,
+    layer: StateLayer,
     bounds: Rectangle,
 }
 
 impl<Message, Theme, Renderer> Overlay<Message, Theme, Renderer> for StateLayerOverlay
 where
-    Renderer: iced::advanced::Renderer,
+    Renderer: iced_widget::renderer::geometry::Renderer,
 {
     fn layout(&mut self, _renderer: &Renderer, _bounds: Size) -> iced::advanced::layout::Node {
         Node::new(Size {
@@ -607,13 +615,12 @@ where
         layout: iced::advanced::Layout<'_>,
         _cursor: mouse::Cursor,
     ) {
-        renderer.fill_quad(
-            Quad {
-                bounds: layout.bounds(),
-                border: Border::default().rounded(f32::MAX),
-                ..Default::default()
-            },
-            self.color,
+        self.ripple.draw(
+            renderer,
+            layout.bounds(),
+            Radius::from(f32::MAX),
+            self.layer,
+            true,
         );
     }
 }

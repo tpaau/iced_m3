@@ -360,8 +360,10 @@ impl<'a, Message, Theme, Renderer> From<Menu<'a, Message, Theme, Renderer>>
 where
     Message: 'a + Clone,
     Theme: 'a,
-    Renderer:
-        'a + iced::advanced::text::Renderer<Font = iced::Font> + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer<Font = iced::Font>
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
 {
     fn from(mut value: Menu<'a, Message, Theme, Renderer>) -> Self {
         let groups = std::mem::take(&mut value.groups);

@@ -123,7 +123,6 @@ where
     label_font: Option<Font>,
     motion_scheme: Option<motion::Scheme>,
     style_spring: Option<Spring>,
-    state_layer_spring: Option<Spring>,
     corner_radius_spring: Option<Spring>,
     button_expansion_spring: Option<Spring>,
     expanded_ratio: f32,
@@ -142,7 +141,6 @@ where
             label_font: None,
             motion_scheme: None,
             style_spring: None,
-            state_layer_spring: None,
             corner_radius_spring: None,
             button_expansion_spring: None,
             expanded_ratio: 0.0,
@@ -206,18 +204,6 @@ where
     }
 
     #[must_use]
-    pub fn state_layer_spring(mut self, spring: Spring) -> Self {
-        self.state_layer_spring = Some(spring);
-        self
-    }
-
-    #[must_use]
-    pub fn state_layer_spring_maybe(mut self, spring: Option<Spring>) -> Self {
-        self.state_layer_spring = spring;
-        self
-    }
-
-    #[must_use]
     pub fn corner_radius_spring(mut self, spring: Spring) -> Self {
         self.corner_radius_spring = Some(spring);
         self
@@ -253,7 +239,10 @@ impl<'a, Message, Theme, Renderer> From<ButtonGroup<'a, Message>>
 where
     Message: 'a + Clone,
     Theme: 'a,
-    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     fn from(value: ButtonGroup<'a, Message>) -> Self {
@@ -302,7 +291,6 @@ where
                     .on_press_maybe(model.on_press)
                     .motion_scheme_maybe(value.motion_scheme)
                     .style_spring_maybe(value.style_spring)
-                    .state_layer_spring_maybe(value.state_layer_spring)
                     .corner_radius_spring_maybe(value.corner_radius_spring)
                     .size(size)
             });

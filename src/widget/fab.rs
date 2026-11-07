@@ -195,7 +195,10 @@ where
 impl<'a, Message, Theme, Renderer> From<Fab<'a, Message>> for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
-    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     fn from(value: Fab<'a, Message>) -> Self {

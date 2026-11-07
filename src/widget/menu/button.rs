@@ -21,6 +21,7 @@ use crate::{
         common_icons::ARROW_RIGHT,
         hybrid_icon::Icon,
         menu::{self, Menu},
+        ripple::Ripple,
     },
 };
 
@@ -152,6 +153,7 @@ where
 
 struct State {
     is_pressed: bool,
+    ripple: Ripple,
     surface_tree: Option<Tree>,
 }
 
@@ -160,8 +162,10 @@ impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
 where
     Message: 'a + Clone,
     Theme: 'a,
-    Renderer:
-        'a + iced::advanced::text::Renderer<Font = iced::Font> + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer<Font = iced::Font>
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
 {
     fn size(&self) -> Size<Length> {
         Size::new(Length::Fill, menu::constants::ITEM_HEIGHT.into())
@@ -174,6 +178,7 @@ where
     fn state(&self) -> iced::advanced::widget::tree::State {
         let state = State {
             is_pressed: false,
+            ripple: Ripple::new(),
             surface_tree: None,
         };
         iced::advanced::widget::tree::State::new(state)
@@ -438,24 +443,13 @@ where
             );
         }
 
-        if self.is_enabled() {
-            let state_layer_color = if state.is_pressed && self.is_hovered {
-                self.style.state_layer.pressed
-            } else if self.is_hovered {
-                self.style.state_layer.hovered
-            } else {
-                self.style.state_layer.idle
-            };
-
-            renderer.fill_quad(
-                Quad {
-                    bounds: container_bounds,
-                    border: Border::default().rounded(menu::constants::ITEM_CORNER_RADIUS.0),
-                    ..Default::default()
-                },
-                state_layer_color,
-            );
-        }
+        state.ripple.draw(
+            renderer,
+            container_bounds,
+            iced::border::Radius::from(menu::constants::ITEM_CORNER_RADIUS.0),
+            self.style.state_layer,
+            self.is_enabled(),
+        );
     }
 
     fn update(
@@ -470,6 +464,9 @@ where
         _viewport: &Rectangle,
     ) {
         let state = tree.state.downcast_mut::<State>();
+        state
+            .ripple
+            .handle(event, layout.bounds(), cursor, self.is_enabled(), shell);
         let is_hovered = cursor.is_over(layout.bounds());
         if self.is_hovered != is_hovered {
             self.is_hovered = is_hovered;
@@ -574,8 +571,10 @@ impl<'a, Message, Theme, Renderer> From<ButtonWidget<'a, Message, Theme, Rendere
 where
     Message: 'a + Clone,
     Theme: 'a,
-    Renderer:
-        'a + iced::advanced::text::Renderer<Font = iced::Font> + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer<Font = iced::Font>
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
 {
     fn from(value: ButtonWidget<'a, Message, Theme, Renderer>) -> Self {
         Element::new(value)
