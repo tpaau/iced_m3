@@ -138,9 +138,14 @@ impl Style {
 
 /// Menu surface with [groups](Group) that can contain either [buttons](button::Button),
 /// [separators](Item::Separator) or [custom elements](Item::Element).
-///
-/// This widget can be paired with an overlay surface provider of choice, like
-/// [`MenuOverlay`](crate::widget::advanced::menu_overlay::MenuOverlay).
+#[cfg_attr(
+    feature = "advanced",
+    doc = r#"This widget can be paired with an overlay surface provider of choice, like [`MenuOverlay`](crate::widget::advanced::menu_overlay::MenuOverlay)."#
+)]
+#[cfg_attr(
+    not(feature = "advanced"),
+    doc = r#"This widget can be paired with an overlay surface provider of choice."#
+)]
 pub struct Menu<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer>
 where
     Message: Clone,

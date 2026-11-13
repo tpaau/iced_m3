@@ -185,9 +185,9 @@ pub struct PressProperties {
 
 /// Helper widget for creating robust menu surface overlays.
 ///
-/// This widget is stateless, meaning it's your job to keep track of whether the menu is open or
-/// not. The [`MenuOverlay`] makes this easier by allowing you to set `on_press` and `on_key`
-/// triggers for certain events while the menu surface is opened.
+/// This widget doesn't keep the open/closed state of the surface overlay - it's your job to keep
+/// track whether the menu is opened or not. The [`MenuOverlay`] makes this easier by allowing you
+/// to set `on_press` triggers for certain events while the menu surface is opened.
 ///
 /// It also allows for different placements of the surface with the [`Placement`] enum, enabling you
 /// to create various kinds of overlays.
