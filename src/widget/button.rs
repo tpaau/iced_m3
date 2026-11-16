@@ -23,7 +23,7 @@ use crate::{
     },
     style::{DISABLED_STATE_LAYER_OPACITY, Elevation, StateLayer, shadow},
     theme::{Accent, ColorScheme},
-    widget::{self, Action, hybrid_icon::Icon},
+    widget::{self, Action, hybrid_icon::Icon, ripple::Ripple},
 };
 
 pub(crate) mod constants {
@@ -743,7 +743,6 @@ where
     elevation: Elevation,
     selected: Option<bool>,
     style_spring: Option<Spring>,
-    state_layer_spring: Option<Spring>,
     corner_radius_spring: Option<Spring>,
 
     // Cache
@@ -769,7 +768,6 @@ where
             elevation: Elevation::default(),
             selected: None,
             style_spring: None,
-            state_layer_spring: None,
             corner_radius_spring: None,
 
             is_hovered: false,
@@ -830,7 +828,6 @@ where
     #[must_use]
     pub fn motion_scheme(mut self, scheme: motion::Scheme) -> Self {
         self.style_spring = Some(fast_effects(scheme));
-        self.state_layer_spring = Some(fast_effects(scheme));
         self.corner_radius_spring = Some(fast_spatial(scheme));
         self
     }
@@ -856,18 +853,6 @@ where
     }
 
     #[must_use]
-    pub fn state_layer_spring(mut self, spring: Spring) -> Self {
-        self.state_layer_spring = Some(spring);
-        self
-    }
-
-    #[must_use]
-    pub fn state_layer_spring_maybe(mut self, spring: Option<Spring>) -> Self {
-        self.state_layer_spring = spring;
-        self
-    }
-
-    #[must_use]
     pub fn corner_radius_spring(mut self, spring: Spring) -> Self {
         self.corner_radius_spring = Some(spring);
         self
@@ -881,11 +866,6 @@ where
 
     fn get_style_spring(&self) -> Spring {
         self.style_spring
-            .unwrap_or(fast_effects(motion::Scheme::default()))
-    }
-
-    fn get_state_layer_spring(&self) -> Spring {
-        self.state_layer_spring
             .unwrap_or(fast_effects(motion::Scheme::default()))
     }
 
@@ -903,7 +883,7 @@ where
 struct State {
     is_pressed: bool,
     style_spring: SpringValue<StateStyle>,
-    state_layer_spring: SpringValue<Color>,
+    ripple: Ripple,
     corner_radius_spring: Option<SpringValue<Radius>>,
     last_style: Style,
 }
@@ -912,7 +892,10 @@ impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
     for Button<'a, Message, Renderer>
 where
     Message: 'a + Clone,
-    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     fn tag(&self) -> tree::Tag {
@@ -925,11 +908,7 @@ where
         let state = State {
             is_pressed: false,
             style_spring: SpringValue::new(*style, self.get_style_spring(), now),
-            state_layer_spring: SpringValue::new(
-                self.style.state_layer.idle,
-                self.get_state_layer_spring(),
-                now,
-            ),
+            ripple: Ripple::new(),
             corner_radius_spring: None,
             last_style: self.style,
         };
@@ -1082,6 +1061,9 @@ where
         let state = tree.state.downcast_mut::<State>();
         let bounds = layout.bounds();
 
+        state
+            .ripple
+            .handle(event, bounds, cursor, !self.is_disabled(), shell);
         self.is_hovered = cursor.is_over(bounds);
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
@@ -1115,10 +1097,6 @@ where
         if state.style_spring.spring.model != spring {
             state.style_spring.spring.model = spring;
         }
-        let spring = self.get_state_layer_spring();
-        if state.state_layer_spring.spring.model != spring {
-            state.state_layer_spring.spring.model = spring;
-        }
         let corner_radius_spring = state.corner_radius_spring.as_mut().unwrap();
         let spring = self.get_corner_radius_spring();
         if corner_radius_spring.spring.model != spring {
@@ -1126,20 +1104,6 @@ where
         }
 
         let now = Instant::now();
-
-        let state_layer = self.style.state_layer(self.selected);
-        let state_layer_color = if self.is_disabled() {
-            state_layer.idle
-        } else if cursor.is_over(layout.bounds()) {
-            if state.is_pressed {
-                state_layer.pressed
-            } else {
-                state_layer.hovered
-            }
-        } else {
-            state_layer.idle
-        };
-        state.state_layer_spring.set_target(state_layer_color, now);
 
         let style = *self.style.state_style(self.is_disabled(), self.selected);
         if !self.style_change_checked && state.last_style != self.style {
@@ -1157,14 +1121,10 @@ where
         );
         corner_radius_spring.set_target(corner_radius, now);
 
-        if !state.style_spring.is_at_rest()
-            || !state.state_layer_spring.is_at_rest()
-            || !corner_radius_spring.is_at_rest()
-        {
+        if !state.style_spring.is_at_rest() || !corner_radius_spring.is_at_rest() {
             shell.request_redraw();
         }
 
-        state.state_layer_spring.step(now);
         state.style_spring.step(now);
         corner_radius_spring.step(now);
     }
@@ -1237,13 +1197,12 @@ where
             renderer.fill_paragraph(label, layout.bounds().position(), style.label, bounds);
         }
 
-        renderer.fill_quad(
-            renderer::Quad {
-                bounds,
-                border: iced::Border::default().rounded(corner_radius),
-                ..Default::default()
-            },
-            state.state_layer_spring.value(),
+        state.ripple.draw(
+            renderer,
+            bounds,
+            corner_radius,
+            *self.style.state_layer(self.selected),
+            !self.is_disabled(),
         );
     }
 
@@ -1279,7 +1238,10 @@ impl<'a, Message, Theme, Renderer> From<Button<'a, Message, Renderer>>
     for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
-    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     fn from(value: Button<'a, Message, Renderer>) -> Self {
