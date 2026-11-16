@@ -54,7 +54,9 @@ impl Style {
 pub struct NavBar<'a, Message, Theme, Renderer>
 where
     Message: Clone,
-    Renderer: iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     items: Vec<Item<'a, Message>>,
@@ -74,7 +76,10 @@ impl<'a, Message, Theme, Renderer> NavBar<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
     Theme: 'a,
-    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     #[must_use]
@@ -255,7 +260,10 @@ impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
 where
     Message: 'a + Clone,
     Theme: 'a,
-    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     fn size(&self) -> Size<Length> {
@@ -422,7 +430,10 @@ impl<'a, Message, Theme, Renderer> From<NavBar<'a, Message, Theme, Renderer>>
 where
     Message: 'a + Clone,
     Theme: 'a,
-    Renderer: 'a + iced::advanced::text::Renderer + iced::advanced::svg::Renderer,
+    Renderer: 'a
+        + iced::advanced::text::Renderer
+        + iced::advanced::svg::Renderer
+        + iced_widget::renderer::geometry::Renderer,
     Renderer::Font: From<iced::Font>,
 {
     fn from(mut value: NavBar<'a, Message, Theme, Renderer>) -> Self {
