@@ -4,6 +4,7 @@ mod shadow;
 pub use scrollable::*;
 pub use shadow::*;
 
+use crate::animation::Interpolable;
 use iced::Color;
 use palette::{IntoColor, LinSrgb, Oklab, Srgb};
 
@@ -32,6 +33,18 @@ impl StateLayer {
             focused: color.scale_alpha(FOCUS_STATE_LAYER_OPACITY),
             pressed: color.scale_alpha(PRESSED_STATE_LAYER_OPACITY),
             dragged: color.scale_alpha(DRAGGED_STATE_LAYER_OPACITY),
+        }
+    }
+}
+
+impl Interpolable for StateLayer {
+    fn interpolate(self, other: Self, t: f32) -> Self {
+        Self {
+            idle: self.idle.interpolate(other.idle, t),
+            hovered: self.hovered.interpolate(other.hovered, t),
+            focused: self.focused.interpolate(other.focused, t),
+            pressed: self.pressed.interpolate(other.pressed, t),
+            dragged: self.dragged.interpolate(other.dragged, t),
         }
     }
 }
