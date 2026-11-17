@@ -2,8 +2,11 @@
 name = "iced_m3"
 version = "0.1.0"
 edition = "2024"
-authors = [ "tpaau <tpaau-17db@tutamail.com>" ]
 license = "MIT"
+
+[package.metadata.docs.rs]
+rustdoc-args = [ "--cfg", "docsrs" ]
+all-features = true
 
 [dependencies]
 iced = { version = "0.14.0", features = [ "advanced", "canvas" ] }
@@ -24,26 +27,7 @@ expressive-defaults = []
 shapes = [ "dep:polymorpher", "iced/canvas" ]
 
 [workspace]
-members = [
-  "demos/fonts",
-  "demos/buttons",
-  "demos/fab_menu",
-  "demos/progress_indicators",
-  "demos/fab",
-  "demos/badges",
-  "demos/navrail",
-  "demos/switch",
-  "demos/card",
-  "demos/navbar",
-  "demos/shapes",
-  "demos/loading_indicator",
-  "demos/button_groups",
-  "demos/menu",
-]
-
-[package.metadata.docs.rs]
-rustdoc-args = [ "--cfg", "docsrs" ]
-all-features = true
+members = ["demos/*"]
 
 [lints.clippy]
 too_many_arguments = "allow"
