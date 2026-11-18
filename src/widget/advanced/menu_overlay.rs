@@ -403,13 +403,14 @@ where
             bounds.x += translation.x;
             bounds.y += translation.y;
 
-            // TODO: Will this update then the surface closure changes?
             if self.surface_element.is_none() {
                 self.surface_element = Some((self.surface)());
             }
             let state = tree.state.downcast_mut::<State>();
             let surface = self.surface_element.as_mut().unwrap();
-            if state.surface_tree.is_none() {
+            if let Some(surface_tree) = &mut state.surface_tree {
+                surface_tree.diff(surface.as_widget());
+            } else {
                 state.surface_tree = Some(Tree::new(surface.as_widget()));
             }
             overlay::Element::new(Box::new(Overlay {
