@@ -371,6 +371,11 @@ where
             shell,
             viewport,
         );
+
+        if !self.opened {
+            let state = tree.state.downcast_mut::<State>();
+            state.surface_tree = None;
+        }
     }
 
     fn mouse_interaction(
