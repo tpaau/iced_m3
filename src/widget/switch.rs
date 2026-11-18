@@ -265,6 +265,7 @@ struct State {
     style_spring: SpringValue<StateStyle>,
     handle_position_spring: SpringValue<f32>,
     handle_size_spring: SpringValue<f32>,
+    drag_offset: f32,
 }
 
 impl State {
@@ -322,6 +323,7 @@ where
             style_spring: SpringValue::new(style, effects_spring, now),
             handle_position_spring: SpringValue::new(handle_position, spatial_spring, now),
             handle_size_spring: SpringValue::new(handle_size, spatial_spring, now),
+            drag_offset: 0.0,
             last_style: self.style,
         };
 
@@ -572,6 +574,7 @@ where
                 shell.capture_event();
                 state.press_x = cursor.position().map(|point| point.x);
                 state.is_dragging = false;
+                state.drag_offset = 0.0;
                 state.awaiting_toggle = None;
                 state.drag_position = None;
             }
@@ -584,11 +587,13 @@ where
                         && (position.x - state.press_x.unwrap_or(0.0)).abs() > DRAG_START_THRESHOLD
                     {
                         state.is_dragging = true;
+                        state.drag_offset =
+                            (position.x - bounds.x) - state.handle_position_spring.value();
                     }
 
                     if state.is_dragging && self.on_toggle.is_some() {
-                        let drag_position =
-                            (position.x - bounds.x).clamp(HANDLE_CENTER_MIN, HANDLE_CENTER_MAX);
+                        let drag_position = (position.x - bounds.x - state.drag_offset)
+                            .clamp(HANDLE_CENTER_MIN, HANDLE_CENTER_MAX);
 
                         state.drag_position = Some(drag_position);
                         state.handle_position_spring.reset(drag_position, now);
@@ -632,6 +637,7 @@ where
                 }
                 state.press_x = None;
                 state.is_dragging = false;
+                state.drag_offset = 0.0;
             }
 
             _ => {}
