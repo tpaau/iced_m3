@@ -270,17 +270,17 @@ where
             viewport,
         );
 
-        // Drawing the state layer above the card content is deliberate
+        // Can't be drawn over text or images, drawing it with `with_layer` instead causes
+        // unintended behavior where the state layer is being drawn over widget that would otherwise
+        // cover the card.
         let enabled = matches!(self.interaction, Interaction::Press(_));
-        renderer.with_layer(layout.bounds(), |renderer| {
-            tree.state.downcast_ref::<State>().ripple.draw(
-                renderer,
-                layout.bounds(),
-                self.style.border.radius,
-                self.style.state_layer,
-                enabled,
-            );
-        });
+        tree.state.downcast_ref::<State>().ripple.draw(
+            renderer,
+            layout.bounds(),
+            self.style.border.radius,
+            self.style.state_layer,
+            enabled,
+        );
     }
 
     fn mouse_interaction(
