@@ -272,13 +272,15 @@ where
 
         // Drawing the state layer above the card content is deliberate
         let enabled = matches!(self.interaction, Interaction::Press(_));
-        tree.state.downcast_ref::<State>().ripple.draw(
-            renderer,
-            layout.bounds(),
-            self.style.border.radius,
-            self.style.state_layer,
-            enabled,
-        );
+        renderer.with_layer(layout.bounds(), |renderer| {
+            tree.state.downcast_ref::<State>().ripple.draw(
+                renderer,
+                layout.bounds(),
+                self.style.border.radius,
+                self.style.state_layer,
+                enabled,
+            );
+        });
     }
 
     fn mouse_interaction(
