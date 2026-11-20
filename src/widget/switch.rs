@@ -26,6 +26,10 @@ const TRACK_SIZE: Size<f32> = Size {
     width: 52.0,
     height: 32.0,
 };
+
+const HANDLE_CENTER_MIN: f32 = TRACK_SIZE.height / 2.0;
+const HANDLE_CENTER_MAX: f32 = TRACK_SIZE.width - HANDLE_CENTER_MIN;
+const DRAG_START_THRESHOLD: f32 = 2.0;
 const TRACK_DISABLED_OUTLINE_WIDTH: f32 = 2.0;
 const HANDLE_SIZE_NO_ICON: f32 = 16.0;
 const HANDLE_SIZE_WITH_ICON: f32 = 24.0;
@@ -227,8 +231,8 @@ where
         self
     }
 
-    fn icon_rotation(&self) -> Radians {
-        if self.selected {
+    fn icon_rotation_for(&self, selected: bool) -> Radians {
+        if selected {
             Radians(0.0)
         } else {
             // The close icon is symmetrical so it doesn't matter it's not a 360 rotation
@@ -245,19 +249,13 @@ where
             HANDLE_SIZE_NO_ICON
         }
     }
-
-    fn handle_position(&self) -> f32 {
-        if self.selected {
-            TRACK_SIZE.width - TRACK_SIZE.height / 2.0
-        } else {
-            TRACK_SIZE.height / 2.0
-        }
-    }
 }
 
 struct State {
-    is_hovered: bool,
-    is_pressed: bool,
+    is_dragging: bool,
+    press_x: Option<f32>,
+    drag_position: Option<f32>,
+    awaiting_toggle: Option<bool>,
     last_effects_spring: Spring,
     last_spatial_spring: Spring,
     last_style: Style,
@@ -267,6 +265,7 @@ struct State {
     style_spring: SpringValue<StateStyle>,
     handle_position_spring: SpringValue<f32>,
     handle_size_spring: SpringValue<f32>,
+    drag_offset: f32,
 }
 
 impl State {
@@ -292,7 +291,7 @@ where
     }
 
     fn state(&self) -> iced::advanced::widget::tree::State {
-        let icon_rotation = self.icon_rotation();
+        let icon_rotation = self.icon_rotation_for(self.selected);
         let style = *self.style.state(self.selected, self.on_toggle.is_some());
         let now = Instant::now();
         let effects_spring = self
@@ -301,7 +300,7 @@ where
         let spatial_spring = self
             .spatial_spring
             .unwrap_or(fast_spatial(motion::Scheme::default()));
-        let handle_position = self.handle_position();
+        let handle_position = rest_position(self.selected);
         let handle_size = self.handle_size(false);
         let icon_opacity = if self.icon_mode == IconMode::Always {
             0.5
@@ -312,8 +311,10 @@ where
         } * style.icon_color.a;
 
         let state = State {
-            is_hovered: false,
-            is_pressed: false,
+            is_dragging: false,
+            press_x: None,
+            drag_position: None,
+            awaiting_toggle: None,
             last_effects_spring: effects_spring,
             last_spatial_spring: spatial_spring,
             ripple: Ripple::new(),
@@ -322,6 +323,7 @@ where
             style_spring: SpringValue::new(style, effects_spring, now),
             handle_position_spring: SpringValue::new(handle_position, spatial_spring, now),
             handle_size_spring: SpringValue::new(handle_size, spatial_spring, now),
+            drag_offset: 0.0,
             last_style: self.style,
         };
 
@@ -420,15 +422,20 @@ where
 
     fn mouse_interaction(
         &self,
-        _tree: &iced::advanced::widget::Tree,
+        tree: &iced::advanced::widget::Tree,
         layout: iced::advanced::Layout<'_>,
         cursor: mouse::Cursor,
         _viewport: &iced::Rectangle,
         _renderer: &Renderer,
     ) -> mouse::Interaction {
-        let is_mouse_over = cursor.is_over(layout.bounds());
+        if self.on_toggle.is_none() {
+            return mouse::Interaction::default();
+        }
 
-        if is_mouse_over && self.on_toggle.is_some() {
+        let state = tree.state.downcast_ref::<State>();
+        if state.is_dragging {
+            mouse::Interaction::Grabbing
+        } else if cursor.is_over(layout.bounds()) {
             mouse::Interaction::Pointer
         } else {
             mouse::Interaction::default()
@@ -447,18 +454,31 @@ where
         _viewport: &iced::Rectangle,
     ) {
         let state = tree.state.downcast_mut::<State>();
-        let is_over = cursor.is_over(layout.bounds());
+        let bounds = layout.bounds();
+        let is_over = cursor.is_over(bounds);
 
         let now = Instant::now();
 
         let ripple_bounds = state_layer_bounds(
-            layout.bounds(),
+            bounds,
             state.handle_size_spring.value(),
             state.handle_position_spring.value(),
         );
+        // While a drag is in progress the pointer can leave the track, but the
+        // ripple has to stay pressed until the button is released
+        let interaction_bounds = if state.is_dragging {
+            Rectangle {
+                x: bounds.x - 1.0e6,
+                y: bounds.y - 1.0e6,
+                width: bounds.width + 2.0e6,
+                height: bounds.height + 2.0e6,
+            }
+        } else {
+            bounds
+        };
         state.ripple.handle_in(
             event,
-            layout.bounds(),
+            interaction_bounds,
             ripple_bounds,
             cursor,
             self.on_toggle.is_some(),
@@ -476,7 +496,22 @@ where
             state.set_spatial_spring(spatial_spring);
         }
 
-        let style = *self.style.state(self.selected, self.on_toggle.is_some());
+        let drag_progress = state.drag_position.map(|drag_position| {
+            ((drag_position - HANDLE_CENTER_MIN) / (HANDLE_CENTER_MAX - HANDLE_CENTER_MIN))
+                .clamp(0.0, 1.0)
+        });
+        let visual_selected = match drag_progress {
+            Some(progress) => progress >= 0.5,
+            None => self.selected,
+        };
+
+        let style = match drag_progress {
+            Some(progress) => self
+                .style
+                .state(false, self.on_toggle.is_some())
+                .interpolate(*self.style.state(true, self.on_toggle.is_some()), progress),
+            None => *self.style.state(visual_selected, self.on_toggle.is_some()),
+        };
         if !self.style_checked && self.style != state.last_style {
             state.style_spring.reset(style, now);
             state.last_style = self.style;
@@ -488,16 +523,27 @@ where
 
         state
             .handle_size_spring
-            .set_target(self.handle_size(state.is_pressed), now);
-        state
-            .handle_position_spring
-            .set_target(self.handle_position(), now);
+            .set_target(self.handle_size(state.press_x.is_some()), now);
+        if let Some(drag_position) = state.drag_position {
+            state.handle_position_spring.reset(drag_position, now);
+        } else {
+            state
+                .handle_position_spring
+                .set_target(rest_position(self.selected), now);
+        }
+        let icon_rotation_target = match drag_progress {
+            Some(progress) => self
+                .icon_rotation_for(false)
+                .interpolate(self.icon_rotation_for(true), progress),
+            None => self.icon_rotation_for(visual_selected),
+        };
         state
             .icon_rotation_spring
-            .set_target(self.icon_rotation(), now);
-        state
-            .icon_opacity_spring
-            .set_target(self.selected as usize as f32, now);
+            .set_target(icon_rotation_target, now);
+        state.icon_opacity_spring.set_target(
+            drag_progress.unwrap_or(visual_selected as usize as f32),
+            now,
+        );
 
         if !state.handle_position_spring.is_at_rest()
             || !state.handle_size_spring.is_at_rest()
@@ -515,31 +561,86 @@ where
         state.handle_position_spring.step(now);
         state.style_spring.step(now);
 
+        if state
+            .awaiting_toggle
+            .is_some_and(|selected_at_release| selected_at_release != self.selected)
+        {
+            state.awaiting_toggle = None;
+            state.drag_position = None;
+        }
+
         match event {
             iced::Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) if is_over => {
                 shell.capture_event();
-                state.is_pressed = true;
+                state.press_x = cursor.position().map(|point| point.x);
+                state.is_dragging = false;
+                state.drag_offset = 0.0;
+                state.awaiting_toggle = None;
+                state.drag_position = None;
+            }
+
+            iced::Event::Mouse(mouse::Event::CursorMoved { .. }) if state.press_x.is_some() => {
+                if let Some(position) = cursor.position() {
+                    // The drag only begins once the pointer has moved away from
+                    // the press point; until then the press acts like a tap
+                    if !state.is_dragging
+                        && (position.x - state.press_x.unwrap_or(0.0)).abs() > DRAG_START_THRESHOLD
+                    {
+                        state.is_dragging = true;
+                        state.drag_offset =
+                            (position.x - bounds.x) - state.handle_position_spring.value();
+                    }
+
+                    if state.is_dragging && self.on_toggle.is_some() {
+                        let drag_position = (position.x - bounds.x - state.drag_offset)
+                            .clamp(HANDLE_CENTER_MIN, HANDLE_CENTER_MAX);
+
+                        state.drag_position = Some(drag_position);
+                        state.handle_position_spring.reset(drag_position, now);
+                        shell.capture_event();
+                        shell.request_redraw();
+                    }
+                }
             }
 
             iced::Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left))
-                if state.is_pressed =>
+                if state.press_x.is_some() =>
             {
                 shell.capture_event();
-                if is_over && let Some(on_toggle) = self.on_toggle.clone() {
-                    shell.publish(on_toggle);
+                let toggled = if self.on_toggle.is_some() {
+                    match state.is_dragging {
+                        true => {
+                            let drag_position =
+                                state.drag_position.unwrap_or(rest_position(self.selected));
+                            let target_selected = drag_position >= TRACK_SIZE.width / 2.0;
+                            target_selected != self.selected
+                        }
+                        // A mere tap toggles when released on the switch
+                        false => is_over,
+                    }
+                } else {
+                    false
+                };
+
+                if toggled {
+                    if let Some(on_toggle) = self.on_toggle.clone() {
+                        shell.publish(on_toggle);
+                    }
+                    // Keep the thumb where the pointer left it until the parent
+                    // applies the new `selected` value
+                    state.awaiting_toggle = Some(self.selected);
+                } else {
+                    state.drag_position = None;
+                    state
+                        .handle_position_spring
+                        .set_target(rest_position(self.selected), now);
                 }
-                state.is_pressed = false;
+                state.press_x = None;
+                state.is_dragging = false;
+                state.drag_offset = 0.0;
             }
 
             _ => {}
-        }
-
-        if state.is_hovered != is_over {
-            state.is_hovered = is_over;
-
-            if !is_over {
-                state.is_pressed = false;
-            }
         }
     }
 
@@ -567,6 +668,15 @@ where
             };
             overlay::Element::new(Box::new(overlay))
         })
+    }
+}
+
+/// The horizontal center of the thumb at rest.
+fn rest_position(selected: bool) -> f32 {
+    if selected {
+        HANDLE_CENTER_MAX
+    } else {
+        HANDLE_CENTER_MIN
     }
 }
 
