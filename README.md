@@ -188,7 +188,6 @@ TODOs:
 TODOs:
 - Circular progress indicator
 - Squiggly variant!!
-- Fix jank in animation
 
 
 <a name="widgets-vertical-menu"></a>

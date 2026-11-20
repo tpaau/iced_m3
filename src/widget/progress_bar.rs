@@ -214,62 +214,44 @@ impl<Message> Widget<Message, iced::Theme, iced::Renderer> for ProgressBar {
                 let second_head = animation_value(0.65, 0.85);
                 let second_tail = animation_value(0.90, 0.85);
 
-                let gap = gap / bounds.width.max(1.0);
-
-                // Convert the animated positions into intervals.
+                // The two animated segments can cross during the animation.
+                // Sort them so the track pieces are always drawn left-to-right.
                 let mut primary_segments = [
                     (first_tail.min(first_head), first_tail.max(first_head)),
                     (second_tail.min(second_head), second_tail.max(second_head)),
                 ];
 
-                // The two animated segments can cross during the animation.
-                // Sort them so the track pieces are always drawn left-to-right.
                 primary_segments.sort_by(|a, b| a.0.total_cmp(&b.0));
 
-                let [(first_start, first_end), (second_start, second_end)] = primary_segments;
-
-                let mut draw_normalized = |start: f32, end: f32, color: Color| {
-                    let start = start.clamp(0.0, 1.0);
-                    let end = end.clamp(0.0, 1.0);
-
-                    if end <= start {
-                        return;
-                    }
-
-                    draw_quad(
-                        bounds.x + bounds.width * start,
-                        bounds.width * (end - start),
-                        target_height,
-                        color,
-                    );
+                // Segments sweep the full track width: a segment touches the
+                // leading edge while it grows in and the trailing edge while
+                // it dies out. A segment with no extent is done animating and
+                // leaves the track whole.
+                let mut paint = |start: f32, end: f32, color: Color| {
+                    draw_quad(bounds.x + start, end - start, target_height, color);
                 };
 
-                // Track segment 1.
-                draw_normalized(0.0, first_start - gap / 2.0, self.style.track_color);
+                // Every segment with extent carves a gap out of the track on
+                // both sides, hugging the segment's raw edges. The carve is
+                // capped by the segment's extent, so it slides in with the
+                // segment instead of popping in at full size.
+                let mut track_start = 0.0;
 
-                // Track segment 2.
-                draw_normalized(
-                    first_end + gap / 2.0,
-                    second_start - gap / 2.0,
-                    self.style.track_color,
-                );
+                for &(start, end) in &primary_segments {
+                    let start = bounds.width * start;
+                    let end = bounds.width * end;
 
-                // Track segment 3.
-                draw_normalized(second_end + gap / 2.0, 1.0, self.style.track_color);
+                    if end > start {
+                        let carve = (end - start).min(gap);
 
-                // Primary segment 1.
-                draw_normalized(
-                    first_start + gap / 2.0,
-                    first_end - gap / 2.0,
-                    self.style.bar_color,
-                );
+                        paint(track_start, start - carve, self.style.track_color);
+                        paint(start, end, self.style.bar_color);
 
-                // Primary segment 2.
-                draw_normalized(
-                    second_start + gap / 2.0,
-                    second_end - gap / 2.0,
-                    self.style.bar_color,
-                );
+                        track_start = end + carve;
+                    }
+                }
+
+                paint(track_start, bounds.width, self.style.track_color);
             }
         }
     }
