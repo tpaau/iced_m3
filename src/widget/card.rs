@@ -108,16 +108,20 @@ where
 impl<'a, Message, Theme, Renderer> Card<'a, Message, Theme, Renderer>
 where
     Message: Clone,
+    Renderer: iced::advanced::Renderer,
 {
     #[must_use]
     pub fn new(style: Style, content: impl Into<Element<'a, Message, Theme, Renderer>>) -> Self {
+        let content = content.into();
+        let size = content.as_widget().size_hint();
+
         Self {
-            content: content.into(),
+            content,
             interaction: Interaction::default(),
             padding: constants::DEFAULT_PADDING.into(),
             style,
-            width: Length::Shrink,
-            height: Length::Shrink,
+            width: size.width.fluid(),
+            height: size.height.fluid(),
         }
     }
 

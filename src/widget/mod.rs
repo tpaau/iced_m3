@@ -198,6 +198,7 @@ pub fn card<'a, Message, Theme, Renderer>(
 ) -> Card<'a, Message, Theme, Renderer>
 where
     Message: Clone,
+    Renderer: iced::advanced::Renderer,
 {
     Card::new(style, content)
 }
