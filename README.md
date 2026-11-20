@@ -3,8 +3,8 @@
 
 <div align="center">
   
-  ![](https://img.shields.io/github/last-commit/tpaau/iced_m3?&style=for-the-badge&color=FFFFFF&logo=git&logoColor=C9C9C9&labelColor=252525)
-  ![](https://img.shields.io/github/repo-size/tpaau/iced_m3?&style=for-the-badge&color=FFFFFF&logo=git&logoColor=C9C9C9&labelColor=252525)
+  ![](https://img.shields.io/github/last-commit/ColdMaterial/iced_md3?&style=for-the-badge&color=FFFFFF&logo=git&logoColor=C9C9C9&labelColor=252525)
+  ![](https://img.shields.io/github/repo-size/ColdMaterial/iced_md3?&style=for-the-badge&color=FFFFFF&logo=git&logoColor=C9C9C9&labelColor=252525)
 </div>
 
 <div align="center">
@@ -35,7 +35,7 @@
   - [Slider](#widgets-slider)
   - [Text Field](#widgets-text-field)
 
-You can go see the demos [here](https://github.com/tpaau/iced_m3/blob/main/demos/)!
+You can go see the demos [here](https://github.com/ColdMaterial/iced_md3/blob/main/demos/)!
 
 [Chilen](https://github.com/tpaau/chilen) uses `iced_m3` extensively, you can check how the library
 is used there too!
@@ -44,7 +44,7 @@ is used there too!
 # Usage
 Run this in your project:
 ```bash
-cargo add iced_m3 --git https://github.com/tpaau/iced_m3.git
+cargo add iced_m3 --git https://github.com/ColdMaterial/iced_md3.git
 ```
 
 This library is largely for use in my personal projects (like
@@ -62,9 +62,9 @@ Iced releases.
 
 <a name="widgets-badges"></a>
 ## Badges
-[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/badges)
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/ColdMaterial/iced_md3/blob/main/demos/badges)
 
-![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/badges.jpg)
+![showcase](https://github.com/ColdMaterial/iced_md3/blob/main/showcase/badges.jpg)
 
 > Badges show notifications, counts, or status information on navigation items and icons
 >
@@ -73,9 +73,9 @@ Iced releases.
 
 <a name="widgets-common-buttons"></a>
 ## Common Buttons
-[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/buttons)
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/ColdMaterial/iced_md3/blob/main/demos/buttons)
 
-![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/buttons-demo.gif)
+![showcase](https://github.com/ColdMaterial/iced_md3/blob/main/showcase/buttons-demo.gif)
 
 > Buttons prompt most actions in a UI
 >
@@ -83,9 +83,9 @@ Iced releases.
 
 <a name="widgets-connected-button-groups"></a>
 ## Connected Button Groups
-[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/button_groups)
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/ColdMaterial/iced_md3/blob/main/demos/button_groups)
 
-![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/connected-button-groups.gif)
+![showcase](https://github.com/ColdMaterial/iced_md3/blob/main/showcase/connected-button-groups.gif)
 
 > Connected button groups help people select options, switch views, or sort elements in a page.
 >
@@ -93,9 +93,9 @@ Iced releases.
 
 <a name="widgets-cards"></a>
 ## Cards
-[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/cards)
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/ColdMaterial/iced_md3/blob/main/demos/cards)
 
-![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/cards.gif)
+![showcase](https://github.com/ColdMaterial/iced_md3/blob/main/showcase/cards.gif)
 
 > Cards display content and actions about a single subject
 >
@@ -118,9 +118,9 @@ TODOs:
 
 <a name="widgets-fabs"></a>
 ## Floating Action Buttons
-[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/fab)
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/ColdMaterial/iced_md3/blob/main/demos/fab)
 
-![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/fab.jpg)
+![showcase](https://github.com/ColdMaterial/iced_md3/blob/main/showcase/fab.jpg)
 
 > Floating action buttons (FABs) help people take primary actions
 >
@@ -128,9 +128,9 @@ TODOs:
 
 <a name="widgets-fab-menu"></a>
 ## FAB Menu
-[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/fab_menu)
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/ColdMaterial/iced_md3/blob/main/demos/fab_menu)
 
-![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/fab-menu-demo.gif)
+![showcase](https://github.com/ColdMaterial/iced_md3/blob/main/showcase/fab-menu-demo.gif)
 
 > The floating action button (FAB) menu opens from a FAB to display multiple related actions
 >
@@ -142,9 +142,9 @@ TODOs:
 
 <a name="widgets-loading-indicator"></a>
 ## Loading Indicator
-[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/loading_indicator)
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/ColdMaterial/iced_md3/blob/main/demos/loading_indicator)
 
-![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/loading-indicator.gif)
+![showcase](https://github.com/ColdMaterial/iced_md3/blob/main/showcase/loading-indicator.gif)
 
 > Loading indicators show the progress of a process for a short wait time
 >
@@ -163,9 +163,9 @@ TODOs:
 
 <a name="widgets-navrail"></a>
 ## Navigation Rail
-[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/navrail)
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/ColdMaterial/iced_md3/blob/main/demos/navrail)
 
-![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/navigation-rail.gif)
+![showcase](https://github.com/ColdMaterial/iced_md3/blob/main/showcase/navigation-rail.gif)
 
 > Navigation rails let people switch between UI views on mid-sized devices
 >
@@ -177,9 +177,9 @@ TODOs:
 
 <a name="widgets-progress-bar"></a>
 ## Progress Bar
-[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/progress_indicators)
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/ColdMaterial/iced_md3/blob/main/demos/progress_indicators)
 
-![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/progress-bar-demo.gif)
+![showcase](https://github.com/ColdMaterial/iced_md3/blob/main/showcase/progress-bar-demo.gif)
 
 > Progress indicators show the status of a process in real time
 >
@@ -207,9 +207,9 @@ TODOs:
 
 <a name="widgets-shapes"></a>
 ## Shapes
-[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/shapes)
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/ColdMaterial/iced_md3/blob/main/demos/shapes)
 
-![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/material-shapes.gif)
+![showcase](https://github.com/ColdMaterial/iced_md3/blob/main/showcase/material-shapes.gif)
 
 > Shapes are expressive elements of Material 3 that echo key visual attributes of M3 typography.
 >
@@ -218,9 +218,9 @@ TODOs:
 
 <a name="widgets-switch"></a>
 ## Switch
-[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/tpaau/iced_m3/blob/main/demos/switch)
+[![demo](https://img.shields.io/badge/demo-a?&style=for-the-badge&color=D0BCFF&logo=material-design&logoColor=D0BCFF&labelColor=381E72)](https://github.com/ColdMaterial/iced_md3/blob/main/demos/switch)
 
-![showcase](https://github.com/tpaau/iced_m3/blob/main/showcase/switch.gif)
+![showcase](https://github.com/ColdMaterial/iced_md3/blob/main/showcase/switch.gif)
 
 > Switches toggle the selection of an item on and off
 >
