@@ -395,6 +395,40 @@ where
             state.is_pressed = false;
         }
     }
+
+    fn operate(
+        &mut self,
+        tree: &mut Tree,
+        layout: iced::advanced::Layout<'_>,
+        renderer: &Renderer,
+        operation: &mut dyn iced::advanced::widget::Operation,
+    ) {
+        operation.container(None, layout.bounds());
+        operation.traverse(&mut |operation| {
+            self.content.as_widget_mut().operate(
+                &mut tree.children[0],
+                layout.children().next().unwrap(),
+                renderer,
+                operation,
+            );
+        });
+    }
+    fn overlay<'b>(
+        &'b mut self,
+        tree: &'b mut Tree,
+        layout: iced::advanced::Layout<'b>,
+        renderer: &Renderer,
+        viewport: &iced::Rectangle,
+        translation: iced::Vector,
+    ) -> Option<iced::advanced::overlay::Element<'b, Message, Theme, Renderer>> {
+        self.content.as_widget_mut().overlay(
+            &mut tree.children[0],
+            layout.children().next().unwrap(),
+            renderer,
+            viewport,
+            translation,
+        )
+    }
 }
 
 impl<'a, Message, Theme, Renderer> From<Card<'a, Message, Theme, Renderer>>
