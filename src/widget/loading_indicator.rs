@@ -10,10 +10,6 @@ use iced_widget::{
     Canvas,
     canvas::{self, Fill},
 };
-use polymorpher::{
-    Morph,
-    shapes::{cookie4, cookie9, oval, pentagon, pill, soft_burst, sunny},
-};
 
 use crate::{
     animation::motion::SimulatedSpring, theme::ColorScheme, widget::shapes::cubics_to_iced_path,
@@ -22,14 +18,17 @@ use crate::{
 pub(crate) mod constants {
     use std::sync::LazyLock;
 
-    use polymorpher::shapes::{cookie4, cookie9, oval, pentagon, pill, soft_burst, sunny};
+    use polymorpher::{
+        Morph, RoundedPolygon,
+        shapes::{cookie4, cookie9, oval, pentagon, pill, soft_burst, sunny},
+    };
 
     pub const CONTAINER_SIZE: f32 = 48.0;
     pub const INDICATOR_SIZE: f32 = 38.0;
     pub const LINEAR_ROTATION_CYCLE_SECONDS: f32 = 4.666;
     pub const MORPH_CYCLE_SECONDS: f32 = 0.650;
-    pub static INDICATOR_SCALING_FACTOR: LazyLock<f32> = LazyLock::new(|| {
-        let polygons = [
+    pub static CYCLE_POLYGONS: LazyLock<[RoundedPolygon; 7]> = LazyLock::new(|| {
+        [
             soft_burst(),
             cookie9(),
             pentagon(),
@@ -37,9 +36,22 @@ pub(crate) mod constants {
             sunny(),
             cookie4(),
             oval(),
-        ];
+        ]
+    });
+    pub static MORPHS: LazyLock<[Morph; 7]> = LazyLock::new(|| {
+        [
+            Morph::new(soft_burst(), cookie9()),
+            Morph::new(cookie9(), pentagon()),
+            Morph::new(pentagon(), pill()),
+            Morph::new(pill(), sunny()),
+            Morph::new(sunny(), cookie4()),
+            Morph::new(cookie4(), oval()),
+            Morph::new(oval(), soft_burst()),
+        ]
+    });
+    pub static INDICATOR_SCALING_FACTOR: LazyLock<f32> = LazyLock::new(|| {
         let mut factor = f32::MAX;
-        for polygon in polygons {
+        for polygon in &*CYCLE_POLYGONS {
             let bounds = polygon.aabb(false).max;
             factor = factor.min(bounds.x.min(bounds.y));
         }
@@ -93,7 +105,6 @@ pub struct State {
     start: Instant,
     last_cycle: Duration,
     spring: SimulatedSpring,
-    morphs: [Morph; 7],
 }
 
 impl Default for State {
@@ -107,15 +118,6 @@ impl Default for State {
                 now,
             ),
             last_cycle: Duration::default(),
-            morphs: [
-                Morph::new(soft_burst(), cookie9()),
-                Morph::new(cookie9(), pentagon()),
-                Morph::new(pentagon(), pill()),
-                Morph::new(pill(), sunny()),
-                Morph::new(sunny(), cookie4()),
-                Morph::new(cookie4(), oval()),
-                Morph::new(oval(), soft_burst()),
-            ],
         }
     }
 }
@@ -154,9 +156,10 @@ where
         let offset = Vector::new((frame.width() - size) / 2.0, (frame.height() - size) / 2.0);
         let half = size / 2.0;
 
-        let current_morph = &state.morphs[(state.last_cycle.as_secs_f32()
-            / constants::MORPH_CYCLE_SECONDS) as usize
-            % state.morphs.len()];
+        let current_morph = &constants::MORPHS[(state.last_cycle.as_secs_f32()
+            / constants::MORPH_CYCLE_SECONDS)
+            as usize
+            % constants::MORPHS.len()];
 
         let path = cubics_to_iced_path(
             &current_morph.as_cubics(state.spring.position),
