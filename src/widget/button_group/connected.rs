@@ -125,7 +125,7 @@ where
     style_spring: Option<Spring>,
     corner_radius_spring: Option<Spring>,
     button_expansion_spring: Option<Spring>,
-    expanded_ratio: f32,
+    expansion_ratio: f32,
 }
 
 impl<'a, Message> ButtonGroup<'a, Message>
@@ -143,7 +143,7 @@ where
             style_spring: None,
             corner_radius_spring: None,
             button_expansion_spring: None,
-            expanded_ratio: 0.0,
+            expansion_ratio: 0.0,
         }
     }
 
@@ -227,9 +227,15 @@ where
         self
     }
 
+    /// Sets the expansion button ratio of the group.
+    ///
+    /// The expansion ratio is a fraction of the pressed child’s width used to expand it.
+    ///
+    /// **WARNING**: Very wide buttons might crush their neighbours, which results in a crash. Make
+    /// sure to adjust the expansion ratio for your button width.
     #[must_use]
-    pub fn button_expanded_ratio(mut self, ratio: f32) -> Self {
-        self.expanded_ratio = ratio;
+    pub fn button_expansion_ratio(mut self, ratio: f32) -> Self {
+        self.expansion_ratio = ratio;
         self
     }
 }
@@ -302,7 +308,7 @@ where
         let button_group = standard::ButtonGroup::new(items)
             .motion_scheme_maybe(value.motion_scheme)
             .expansion_spring_maybe(value.button_expansion_spring)
-            .expanded_ratio(value.expanded_ratio)
+            .expansion_ratio(value.expansion_ratio)
             .spacing(value.size.button_spacing);
 
         Element::new(button_group)

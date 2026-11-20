@@ -24,7 +24,7 @@ pub const SPACING_LARGE: Pixels = Pixels(8.0);
 /// Inter-button spacing recommended for extra large buttons.
 pub const SPACING_EXTRA_LARGE: Pixels = Pixels(8.0);
 /// The default fraction of the pressed child’s width used to expand it.
-pub const DEFAULT_BUTTON_EXPANDED_RATIO: f32 = 0.15;
+pub const DEFAULT_BUTTON_EXPANSION_RATIO: f32 = 0.15;
 
 /// Standard button groups organize [`Button`](crate::widget::button::Button) widgets in a row and affect the size of pressed buttons.
 pub struct ButtonGroup<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer>
@@ -36,7 +36,7 @@ where
     motion_scheme: Option<motion::Scheme>,
     expansion_spring: Option<Spring>,
     spacing: Pixels,
-    expanded_ratio: f32,
+    expansion_ratio: f32,
 
     // Cache
     nodes: Vec<Node>,
@@ -88,7 +88,7 @@ where
             motion_scheme: None,
             expansion_spring: None,
             spacing: SPACING_SMALL,
-            expanded_ratio: DEFAULT_BUTTON_EXPANDED_RATIO,
+            expansion_ratio: DEFAULT_BUTTON_EXPANSION_RATIO,
             nodes: Vec::new(),
             items_expandable,
             item_widths,
@@ -130,12 +130,15 @@ where
         self
     }
 
-    /// Sets the expanded button ratio of the group.
+    /// Sets the expansion button ratio of the group.
     ///
-    /// The expanded ratio is a fraction of the pressed child’s width used to expand it.
+    /// The expansion ratio is a fraction of the pressed child’s width used to expand it.
+    ///
+    /// **WARNING**: Very wide buttons might crush their neighbours, which results in a crash. Make
+    /// sure to adjust the expansion ratio for your button width.
     #[must_use]
-    pub fn expanded_ratio(mut self, ratio: f32) -> Self {
-        self.expanded_ratio = ratio.max(0.0);
+    pub fn expansion_ratio(mut self, ratio: f32) -> Self {
+        self.expansion_ratio = ratio.max(0.0);
         self
     }
 
@@ -177,7 +180,7 @@ fn scale_node(node: Node, target_width: f32) -> Node {
 fn resize_buttons(
     mut nodes: Vec<Node>,
     springs: &[SpringValue<f32>],
-    expanded_ratio: f32,
+    expansion_ratio: f32,
 ) -> Vec<Node> {
     let len = nodes.len();
     if len <= 1 {
@@ -189,7 +192,7 @@ fn resize_buttons(
     let gains: Vec<f32> = springs
         .iter()
         .enumerate()
-        .map(|(i, spring)| original_widths[i] * spring.value() * expanded_ratio)
+        .map(|(i, spring)| original_widths[i] * spring.value() * expansion_ratio)
         .collect();
 
     // 2. Calculate net width change (Delta W) for each button
@@ -414,7 +417,7 @@ where
                 self.nodes = resize_buttons(
                     state.button_nodes.clone(),
                     state.size_springs.as_slice(),
-                    self.expanded_ratio,
+                    self.expansion_ratio,
                 );
             }
             iced::Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
