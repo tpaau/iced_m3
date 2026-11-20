@@ -1066,8 +1066,7 @@ where
                     }
 
                     #[cfg(target_os = "macos")]
-                    let macos_shortcut =
-                        iced_widget::text_editor::convert_macos_shortcut(key, modifiers);
+                    let macos_shortcut = convert_macos_shortcut(key, modifiers);
 
                     #[cfg(target_os = "macos")]
                     let modified_key = macos_shortcut.as_ref().unwrap_or(modified_key);
@@ -1791,4 +1790,29 @@ fn alignment_offset(
             alignment::Horizontal::Right => text_bounds_width - text_min_width,
         }
     }
+}
+
+/// Maps the macOS Emacs-style `Ctrl` shortcuts to the equivalent navigation and deletion keys.
+///
+/// `iced_widget` keeps its own implementation crate-private, so this module owns a copy.
+#[cfg(target_os = "macos")]
+fn convert_macos_shortcut(
+    key: &keyboard::Key,
+    modifiers: keyboard::Modifiers,
+) -> Option<keyboard::Key> {
+    if modifiers != keyboard::Modifiers::CTRL {
+        return None;
+    }
+
+    let named = match key.as_ref() {
+        keyboard::Key::Character("b") => key::Named::ArrowLeft,
+        keyboard::Key::Character("f") => key::Named::ArrowRight,
+        keyboard::Key::Character("a") => key::Named::Home,
+        keyboard::Key::Character("e") => key::Named::End,
+        keyboard::Key::Character("h") => key::Named::Backspace,
+        keyboard::Key::Character("d") => key::Named::Delete,
+        _ => return None,
+    };
+
+    Some(keyboard::Key::Named(named))
 }
