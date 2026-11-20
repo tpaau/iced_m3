@@ -12,9 +12,7 @@ use iced_widget::{
 };
 
 use crate::{
-    animation::motion::{self, SimulatedSpring, fast_spatial},
-    theme::ColorScheme,
-    widget::shapes::cubics_to_iced_path,
+    animation::motion::SimulatedSpring, theme::ColorScheme, widget::shapes::cubics_to_iced_path,
 };
 
 pub(crate) mod constants {
@@ -26,10 +24,17 @@ pub(crate) mod constants {
         shapes::{cookie4, cookie9, oval, pentagon, pill, soft_burst, sunny},
     };
 
+    use crate::animation::motion::Spring;
+
     pub const DEFAULT_CONTAINER_SIZE: Pixels = Pixels(48.0);
     pub const DEFAULT_INDICATOR_SIZE: Pixels = Pixels(38.0);
     pub const LINEAR_ROTATION_CYCLE_SECONDS: f32 = 4.666;
     pub const MORPH_CYCLE_SECONDS: f32 = 0.650;
+    // The Compose reference morphs with `spring(dampingRatio = 0.6, stiffness =
+    // 200, visibilityThreshold = 0.1)`, hardcoded and independent from the
+    // motion scheme. The threshold just ends the spring early; the morph
+    // cycle clock plays the same role here.
+    pub const MORPH_SPRING: Spring = Spring::new(0.6, 200.0);
     pub static CYCLE_POLYGONS: LazyLock<[RoundedPolygon; 7]> = LazyLock::new(|| {
         [
             soft_burst(),
@@ -126,12 +131,7 @@ impl Default for State {
 
         Self {
             start: Instant::now(),
-            spring: SimulatedSpring::new(
-                // TODO: Since this is a `Default` implementation required by the canvas program, we
-                // can't actually set this to the desired motion scheme.
-                fast_spatial(motion::Scheme::default()),
-                now,
-            ),
+            spring: SimulatedSpring::new(constants::MORPH_SPRING, now),
             last_cycle: Duration::default(),
         }
     }
@@ -186,10 +186,11 @@ where
         );
 
         let elapsed = Instant::now().duration_since(state.start).as_secs_f32();
+        let morph_turns =
+            (state.last_cycle.as_secs_f32() / constants::MORPH_CYCLE_SECONDS + 1.0) % 4.0;
         let angle = Radians(
             elapsed * std::f32::consts::TAU / constants::LINEAR_ROTATION_CYCLE_SECONDS
-                + PI / 4.0 * state.spring.position
-                + PI / 4.0 * state.last_cycle.as_secs_f32() / constants::MORPH_CYCLE_SECONDS,
+                + PI / 2.0 * (state.spring.position + morph_turns),
         );
 
         frame.translate(Vector::new(offset.x + half, offset.y + half));
