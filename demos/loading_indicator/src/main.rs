@@ -32,11 +32,20 @@ impl State {
                     .font(fonts::text_bold())
                     .size(24.0)
                     .color(self.theme.on_surface()),
-                row![
-                    iced_m3::widget::loading_indicator(Style::contained(&self.theme)),
-                    iced_m3::widget::loading_indicator(Style::uncontained(&self.theme))
+                column![
+                    row![
+                        iced_m3::widget::loading_indicator(Style::contained(&self.theme)),
+                        iced_m3::widget::loading_indicator(Style::uncontained(&self.theme))
+                    ]
+                    .spacing(10),
+                    column![
+                        text("You can also change the size!"),
+                        iced_m3::widget::loading_indicator(Style::contained(&self.theme))
+                            .size(64.0),
+                    ]
+                    .spacing(10)
                 ]
-                .spacing(10)
+                .spacing(20)
             ]
             .spacing(20),
         )

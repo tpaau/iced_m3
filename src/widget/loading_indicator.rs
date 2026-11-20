@@ -5,26 +5,29 @@ use std::{
     time::{Duration, Instant},
 };
 
-use iced::{Color, Element, Radians, Size, Vector};
+use iced::{Color, Element, Pixels, Radians, Size, Vector};
 use iced_widget::{
     Canvas,
     canvas::{self, Fill},
 };
 
 use crate::{
-    animation::motion::SimulatedSpring, theme::ColorScheme, widget::shapes::cubics_to_iced_path,
+    animation::motion::{self, SimulatedSpring, fast_spatial},
+    theme::ColorScheme,
+    widget::shapes::cubics_to_iced_path,
 };
 
 pub(crate) mod constants {
     use std::sync::LazyLock;
 
+    use iced::Pixels;
     use polymorpher::{
         Morph, RoundedPolygon,
         shapes::{cookie4, cookie9, oval, pentagon, pill, soft_burst, sunny},
     };
 
-    pub const CONTAINER_SIZE: f32 = 48.0;
-    pub const INDICATOR_SIZE: f32 = 38.0;
+    pub const DEFAULT_CONTAINER_SIZE: Pixels = Pixels(48.0);
+    pub const DEFAULT_INDICATOR_SIZE: Pixels = Pixels(38.0);
     pub const LINEAR_ROTATION_CYCLE_SECONDS: f32 = 4.666;
     pub const MORPH_CYCLE_SECONDS: f32 = 0.650;
     pub static CYCLE_POLYGONS: LazyLock<[RoundedPolygon; 7]> = LazyLock::new(|| {
@@ -92,12 +95,22 @@ impl Style {
 /// Loading indicators show the progress of a process for a short wait time
 pub struct LoadingIndicator {
     style: Style,
+    size: Pixels,
 }
 
 impl LoadingIndicator {
     #[must_use]
     pub fn new(style: Style) -> Self {
-        Self { style }
+        Self {
+            style,
+            size: constants::DEFAULT_CONTAINER_SIZE,
+        }
+    }
+
+    #[must_use]
+    pub fn size(mut self, size: impl Into<Pixels>) -> Self {
+        self.size = size.into();
+        self
     }
 }
 
@@ -114,7 +127,9 @@ impl Default for State {
         Self {
             start: Instant::now(),
             spring: SimulatedSpring::new(
-                crate::animation::motion::constants::FAST_SPATIAL_EXPRESSIVE,
+                // TODO: Since this is a `Default` implementation required by the canvas program, we
+                // can't actually set this to the desired motion scheme.
+                fast_spatial(motion::Scheme::default()),
                 now,
             ),
             last_cycle: Duration::default(),
@@ -147,14 +162,18 @@ where
         };
 
         if let Some(color) = container_color {
-            let radius = constants::CONTAINER_SIZE / 2.0;
+            let radius = self.size.0 / 2.0;
             let circle = canvas::Path::circle(frame.center(), radius);
             frame.fill(&circle, color);
         }
 
-        let size = constants::INDICATOR_SIZE;
-        let offset = Vector::new((frame.width() - size) / 2.0, (frame.height() - size) / 2.0);
-        let half = size / 2.0;
+        let indicator_size = (self.size.0 / constants::DEFAULT_CONTAINER_SIZE.0)
+            * constants::DEFAULT_INDICATOR_SIZE.0;
+        let offset = Vector::new(
+            (frame.width() - indicator_size) / 2.0,
+            (frame.height() - indicator_size) / 2.0,
+        );
+        let half = indicator_size / 2.0;
 
         let current_morph = &constants::MORPHS[(state.last_cycle.as_secs_f32()
             / constants::MORPH_CYCLE_SECONDS)
@@ -163,7 +182,7 @@ where
 
         let path = cubics_to_iced_path(
             &current_morph.as_cubics(state.spring.position),
-            Size::new(constants::INDICATOR_SIZE, constants::INDICATOR_SIZE),
+            Size::new(indicator_size, indicator_size),
         );
 
         let elapsed = Instant::now().duration_since(state.start).as_secs_f32();
@@ -216,10 +235,7 @@ where
     Renderer: 'a + iced_widget::renderer::geometry::Renderer,
 {
     fn from(value: LoadingIndicator) -> Self {
-        Element::new(
-            Canvas::new(value)
-                .width(constants::CONTAINER_SIZE)
-                .height(constants::CONTAINER_SIZE),
-        )
+        let size = value.size.0;
+        Element::new(Canvas::new(value).width(size).height(size))
     }
 }
