@@ -29,7 +29,6 @@ jobs:
         toolchain: [stable, beta, nightly]
     steps:
       - uses: actions/checkout@v6
-      - uses: tpaau/init-pulse@main
 
       - name: Update Rust
         run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
